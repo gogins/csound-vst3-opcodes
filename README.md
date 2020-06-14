@@ -5,7 +5,7 @@ https://github.com/gogins<br>
 http://michaelgogins.tumblr.com
 
 
-Plugin opcodes for hosting vst3 plugin instruments and effects in Csound.
+This project provides plugin opcodes for hosting VST3 plugin instruments and effects in Csound.
 
 These opcodes are a port of the existing vst4cs opcodes, which supports only the VST2 protocol, to the newer and more capable VST3 protocol.
 
