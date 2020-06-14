@@ -7,6 +7,7 @@ Michael Gogins<br>
 https://github.com/gogins<br>
 http://michaelgogins.tumblr.com
 
+## Introduction
 
 This project provides plugin opcodes for hosting VST3 plugin instruments and effects in Csound.
 
@@ -16,3 +17,19 @@ These opcodes are designed to be cross-platform and to run at least on Linux, Wi
 
 csound-vst3-opcodes is non-commercial software and is licensed under GPLv3, as is the VST3 SDK; GPLv3, in turn, is compatible with Csound, which has a LGPLv2.1 license that permits relicensing to any later version of the GPL.
 
+## Building
+
+In the root directory of your local repository, execute `bash update-submodules.bash` to initialize the Steinberg VST SDK submodules.
+
+Change to the `vst3sdk` directory and follow the build instructions there.
+
+Install Csound on your system. On Linux build Csound using the instructions [here](https://github.com/csound/csound/blob/develop/BUILD.md).
+
+Change to the `vst3-plugins` directory and execute the following commands:
+```
+mkdir build
+cd build
+cmake ..
+make -j4
+cpack
+```
