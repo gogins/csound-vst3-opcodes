@@ -13,4 +13,5 @@ These opcodes are designed to be cross-platform and to run at least on Linux, Wi
 
 csound-vst3-opcodes is non-commercial software and is licensed under GPLv3, as is the VST3 SDK; GPLv3, in turn, is compatible with Csound, which has a LGPLv2.1 license that permits relicensing to any later version of the GPL.
 
+![](VST_Compatible_Logo_Steinberg_with_TM_negative.png "VST3")
 
