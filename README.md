@@ -21,9 +21,9 @@ csound-vst3-opcodes is non-commercial software and is licensed under GPLv3, as i
 
 In the root directory of your local repository, execute `bash update-submodules.bash` to initialize the Steinberg VST SDK submodules.
 
-Change to the `vst3sdk` directory and follow the build instructions there.
+Change to the `vst3sdk` directory and, on Linux, prepare for building according to the `vst3sdk/doc/vstinterfaces/linuxSetup.html` file. Then build the VST SDK and examples following the instructions [here](https://github.com/steinbergmedia/vst3sdk#200), 
 
-Install Csound on your system. On Linux build Csound using the instructions [here](https://github.com/csound/csound/blob/develop/BUILD.md).
+Install Csound on your system. On Linux, build Csound using the instructions [here](https://github.com/csound/csound/blob/develop/BUILD.md).
 
 Change to the `vst3-plugins` directory and execute the following commands:
 ```
