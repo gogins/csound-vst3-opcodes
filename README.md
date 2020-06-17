@@ -25,31 +25,34 @@ LGPLv2.1 license that permits relicensing to any later version of the GPL.
 
 ## Building
 
+Steinberg has provided an unusual variation on the standard CMake layout that 
+seems odd at first but does simplify building VST projects. The idea is that 
+user projects co-opt Steinberg's CMake build system for the VST SDK. In other 
+words, one builds one's VST projects as if they were parts of the VST SDK 
+itself.
+
 ### Linux
 
 In the root directory of your local repository, execute 
-`bash update-submodules.bash` to initialize the Steinberg VST SDK submodules.
-
-Change to the `vst3sdk` directory and, on Linux, prepare for building 
-according to the `vst3sdk/doc/vstinterfaces/linuxSetup.html` file. Then build 
-the VST SDK and examples following the instructions 
-[here](https://github.com/steinbergmedia/vst3sdk#200), 
-
-Install Csound on your system. On Linux, build Csound using the instructions 
-[here](https://github.com/csound/csound/blob/develop/BUILD.md).
-
-Change to the `vst3-plugins` directory and execute the following commands:
+`bash update-submodules.bash` to initialize the Steinberg VST SDK submodules. 
+Then execute the following commands to build the VST SDK itself and to verify 
+that you have done so.
 ```
 mkdir build
 cd build
-cmake ..
+cmake ../vst3sdk -DCMAKE_BUILD_TYPE=Release
 make -j4
-cpack
+```
+If this builds 100% (which includes running a test suite), then still in the 
+build diretory, execute:
+``
+cmake ../vst3sdk -DCMAKE_BUILD_TYPE=Release -DSMTG_MYPLUGINS_SRC_PATH=../csound-vst3
+make -j4
 ```
 
 ## Installation
 
-Copy the vst3-cs shared library to your Csound plugin directory, which is 
+Copy the vst3-opcodes shared library to your Csound plugin directory, which is 
 specified in the `OPCODE6DIR64` environment variable.
 
 ## User Guide
