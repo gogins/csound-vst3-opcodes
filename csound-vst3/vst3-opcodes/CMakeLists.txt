@@ -48,10 +48,10 @@ elseif(SMTG_WIN)
 endif()
 
 set(target vst3_plugins)
-
-add_library(${target} ${vst3_plugins_sources})
+message("CSOUND_LIBRARIES: ${CSOUND_LIBRARIES}")
+add_library(${target} MODULE ${vst3_plugins_sources})
 #set_target_properties(${target} PROPERTIES ${SDK_IDE_HOSTING_EXAMPLES_FOLDER})
-target_link_libraries(${target} PRIVATE base sdk ${vst3_plugins_PLATFORM_LIBS} ${CSOUND_LIBRARY}})
+target_link_libraries(${target} PRIVATE base sdk ${CSOUND_LIBRARIES} ${vst3_plugins_PLATFORM_LIBS})
 target_include_directories(${target} PRIVATE ${CSOUND_INCLUDE_DIRS})
 if (APP_PROPERTIES)
     set_target_properties(${target} PROPERTIES ${APP_PROPERTIES})
