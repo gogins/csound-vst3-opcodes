@@ -11,6 +11,7 @@
 #include <csound/csdl.h>
 #include <csound/OpcodeBase.hpp>
 
+#include "pluginterfaces/vst/ivstaudioprocessor.h"
 #include "public.sdk/source/vst/hosting/hostclasses.h"
 #include "public.sdk/source/vst/hosting/module.h"
 #include "public.sdk/source/vst/hosting/optional.h"
@@ -22,22 +23,81 @@
 #include <unistd.h>
 #endif
 
+
 namespace csound {
     
-struct vst3plugin_t;
-    
-class vstHost_t : public Steinberg::Vst::HostApplication {
+    struct vst3plugin_t {
+        std::shared_ptr<class AudioClient> vst3Processor;
+        std::shared_ptr<class AudioClient> vst3Controller;
+    };
+        
+    class vst_host_t : public Steinberg::Vst::HostApplication {
+    public:
+        ~vst_host_t () noexcept override {
+        }
+        /**
+         * Loads a VST3 module and obtains the interfaces required to run it.
+         */
+        void startAudioClient (const std::string& path, VST3::Optional<VST3::UID> effectID,
+                               uint32 flags) {
+            std::string error;
+            module = VST3::Hosting::Module::create(path, error);
+            if (!module) {
+                std::string reason = "Could not create Module for file:";
+                reason += path;
+                reason += "\nError: ";
+                reason += error;
+                return;
+            }
+            auto factory = module->getFactory ();
+            for (auto& classInfo : factory.classInfos ()) {
+                if (classInfo.category () == kVstAudioEffectClass) {
+                    if (effectID) {
+                        if (*effectID != classInfo.ID ()) {
+                            continue;
+                        }
+                    }
+                    plugProvider = owned (NEW Steinberg::Vst::PlugProvider (factory, classInfo, true));
+                    break;
+                }
+            }
+            if (!plugProvider) {
+                std::string error;
+                if (effectID) {
+                    error =
+                        "No VST3 Audio Module Class with UID " + effectID->toString () + " found in file ";
+                } else {
+                    error = "No VST3 Audio Module Class found in file ";
+                }
+                error += path;
+                return;
+            }
+            Steinberg::OPtr<Steinberg::Vst::IComponent> component = plugProvider->getComponent ();
+            Steinberg::OPtr<Steinberg::Vst::IEditController> controller = plugProvider->getController ();
+            Steinberg::FUnknownPtr<Steinberg::Vst::IMidiMapping> midiMapping (controller);
+            vst3Processor = AudioClient::create ("VST 3 SDK", component, midiMapping);
+        }
+        VST3::Hosting::Module::Ptr module {nullptr};
+        Steinberg::IPtr<Steinberg::Vst::PlugProvider> plugProvider {nullptr};
+        std::shared_ptr<class AudioClient> vst3Processor;
+    };
+
+    struct std::vector<vst3plugin_t*> &vsts_for_csound(CSOUND *csound) {
+        static std::map<CSOUND *, std::vector<vst3plugin_t*> > vsts_for_csounds;
+        return vsts_for_csounds[csound];
+    }
+
+    static vst3plugin_t *vst_for_csound(CSOUND *csound, size_t index) {
+        std::vector<vst3plugin_t*> &vsts = vsts_for_csound(csound);
+        return vsts[index];
+    }
 };
 
-struct std::vector<vst3plugin_t*> &vsts_for_csound(CSOUND *csound) {
-    static std::map<CSOUND *, std::vector<vst3plugin_t*> > vsts_for_csounds;
-    return vsts_for_csounds[csound];
-}
+namespace Steinberg {
+    FUnknown* gStandardPluginContext = NEW csound::vstHost_t();
+};
 
-static vst3plugin_t *vst_for_csound(CSOUND *csound, size_t index) {
-    std::vector<vst3plugin_t*> &vsts = vsts_for_csound(csound);
-    return vsts[index];
-}
+namespace csound {
 
 struct VST3INIT : public OpcodeBase<VST3INIT> {
     // Inputs.
@@ -48,6 +108,7 @@ struct VST3INIT : public OpcodeBase<VST3INIT> {
     vst3plugin_t *vstplugin;
     int init(CSOUND *csound) {
         int result = OK;
+        
         return result;
     };
 };
