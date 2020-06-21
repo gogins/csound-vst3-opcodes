@@ -35,12 +35,12 @@
 #include "public.sdk/source/vst/hosting/parameterchanges.h"
 #include "public.sdk/source/vst/hosting/plugprovider.h"
 #include "public.sdk/source/vst/hosting/processdata.h"
-#include "public.sdk/source/vst/hosting/stringconvert.cpp"
+#include "public.sdk/source/vst/hosting/stringconvert.h"
 
 /**
  * (1) VST3 Modules may implement any number of VST3 plugins.
  * (2) The vst3init opcode uses a singleton vst3_host_t instance to load a 
- *     VST3 Module, and obtains from it a VST3 PluginFactory.
+ *     VST3 Module, and obtains from the Module a VST3 PluginFactory.
  * (3) All of the VST3 ClassInfo objects exposed by the PluginFactory 
  *     are iterated, and all of the kVstAudioEffectClass PlugProviders are 
  *     saved by name and by UID.
@@ -72,7 +72,38 @@ namespace csound {
     using Channels = std::array<Controllers, kMaxMidiChannels>;
     using Busses = std::array<Channels, kMaxMidiMappingBusses>;
     using MidiCCMapping = Busses;
+    
+    static inline void assignBusBuffers (const Steinberg::Vst::IAudioClient::Buffers& buffers, Steinberg::Vst::HostProcessData& processData,
+                                  bool unassign = false) {
+        auto bufferIndex = 0;
+        for (auto busIndex = 0; busIndex < processData.numOutputs; busIndex++) {
+            auto channelCount = processData.outputs[busIndex].numChannels;
+            for (auto chanIndex = 0; chanIndex < channelCount; chanIndex++) {
+                if (bufferIndex < buffers.numOutputs) {
+                    processData.setChannelBuffer (Steinberg::Vst::BusDirections::kOutput, busIndex, chanIndex,
+                                                  unassign ? nullptr : buffers.outputs[bufferIndex]);
+                    bufferIndex++;
+                }
+            }
+        }
+        bufferIndex = 0;
+        for (auto busIndex = 0; busIndex < processData.numInputs; busIndex++) {
+            auto channelCount = processData.inputs[busIndex].numChannels;
+            for (auto chanIndex = 0; chanIndex < channelCount; chanIndex++) {
+                if (bufferIndex < buffers.numInputs) {
+                    processData.setChannelBuffer (Steinberg::Vst::BusDirections::kInput, busIndex, chanIndex,
+                                                  unassign ? nullptr : buffers.inputs[bufferIndex]);
+                    bufferIndex++;
+                }
+            }
+        }
+    }
 
+    static inline void unassignBusBuffers (const Steinberg::Vst::IAudioClient::Buffers& buffers, Steinberg::Vst::HostProcessData& processData)
+    {
+        assignBusBuffers (buffers, processData, true);
+    }
+    
     /**
      * This class manages one instance of one plugin and all of its 
      * communications with Csound, including audio input and output, 
@@ -89,9 +120,19 @@ namespace csound {
            //~ std::shared_ptr<vst3_plugin_t>(new vst3_plugin_t);
             
         //~ };
-        //~ // IAudioClient
-        //~ bool process (Steinberg::Vst::IAudioClient::Buffers& buffers, int64_t continousFrames) override {
-        //~ };
+        // IAudioClient
+        bool process (Steinberg::Vst::IAudioClient::Buffers& buffers, int64_t continousFrames) override {
+            Steinberg::FUnknownPtr<Steinberg::Vst::IAudioProcessor> processor = component;
+            if (!processor || !isProcessing) {
+                return false;
+            }
+            preprocess (buffers, continousFrames);
+            if (processor->process (processData) != Steinberg::kResultOk) {
+                return false;
+            }
+            postprocess (buffers);
+            return true;
+        }
         bool setSamplerate (double value) override {
             if (sampleRate == value) {
                 return true;
@@ -114,34 +155,21 @@ namespace csound {
             processData.prepare (*component, blockSize, Steinberg::Vst::kSample32);
             return updateProcessSetup ();
         }
-        //~ Steinberg::Vst::IAudioClient::IOSetup getIOSetup () const override;
-        //~ // IMidiClient
-        bool onEvent (const Steinberg::Vst::IMidiClient::Event& event, int32_t port) override {
-            // Try to create Event first.
-            if (processVstEvent (event, port)) {
-                return true;
-            }
-            // In case this is no event it must be a parameter.
-            if (processParamChange (event, port)) {
-                return true;
-            }
-            return true;
-        }
-        Steinberg::Vst::IMidiClient::IOSetup getMidiIOSetup () const override {
+        Steinberg::Vst::IAudioClient::IOSetup getIOSetup () const override {
             Steinberg::Vst::IAudioClient::IOSetup iosetup;
-            auto count = component->getBusCount (Steinberg::Vst::MediaTypes::kAudio, Steinberg::Vst::BusDirections::kOutput);
+            auto count = component->getBusCount (Steinberg::Vst::kAudio, Steinberg::Vst::BusDirections::kOutput);
             for (int32_t i = 0; i < count; i++) {
                 Steinberg::Vst::BusInfo info;
                 if (component->getBusInfo (Steinberg::Vst::MediaTypes::kAudio, Steinberg::Vst::BusDirections::kOutput, i, info) !=
                     Steinberg::kResultOk) {
-                    continue;
-                }
+                        continue;
+                    }
                 for (int32_t j = 0; j < info.channelCount; j++) {
                     auto channelName = VST3::StringConvert::convert (info.name, 128); // TODO: 128???
                     iosetup.outputs.push_back (channelName + " " + std::to_string (j));
                 }
             }
-            count = component->getBusCount (Steinberg::Vst::MediaTypes::kAudio, BusDirections::kInput);
+            count = component->getBusCount (Steinberg::Vst::MediaTypes::kAudio, Steinberg::Vst::BusDirections::kInput);
             for (int32_t i = 0; i < count; i++) {
                 Steinberg::Vst::BusInfo info;
                 if (component->getBusInfo (Steinberg::Vst::MediaTypes::kAudio, Steinberg::Vst::BusDirections::kInput, i, info) != Steinberg::kResultOk) {
@@ -154,14 +182,75 @@ namespace csound {
             }
             return iosetup;
         }
-        //~ // IParameterClient
-        //~ void setParameter (uint32  id, double value, int32 sampleOffset) override;
+        // IMidiClient
+        bool onEvent (const Steinberg::Vst::IMidiClient::Event& event, int32_t port) override {
+            // Try to create Event first.
+            if (processVstEvent (event, port)) {
+                return true;
+            }
+            // In case this is no event it must be a parameter.
+            if (processParamChange (event, port)) {
+                return true;
+            }
+            return true;
+        }
+        Steinberg::Vst::IMidiClient::IOSetup getMidiIOSetup () const override {
+            Steinberg::Vst::IMidiClient::IOSetup iosetup;
+            auto count = component->getBusCount (Steinberg::Vst::MediaTypes::kEvent, Steinberg::Vst::BusDirections::kInput);
+            for (int32_t i = 0; i < count; i++) {
+                Steinberg::Vst::BusInfo info;
+                if (component->getBusInfo (Steinberg::Vst::MediaTypes::kEvent, Steinberg::Vst::BusDirections::kInput, i, info) != Steinberg::kResultOk) {
+                    continue;
+                }
+                auto busName = VST3::StringConvert::convert (info.name, 128); // TODO: 128???
+                iosetup.inputs.push_back (busName);
+            }
+            count = component->getBusCount (Steinberg::Vst::MediaTypes::kEvent, Steinberg::Vst::BusDirections::kOutput);
+            for (int32_t i = 0; i < count; i++) {
+                Steinberg::Vst::BusInfo info;
+                if (component->getBusInfo (Steinberg::Vst::MediaTypes::kEvent, Steinberg::Vst::BusDirections::kOutput, i, info) !=
+                    Steinberg::kResultOk) {
+                    continue;
+                }
+                auto busName = VST3::StringConvert::convert (info.name, 128); // TODO: 128???
+                iosetup.outputs.push_back (busName);
+            }
+            return iosetup;
+        }
+        // IParameterClient
+        void setParameter (uint32  id, double value, int32 sampleOffset) override {
+            paramTransferrer.addChange (id, value, sampleOffset);
+        }
         //~ bool initialize (const std::string& name, Steinberg::Vst::IComponent* component, Steinberg::Vst::IMidiMapping* midiMapping);
-        //~ void createLocalMediaServer (const std::string& name);
-        //~ void terminate ();
-        //~ void updateBusBuffers (Steinberg::Vst::IAudioClient::Buffers& buffers, Steinberg::Vst::HostProcessData& processData);
-        //~ void initProcessData ();
-        //~ void initProcessContext ();
+        /**
+         * Here, the vst3 opcodes themselves play the role of the local media server, in particular 
+         * the note on, parameter set, and audio output opcodes.
+         */
+        void createLocalMediaServer (const std::string& name) {
+        }
+        void terminate () {
+            //mediaServer = nullptr;
+            Steinberg::FUnknownPtr<Steinberg::Vst::IAudioProcessor> processor = component;
+            if (!processor) {
+                return;
+            }
+            processor->setProcessing (false);
+            component->setActive (false);
+        }
+        void updateBusBuffers (Steinberg::Vst::IAudioClient::Buffers& buffers, Steinberg::Vst::HostProcessData& processData) {
+            // Doesn't actually seem to be defined in the VST3 SDK or examples.
+        }
+        void initProcessData () {
+            // processData.prepare will be done in setBlockSize.
+            processData.inputEvents = &eventList;
+            processData.inputParameterChanges = &inputParameterChanges;
+            processData.processContext = &processContext;
+            initProcessContext ();
+        }
+        void initProcessContext () {
+            processContext = {};
+            processContext.tempo = 120;
+        }
         bool updateProcessSetup () {
             Steinberg::FUnknownPtr<Steinberg::Vst::IAudioProcessor> processor = component;
             if (!processor) {
@@ -186,8 +275,17 @@ namespace csound {
             isProcessing = true;
             return isProcessing;
         }
-        //~ void preprocess (Steinberg::Vst::IAudioClient::Buffers& buffers, int64_t continousFrames);
-        //~ void postprocess (Steinberg::Vst::IAudioClient::Buffers& buffers);
+        void preprocess (Steinberg::Vst::IAudioClient::Buffers& buffers, int64_t continousFrames) {
+            processData.numSamples = buffers.numSamples;
+            processContext.continousTimeSamples = continousFrames;
+            assignBusBuffers (buffers, processData);
+            paramTransferrer.transferChangesTo (inputParameterChanges);
+        }
+        void postprocess (Steinberg::Vst::IAudioClient::Buffers& buffers) {
+            eventList.clear ();
+            inputParameterChanges.clearQueue ();
+            unassignBusBuffers (buffers, processData);
+        }
         bool isPortInRange (int32 port, int32 channel) const {
             return port < kMaxMidiMappingBusses && !midiCCMapping[port][channel].empty ();
         }
