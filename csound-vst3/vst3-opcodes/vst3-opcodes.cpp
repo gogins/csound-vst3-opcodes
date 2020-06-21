@@ -28,6 +28,7 @@
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/imediaserver.h"
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/iparameterclient.h"
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/miditovst.h"
+//#include "public.sdk/source/vst/basewrapper/basewrapper.h"
 #include "public.sdk/source/vst/hosting/eventlist.h"
 #include "public.sdk/source/vst/hosting/hostclasses.h"
 #include "public.sdk/source/vst/hosting/module.h"
@@ -42,8 +43,7 @@
  * (2) The vst3init opcode uses a singleton vst3_host_t instance to load a 
  *     VST3 Module, and obtains from the Module a VST3 PluginFactory.
  * (3) All of the VST3 ClassInfo objects exposed by the PluginFactory 
- *     are iterated, and all of the kVstAudioEffectClass PlugProviders are 
- *     saved by name and by UID.
+ *     are iterated.
  * (4) Either the first PlugProvider, or the PlugProviders that is named in 
  *     the vst3init call, is used to create a vst3_plugin_t instance, which 
  *     actually obtains the interfaces called by Csound to use the plugin.
@@ -53,6 +53,9 @@
  *     user, who must pass it to all other vst3 opcodes.
  * (7) When Csound calls csoundModuleDestroy, the vst3_host_t instance 
  *     terminates all plugins and deallocates all state.
+ *
+ * The life cycle of the plugin is:
+ * (1) 
  */
  
 #define CSOUND_LIFECYCLE_DEBUG 1
@@ -63,6 +66,14 @@ namespace Steinberg {
 
 namespace csound {
     
+    /**
+     * Persistent state:
+     * (1) There is one and only one vst3_host_t instance in a process.
+     * (2) There are zero or more vst3_plugin_t instances for each CSOUND 
+     *     instance, and these plugins are deleted when csoundModuleDestroy 
+     *     is called.
+     */
+    
     enum
     {
         kMaxMidiMappingBusses = 4,
@@ -72,6 +83,37 @@ namespace csound {
     using Channels = std::array<Controllers, kMaxMidiChannels>;
     using Busses = std::array<Channels, kMaxMidiMappingBusses>;
     using MidiCCMapping = Busses;
+    
+    static inline MidiCCMapping initMidiCtrlerAssignment (Steinberg::Vst::IComponent* component, Steinberg::Vst::IMidiMapping* midiMapping) {
+        MidiCCMapping midiCCMapping {};
+        if (!midiMapping || !component) {
+            return midiCCMapping;
+        }
+        int32 busses = std::min<int32> (component->getBusCount (Steinberg::Vst::kEvent, Steinberg::Vst::kInput), kMaxMidiMappingBusses);
+        if (midiCCMapping[0][0].empty ()) {
+            for (int32 b = 0; b < busses; b++) {
+                for (int32 i = 0; i < kMaxMidiChannels; i++) {
+                    midiCCMapping[b][i].resize (Steinberg::Vst::kCountCtrlNumber);
+                }
+            }
+        }
+        Steinberg::Vst::ParamID paramID;
+        for (int32 b = 0; b < busses; b++) {
+            for (int16 ch = 0; ch < kMaxMidiChannels; ch++) {
+                for (int32 i = 0; i < Steinberg::Vst::kCountCtrlNumber; i++) {
+                    paramID = Steinberg::Vst::kNoParamId;
+                    if (midiMapping->getMidiControllerAssignment (b, ch, (Steinberg::Vst::CtrlNumber)i, paramID) ==
+                        Steinberg::kResultTrue) {
+                        midiCCMapping[b][ch][i] = paramID;
+                    } else {
+                        midiCCMapping[b][ch][i] = Steinberg::Vst::kNoParamId;
+                    }
+                }
+            }
+        }
+        return midiCCMapping;
+    }
+
     
     static inline void assignBusBuffers (const Steinberg::Vst::IAudioClient::Buffers& buffers, Steinberg::Vst::HostProcessData& processData,
                                   bool unassign = false) {
@@ -99,11 +141,10 @@ namespace csound {
         }
     }
 
-    static inline void unassignBusBuffers (const Steinberg::Vst::IAudioClient::Buffers& buffers, Steinberg::Vst::HostProcessData& processData)
-    {
+    static inline void unassignBusBuffers (const Steinberg::Vst::IAudioClient::Buffers& buffers, Steinberg::Vst::HostProcessData& processData) {
         assignBusBuffers (buffers, processData, true);
     }
-    
+ 
     /**
      * This class manages one instance of one plugin and all of its 
      * communications with Csound, including audio input and output, 
@@ -115,12 +156,6 @@ namespace csound {
             public Steinberg::Vst::IParameterClient {
         vst3_plugin_t () {};
         virtual ~vst3_plugin_t () override {};
-        //~ static std::shared_ptr<vst3_plugin_t> create (CSOUND *csound,  const std::string& module_pathname, const std::string& plugin_name, Steinberg::Vst::IComponent* component,
-                                      //~ Steinberg::Vst::IMidiMapping* midiMapping) {
-           //~ std::shared_ptr<vst3_plugin_t>(new vst3_plugin_t);
-            
-        //~ };
-        // IAudioClient
         bool process (Steinberg::Vst::IAudioClient::Buffers& buffers, int64_t continousFrames) override {
             Steinberg::FUnknownPtr<Steinberg::Vst::IAudioProcessor> processor = component;
             if (!processor || !isProcessing) {
@@ -221,12 +256,20 @@ namespace csound {
         void setParameter (uint32  id, double value, int32 sampleOffset) override {
             paramTransferrer.addChange (id, value, sampleOffset);
         }
-        //~ bool initialize (const std::string& name, Steinberg::Vst::IComponent* component, Steinberg::Vst::IMidiMapping* midiMapping);
-        /**
-         * Here, the vst3 opcodes themselves play the role of the local media server, in particular 
-         * the note on, parameter set, and audio output opcodes.
-         */
-        void createLocalMediaServer (const std::string& name) {
+        bool initialize (Steinberg::Vst::PlugProvider *provider) {
+            component = provider->getComponent ();
+            if (!component) {
+                return false;
+            }
+            controller = provider->getController ();
+            if (!controller) {
+                return false;
+            }
+            Steinberg::FUnknownPtr<Steinberg::Vst::IMidiMapping> midiMapping (controller);
+            initProcessData ();
+            paramTransferrer.setMaxParameters (1000);
+            midiCCMapping = initMidiCtrlerAssignment (component, midiMapping);
+            return true;
         }
         void terminate () {
             //mediaServer = nullptr;
@@ -241,7 +284,7 @@ namespace csound {
             // Doesn't actually seem to be defined in the VST3 SDK or examples.
         }
         void initProcessData () {
-            // processData.prepare will be done in setBlockSize.
+            // processData.prepare is done in setBlockSize.
             processData.inputEvents = &eventList;
             processData.inputParameterChanges = &inputParameterChanges;
             processData.processContext = &processContext;
@@ -330,10 +373,10 @@ namespace csound {
         Steinberg::Vst::ProcessContext processContext;
         Steinberg::Vst::EventList eventList;
         Steinberg::Vst::ParameterChanges inputParameterChanges;
-        Steinberg::Vst::IComponent* component = nullptr;
+        Steinberg::Vst::IComponent *component = nullptr;
+        Steinberg::Vst::IEditController *controller = nullptr;
         Steinberg::Vst::ParameterChangeTransfer paramTransferrer;
         MidiCCMapping midiCCMapping;
-        //IMediaServerPtr mediaServer;
         bool isProcessing = false;
         std::string name;
     };
@@ -346,28 +389,31 @@ namespace csound {
         vst3_host_t(){};
         static vst3_host_t &get_instance();
         vst3_host_t(vst3_host_t const&) = delete;
-        void operator=(vst3_host_t const&)  = delete;
+        void operator=(vst3_host_t const&) = delete;
         ~vst3_host_t () noexcept override {
         }
         /**
          * Loads a VST3 Module and obtains all plugins in it.
          */
-        void load_module (CSOUND *csound, const std::string& module_pathname, const std::string &plugin_name, bool verbose) {
+        int load_module (CSOUND *csound, const std::string& module_pathname, const std::string &plugin_name, bool verbose) {
+            int handle = -1;
             if (verbose == true) {
                 csound->Message(csound, "vst3init: loading module: %s\n", module_pathname.c_str());
             }
             std::string error;
-            module = VST3::Hosting::Module::create(module_pathname, error);
+            auto module = VST3::Hosting::Module::create(module_pathname, error);
             if (!module) {
                 std::string reason = "Could not create Module for file:";
                 reason += module_pathname;
                 reason += "\nError: ";
                 reason += error;
                 csound->Message(csound, "vst3init: error: %s\n", reason.c_str());
-                return;
+                return handle;
             }
             auto factory = module->getFactory ();
             int count = 0;
+            // Loop over all class infos from the module, but create only the requested plugin.
+            // This gives the user a list of all plugins available from the module.
             for (auto& classInfo : factory.classInfos ()) {
                 count = count + 1;
                 if (verbose == true) {
@@ -385,23 +431,33 @@ namespace csound {
                 if (classInfo.category () == kVstAudioEffectClass) {
                     auto plugProvider = owned (NEW Steinberg::Vst::PlugProvider (factory, classInfo, true));
                     if (!plugProvider) {
-                        std::string error = "No VST3 Audio Module Class found in file ";
+                        std::string error = "No VST3 Audio Module class found in file ";
                         error += module_pathname;
                         csound->Message(csound, "vst3init: error: %s\n", error.c_str());
                         continue;
+                    } else if (plugin_name == classInfo.name()) {
+                        auto vst3_plugin = std::make_shared<vst3_plugin_t>();
+                        vst3_plugin->initialize(plugProvider);
+                        handle = vst3_plugins_for_handles.size();
+                        vst3_plugins_for_handles.push_back(vst3_plugin);
+                        csound->Message(csound, "vst3init: created plugin: \"%s\": handle: %d\n\n", plugin_name.c_str(), handle);
                     }
-                    Steinberg::OPtr<Steinberg::Vst::IComponent> component = plugProvider->getComponent ();
-                    Steinberg::OPtr<Steinberg::Vst::IEditController> controller = plugProvider->getController ();
                 }
             }
-            //Steinberg::OPtr<Steinberg::Vst::IComponent> component = plugProvider->getComponent ();
-            //Steinberg::OPtr<Steinberg::Vst::IEditController> controller = plugProvider->getController ();
-            //Steinberg::FUnknownPtr<Steinberg::Vst::IMidiMapping> midiMapping (controller);
-            //vst3Processor = AudioClient::create ("VST 3 SDK", component, midiMapping);
+            return handle;
         }
-        VST3::Hosting::Module::Ptr module {nullptr};
-        // Steinberg::IPtr<Steinberg::Vst::PlugProvider> plugProvider {nullptr};
-//        std::shared_ptr<class AudioClient> vst3Processor;
+        std::shared_ptr<vst3_plugin_t> plugin_for_handle(MYFLT *handle) {
+            auto handle_value = *handle;
+            auto index = static_cast<size_t>(handle_value);
+            return vst3_plugins_for_handles[index];
+        }
+        std::multimap<CSOUND *, std::shared_ptr<vst3_plugin_t>> vst3_plugins_for_csounds;
+        // Handles for vst3_plugin_t instances are indexes into a list of 
+        // plugins. It's not possible to simply store the address of a 
+        // vst3_plugin_t instance in a Csound opcode parameter, because the 
+        // address might be 64 bits and the MYFLT parameter might be only 32 
+        // bits. 
+        std::vector<std::shared_ptr<vst3_plugin_t>> vst3_plugins_for_handles;
     };
     
     inline vst3_host_t &vst3_host_t::get_instance() {
@@ -410,19 +466,10 @@ namespace csound {
         return vst3_host;
     };
 
-    struct std::vector<vst3_plugin_t*> &vsts_for_csound(CSOUND *csound) {
-        static std::map<CSOUND *, std::vector<vst3_plugin_t*> > vsts_for_csounds;
-        return vsts_for_csounds[csound];
-    }
-
-    static vst3_plugin_t *vst_for_csound(CSOUND *csound, size_t index) {
-        std::vector<vst3_plugin_t*> &vsts = vsts_for_csound(csound);
-        return vsts[index];
-    }
-
     struct VST3INIT : public csound::OpcodeBase<VST3INIT> {
-        // Inputs.
+        // Outputs.
         MYFLT *i_vst3_handle;
+        // Inputs.
         MYFLT *i_module_pathname;
         MYFLT *i_plugin_name;
         MYFLT *i_verbose;
@@ -430,8 +477,8 @@ namespace csound {
             int result = OK;
             auto &host = csound::vst3_host_t::get_instance();
             std::string module_pathname = ((STRINGDAT *)i_module_pathname)->data;
-            std::string plugin_name =  ((STRINGDAT *)i_plugin_name)->data;
-            host.load_module(csound, module_pathname, plugin_name, (bool)*i_verbose);
+            std::string plugin_name = ((STRINGDAT *)i_plugin_name)->data;
+            *i_vst3_handle = host.load_module(csound, module_pathname, plugin_name, (bool)*i_verbose);
             return result;
         };
     };
@@ -575,7 +622,7 @@ namespace csound {
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 #endif
     static OENTRY localops[] = {
-        {"vst3init", sizeof(VST3INIT), 0, 1, "i", "To", &VST3INIT::init_, 0, 0},
+        {"vst3init", sizeof(VST3INIT), 0, 1, "i", "TTo", &VST3INIT::init_, 0, 0},
         {"vst3info", sizeof(VST3INFO), 0, 1, "", "i", &VST3INFO::init_, 0, 0},
         {   "vst3audio", sizeof(VST3AUDIO), 0, 3, "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
             "iy", &VST3AUDIO::init_, &VST3AUDIO::audio_, 0
@@ -646,13 +693,12 @@ extern "C" {
                         csound,
                         thread_hasher(std::this_thread::get_id()));
 #endif
-        auto vsts = csound::vsts_for_csound(csound);
-        for (size_t i = 0, n = vsts.size(); i < n; ++i) {
-            if (vsts[i]) {
-                delete vsts[i];
-            }
+        auto &vst3_host = csound::vst3_host_t::get_instance();
+        auto range = vst3_host.vst3_plugins_for_csounds.equal_range(csound);
+        for (auto it = range.first; it != range.second; ++it) {
+            it->second = nullptr;
         }
-        vsts.clear();
+        vst3_host.vst3_plugins_for_csounds.erase(csound);
         return 0;
     }
 } // extern "C"
