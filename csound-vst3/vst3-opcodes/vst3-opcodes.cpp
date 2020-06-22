@@ -462,9 +462,18 @@ namespace csound {
     
     inline vst3_host_t &vst3_host_t::get_instance() {
         static vst3_host_t vst3_host;
-        Steinberg::gStandardPluginContext = &vst3_host;
+        if (Steinberg::gStandardPluginContext == nullptr) {
+            Steinberg::gStandardPluginContext = &vst3_host;
+        }
         return vst3_host;
     };
+    
+    inline static vst3_plugin_t *get_plugin(MYFLT *handle) 
+    {
+        auto plugin = vst3_host_t::get_instance().plugin_for_handle(handle);
+        return plugin.get();
+    }
+
 
     struct VST3INIT : public csound::OpcodeBase<VST3INIT> {
         // Outputs.
@@ -487,9 +496,25 @@ namespace csound {
         // Inputs.
         MYFLT *i_vst3_handle;
         // State.
-        vst3_plugin_t vst3_plugin;
+        vst3_plugin_t *vst3_plugin;
         int init(CSOUND *csound) {
             int result = OK;
+            vst3_plugin = get_plugin(i_vst3_handle);
+            //auto class_info = component.
+            // Print the class info, 
+            // the busses,
+            // the parameters, 
+            if (vst3_plugin->controller) {
+                auto n = vst3_plugin->controller->getParameterCount();
+                Steinberg::Vst::ParameterInfo parameterInfo;
+                for (int i = 0; i < n; ++i) {
+                    vst3_plugin->controller->getParameterInfo(i, parameterInfo);
+                    csound->Message(csound, "Parameter %4d: %s %s %9.4f\n", parameterInfo.title, parameterInfo.units, parameterInfo.defaultNormalizedValue);
+                }
+            }
+            // the MIDI mapping,
+            // the presets,
+             // the programs.
             return result;
         };
     };

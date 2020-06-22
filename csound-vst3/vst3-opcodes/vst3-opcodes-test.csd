@@ -11,6 +11,7 @@ i_handle_mda vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Release/mda-vst3
 // support vst3 on Linux. I may go ahead and add VST2 support to this project, 
 // at least privately.
 // i_handle_ptq vst3init "/home/mkg/Pianoteq_6.vst3", 1
+vst3info i_handle_mda
 endin
 </CsInstruments>
 <CsScore>
