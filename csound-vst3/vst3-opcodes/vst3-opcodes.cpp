@@ -114,7 +114,6 @@ namespace csound {
         return midiCCMapping;
     }
 
-    
     static inline void assignBusBuffers (const Steinberg::Vst::IAudioClient::Buffers& buffers, Steinberg::Vst::HostProcessData& processData,
                                   bool unassign = false) {
         auto bufferIndex = 0;
@@ -256,19 +255,31 @@ namespace csound {
         void setParameter (uint32  id, double value, int32 sampleOffset) override {
             paramTransferrer.addChange (id, value, sampleOffset);
         }
-        bool initialize (Steinberg::Vst::PlugProvider *provider) {
-            component = provider->getComponent ();
+        bool initialize (CSOUND *csound_, Steinberg::Vst::PlugProvider *provider) {
+            csound = csound_;
+            component_ = provider->getComponent ();
+            controller_ = provider->getController ();
+            component = component_;
             if (!component) {
+                csound->Message(csound, "vst3_plugin::initialize: no component.\n");
                 return false;
             }
-            controller = provider->getController ();
-            if (!controller) {
+            controller = controller_;
+            processor_ = component_;
+            if (!processor_) {
+                csound->Message(csound, "vst3_plugin::initialize: no processor.\n");
                 return false;
             }
-            Steinberg::FUnknownPtr<Steinberg::Vst::IMidiMapping> midiMapping (controller);
+            Steinberg::FUnknownPtr<Steinberg::Vst::IMidiMapping> midiMapping (controller_);
             initProcessData ();
             paramTransferrer.setMaxParameters (1000);
-            midiCCMapping = initMidiCtrlerAssignment (component, midiMapping);
+            midiCCMapping = initMidiCtrlerAssignment (component_, midiMapping);
+            if (!controller) {
+                csound->Message(csound, "vst3_plugin::initialize: no controller.\n");
+                return false;
+            }
+            //controller->initialize(nullptr);
+            csound->Message(csound, "vst3_plugin::initialize completed.\n");
             return true;
         }
         void terminate () {
@@ -367,6 +378,9 @@ namespace csound {
             return false;
         }
         CSOUND* csound = nullptr;
+        Steinberg::OPtr<Steinberg::Vst::IComponent> component_;
+        Steinberg::FUnknownPtr<Steinberg::Vst::IAudioProcessor> processor_;
+        Steinberg::OPtr<Steinberg::Vst::IEditController> controller_;
         double sampleRate = 0;
         int32 blockSize = 0;
         Steinberg::Vst::HostProcessData processData;
@@ -436,8 +450,8 @@ namespace csound {
                         csound->Message(csound, "vst3init: error: %s\n", error.c_str());
                         continue;
                     } else if (plugin_name == classInfo.name()) {
-                        auto vst3_plugin = std::make_shared<vst3_plugin_t>();
-                        vst3_plugin->initialize(plugProvider);
+ 	                    auto vst3_plugin = std::make_shared<vst3_plugin_t>();
+                        vst3_plugin->initialize(csound, plugProvider);
                         handle = vst3_plugins_for_handles.size();
                         vst3_plugins_for_handles.push_back(vst3_plugin);
                         csound->Message(csound, "vst3init: created plugin: \"%s\": handle: %d\n\n", plugin_name.c_str(), handle);
@@ -504,11 +518,13 @@ namespace csound {
             // Print the class info, 
             // the busses,
             // the parameters, 
-            if (vst3_plugin->controller) {
-                auto n = vst3_plugin->controller->getParameterCount();
+            if (vst3_plugin->controller_) {
+                int32 n = vst3_plugin->controller_->getParameterCount();
                 Steinberg::Vst::ParameterInfo parameterInfo;
+                vst3_plugin->setSamplerate(csound->GetSr(csound));
+                vst3_plugin->setBlockSize(csound->GetKsmps(csound));
                 for (int i = 0; i < n; ++i) {
-                    vst3_plugin->controller->getParameterInfo(i, parameterInfo);
+                    vst3_plugin->controller_->getParameterInfo(i, parameterInfo);
                     csound->Message(csound, "Parameter %4d: %s %s %9.4f\n", parameterInfo.title, parameterInfo.units, parameterInfo.defaultNormalizedValue);
                 }
             }
