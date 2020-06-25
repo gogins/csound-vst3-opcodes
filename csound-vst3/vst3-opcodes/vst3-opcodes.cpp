@@ -395,31 +395,54 @@ namespace csound {
             for (int32 i = 0; i < n; i++) {
                 Steinberg::Vst::BusInfo busInfo = {};
                 auto result = component->getBusInfo (Steinberg::Vst::MediaTypes::kAudio, Steinberg::Vst::kInput, i, busInfo);
-                Steinberg::String name(busInfo.name);
-                name.toMultiByte(Steinberg::kCP_Utf8);
-                csound->Message(csound, "Buss: media type %d: direction %d: channels %d: name: %s bus type: %d flags: %d\n", 
-                    busInfo.mediaType, 
-                    busInfo.direction,
+                auto name = VST3::StringConvert::convert(busInfo.name);
+                csound->Message(csound, "vst3_plugin: buss: direction: %s  media: %s  channels: %3d  bus type: %d  flags: %d  name: %-32s \n", 
+                    busInfo.direction == 0 ? "Input " : "Output",
+                    busInfo.mediaType == 0 ? "Audio" : "Event",
                     busInfo.channelCount,
-                    name,
                     busInfo.busType,
-                    busInfo.flags);
+                    busInfo.flags,
+                    name.data());
             }
             n = component->getBusCount( Steinberg::Vst::MediaTypes::kEvent, Steinberg::Vst::kInput);
             for (int32 i = 0; i < n; i++) {
                 Steinberg::Vst::BusInfo busInfo = {};
                 auto result = component->getBusInfo (Steinberg::Vst::MediaTypes::kEvent, Steinberg::Vst::kInput, i, busInfo);
-                Steinberg::String name(busInfo.name);
-                name.toMultiByte(Steinberg::kCP_Utf8);
-                csound->Message(csound, "Buss: media type %d: direction %d: channels %d: name: %s bus type: %d flags: %d\n", 
-                    busInfo.mediaType, 
-                    busInfo.direction,
+                auto name = VST3::StringConvert::convert(busInfo.name);
+                csound->Message(csound, "vst3_plugin: buss: direction: %s  media: %s  channels: %3d  bus type: %d  flags: %d  name: %-32s \n", 
+                    busInfo.direction == 0 ? "Input " : "Output",
+                    busInfo.mediaType == 0 ? "Audio" : "Event",
                     busInfo.channelCount,
-                    name,
                     busInfo.busType,
-                    busInfo.flags);
+                    busInfo.flags,
+                    name.data());
             }
-            // Output busses.
+            n = component->getBusCount( Steinberg::Vst::MediaTypes::kAudio, Steinberg::Vst::kOutput);
+            for (int32 i = 0; i < n; i++) {
+                Steinberg::Vst::BusInfo busInfo = {};
+                auto result = component->getBusInfo (Steinberg::Vst::MediaTypes::kAudio, Steinberg::Vst::kOutput, i, busInfo);
+                auto name = VST3::StringConvert::convert(busInfo.name);
+                csound->Message(csound, "vst3_plugin: buss: direction: %s  media: %s  channels: %3d  bus type: %d  flags: %d  name: %-32s \n", 
+                    busInfo.direction == 0 ? "Input " : "Output",
+                    busInfo.mediaType == 0 ? "Audio" : "Event",
+                    busInfo.channelCount,
+                    busInfo.busType,
+                    busInfo.flags,
+                    name.data());
+            }
+            n = component->getBusCount( Steinberg::Vst::MediaTypes::kEvent, Steinberg::Vst::kOutput);
+            for (int32 i = 0; i < n; i++) {
+                Steinberg::Vst::BusInfo busInfo = {};
+                auto result = component->getBusInfo (Steinberg::Vst::MediaTypes::kEvent, Steinberg::Vst::kOutput, i, busInfo);
+                auto name = VST3::StringConvert::convert(busInfo.name);
+                csound->Message(csound, "vst3_plugin: buss: direction: %s  media: %s  channels: %3d  bus type: %d  flags: %d  name: %-32s \n", 
+                    busInfo.direction == 0 ? "Input " : "Output",
+                    busInfo.mediaType == 0 ? "Audio" : "Event",
+                    busInfo.channelCount,
+                    busInfo.busType,
+                    busInfo.flags,
+                    name.data());
+            }
             // Parameters.
             if (controller) {
                 int32 n = controller->getParameterCount();
