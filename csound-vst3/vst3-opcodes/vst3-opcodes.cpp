@@ -293,7 +293,8 @@ namespace csound {
         }
         void initProcessContext () {
             processContext = {};
-            processContext.tempo = 120;
+            // Csound's default tempo is one beat per second.
+            processContext.tempo = 60;
         }
         bool updateProcessSetup () {
             ///Steinberg::FUnknownPtr<Steinberg::Vst::IAudioProcessor> processor = component.get();
