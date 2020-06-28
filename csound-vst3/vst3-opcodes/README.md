@@ -117,14 +117,14 @@ vst3-opcodes -- VST3 plugin hosting in Csound.
 
 ### Description
 
-*vst3init* is used to load a VST3 plugin into memory for use with the 
+**vst3init** is used to load a VST3 plugin into memory for use with the 
 other vst3-opcodes. Both VST3 effects and instruments (synthesizers) can be 
 used. Note that for VST3, there may be multiple plugins defined in one 
 loadable module.
 
 ### Syntax
 
-i_handle _vst3init_ S_module_filepath, S_plugin_name [,i_verbose]
+i_handle **vst3init** S_module_filepath, S_plugin_name [,i_verbose]
 
 ### Initialization
 
@@ -137,7 +137,7 @@ on Windows). Remember to use '/' instead of '\' as the path separator.
 *S_plugin_name* -- the name of the plugin within the module. If there is only 
 one plugin, this can be an empty string.
 
-*i_verbose* -- show plugin information when loading. This includes a list of all 
+*i_verbose* -- print plugin information when loading. This includes a list of all 
 the plugins defined in the module.
 
 ### Examples
