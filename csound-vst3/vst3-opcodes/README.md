@@ -5,23 +5,43 @@
 ## https://github.com/gogins/csound-vst3-opcodes
 
 These are a set of Csound opcodes that enable Csound to host VST3 
-plugins, both effect plugins and instrument plugins. The VST2 
-protocol, implemented by the vst4cs opcodes, is not supported. The 
-opcodes should work on Linux, Windows, and OS X, and on both 
-64-bit and 32-bit CPU architectures.
+plugins, both effect plugins and instrument plugins. The vst3-opcodes should 
+work on Linux, Windows, and OS X, and on both 64-bit and 32-bit CPU 
+architectures. VST2 plugins are not supported (but the vst4cs opcodes do 
+support VST2 plugins).
 
 These opcodes are licensed under the terms of the GPLv3 license,
 which is compatible with both the Steinberg VST3 SDK GPLv3 license
 and Csound's LGPLv2 license (which allows re-licensing Csound as 
 "any later version of the GPL license").
 
-Typically, each VST plugin is loaded using the vst3init opcode,
-notes are sent using vst3note, MIDI channel messages of any kind 
-are sent using vst3midiout, VST parameter changes are sent and 
-received using vst3paramset and vst3paramget, and so on. Audio
-must be sent and received from a global, always-on instance of 
-the vst3audio opcode. Any number of audio channels, VST parameters, 
-or notes may be used. Any number of VST plugins may be loaded. 
+The opcodes consist of:
+
+  1. [vst3audio](#vst3audio)
+  1. [vst3bankload](#vst3bankload)
+  1. [vst3banksave](#vst3banksave)
+  1. [vst3edit](#vst3edit)
+  1. [vst3info](#vst3info)
+  1. [vst3init](#vst3init)
+  1. [vst3midiout](#vst3midiout)
+  1. [vst3note](#vst3note)
+  1. [vst3paramget](#vst3paramget)
+  1. [vst3paramset](#vst3paramset)
+  1. [vst3progset](#vst3progset)
+  1. [vts3tempo](#vts3tempo)
+  
+The typical lifecycle of a VST3 plugin in Csound is:
+
+  1. Load the plugin with [vst3init](#vst3init).
+  2. Optionally, load a bank of presets with [vst3bankload](#vst3bankload).
+  3. Select a preset from the bank with [vst3progset](#vst3progset).
+  4. Send notes to the plugin with [vst3note](#vst3note).
+  5. Send MIDI channel messages to the plugin with [vst3midiout](#vst3midiout).
+  6. In a global, always-on instrument, send audio to 
+     and receive audio from the plugin with [vst3audio](#vst3audio).
+     
+Any number of audio channels, VST3 parameters, or notes may be used. 
+Any number of VST3 plugins may be loaded. 
 
 ## vst3bankload
 
@@ -47,7 +67,7 @@ instead of '\\' as the path separator.
 
 ### See Also
 
-[vst3audio](#vst3audio),  
+[vst3audio](#vst3audio), 
 [vst3banksave](#vst3banksave), [vst3edit](#vst3edit),
 [vst3info](#vst3info), [vst3init](#vst3init),
 [vst3midiout](#vst3midiout), [vst3note](#vst3note),
@@ -105,15 +125,27 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 ### Description
 
+**vst3edit** opens the GUI editor widow for a VST3 plugin.
+
 ### Syntax
+
+**vst3edit** i_handle
 
 ### Initialization
 
-### Performance
+*i_handle* -- the handle that identifies the plugin, obtained from 
+[vst3init](#vst3init).### Performance
 
 ### Examples
 
 ### See Also
+
+[vst3audio](#vst3audio), [vst3bankload](#vst3bankload), 
+[vst3banksave](#vst3banksave), 
+[vst3info](#vst3info), [vst3init](#vst3init),
+[vst3midiout](#vst3midiout), [vst3note](#vst3note),
+[vst3paramget](#vst3paramget), [vst3paramset](#vst3paramset),
+[vst3progset](#vst3progset), [vts3tempo](#vts3tempo)
 
 ### Credits
 
@@ -127,11 +159,17 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 ### Description
 
+**vst3info** prints information about the plugin module, input and output 
+busses, parameters, presets, and programs.
+
 ### Syntax
+
+**vst3info** i_handle
 
 ### Initialization
 
-### Performance
+*i_handle* -- the handle that identifies the plugin, obtained from 
+[vst3init](#vst3init).### Performance
 
 ### Examples
 
