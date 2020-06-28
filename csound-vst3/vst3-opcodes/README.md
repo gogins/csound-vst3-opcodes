@@ -18,30 +18,81 @@ and Csound's LGPLv2 license (which allows re-licensing Csound as
 The opcodes consist of:
 
   1. [vst3audio](#vst3audio)
-  1. [vst3bankload](#vst3bankload)
-  1. [vst3banksave](#vst3banksave)
-  1. [vst3edit](#vst3edit)
-  1. [vst3info](#vst3info)
-  1. [vst3init](#vst3init)
-  1. [vst3midiout](#vst3midiout)
-  1. [vst3note](#vst3note)
-  1. [vst3paramget](#vst3paramget)
-  1. [vst3paramset](#vst3paramset)
-  1. [vst3progset](#vst3progset)
-  1. [vts3tempo](#vts3tempo)
+  2. [vst3bankload](#vst3bankload)
+  3. [vst3banksave](#vst3banksave)
+  4. [vst3edit](#vst3edit)
+  5. [vst3info](#vst3info)
+  6. [vst3init](#vst3init)
+  7. [vst3midiout](#vst3midiout)
+  8. [vst3note](#vst3note)
+  9. [vst3paramget](#vst3paramget)
+  10. [vst3paramset](#vst3paramset)
+  11. [vst3progset](#vst3progset)
+  12. [vts3tempo](#vts3tempo)
   
 The typical lifecycle of a VST3 plugin in Csound is:
 
   1. Load the plugin with [vst3init](#vst3init).
-  2. Optionally, load a bank of presets with [vst3bankload](#vst3bankload).
+  2. Load a bank of presets with [vst3bankload](#vst3bankload).
   3. Select a preset from the bank with [vst3progset](#vst3progset).
   4. Send notes to the plugin with [vst3note](#vst3note).
-  5. Send MIDI channel messages to the plugin with [vst3midiout](#vst3midiout).
-  6. In a global, always-on instrument, send audio to 
+  5. Send parameter changes to the plugin with [vst3paramset](#vst3paramset).
+  6. Send MIDI channel messages to the plugin with [vst3midiout](#vst3midiout).
+  7. In a global, always-on instrument, send audio to 
      and receive audio from the plugin with [vst3audio](#vst3audio).
      
-Any number of audio channels, VST3 parameters, or notes may be used. 
-Any number of VST3 plugins may be loaded. 
+Any number of VST3 plugins may be loaded. Any number of audio channels, VST3 
+parameters, or notes may be used. 
+
+## vst3audio
+
+vst3-opcodes -- VST plugin hosting in Csound.
+
+### Description
+
+**vst3audio** is used to send audio to, and receive audio from, a VST3 plugin.
+
+### Syntax
+
+[a_audio_output_1,...] **vst3audio** i_handle [, a_audio_input_1,...]
+
+### Initialization
+
+*i_handle* -- the handle that identifies the plugin, obtained from 
+[vst3init](#vst3init).
+
+### Performance
+
+*a_audio_input_n* -- one of zero or more, up to 32, audio input channels.
+
+*a_audio_output_n* -- one of zero or more audio output channels.
+
+Note that the mininum of the plugin inputs and the opcode inputs, and the 
+minimum of the plugin outputs and the opcode outputs, are used. It is assumed 
+that the main audio busses in the plugin are the first input buss and first 
+output buss.
+
+The audio sent to the plugin must come from some other source in Csound, such
+as an input opcode or a Csound buss channel, and the audio received from the 
+plugin must be sent to some other sink in Csound, such as an opcode output or 
+a Csound buss channel.
+
+### Examples
+
+### See Also
+
+[vst3bankload](#vst3bankload), 
+[vst3banksave](#vst3banksave), [vst3edit](#vst3edit),
+[vst3info](#vst3info), [vst3init](#vst3init),
+[vst3midiout](#vst3midiout), [vst3note](#vst3note),
+[vst3paramget](#vst3paramget), [vst3paramset](#vst3paramset),
+[vst3progset](#vst3progset), [vts3tempo](#vts3tempo)
+
+### Credits
+
+Michael Gogins 
+http://michaelgogins.tumblr.com
+michael dot gogins at gmail dot com
 
 ## vst3bankload
 
@@ -216,7 +267,7 @@ the plugins defined in the module.
 
 [vst3audio](#vst3audio), [vst3bankload](#vst3bankload), 
 [vst3banksave](#vst3banksave), [vst3edit](#vst3edit),
-[vst3info](#vst3info), [vst3init](#vst3init),
+[vst3info](#vst3info), 
 [vst3midiout](#vst3midiout), [vst3note](#vst3note),
 [vst3paramget](#vst3paramget), [vst3paramset](#vst3paramset),
 [vst3progset](#vst3progset), [vts3tempo](#vts3tempo)
