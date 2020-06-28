@@ -625,66 +625,28 @@ namespace csound {
         MYFLT   zerodbfs;
         int opcode_input_n;
         int opcode_output_n;
-        
         vst3_plugin_t *vst3_plugin;
         int init(CSOUND *csound) {
             int result = OK;
             vst3_plugin = get_plugin(i_vst3_handle);
             auto sr = csound->GetSr(csound);
             vst3_plugin->setSamplerate(sr);
+             // Set up the client buffers.
+            vst3_plugin->numSamples = ksmps();
+            vst3_plugin->Buffers.numInputs = input_arg_count() - 1;
+            vst3_plugin->Buffers.inputs = &ains[0];
+            vst3_plugin->Buffers.numOutputs = output_arg_count();
+            vst3_plugin->Buffers.outputs = &aouts[0];
             // This also prepares the host buffers.
             vst3_plugin->setBlockSize(ksmps());
-            opcode_input_n = input_count() - 1;
-            opcode_output_n = output_count();
-            log(csound, "vst3audio:  inputs: %3d  outputs: %3d\n", opcode_input_n, opcode_output_n);
+            log(csound, "vst3audio:  inputs: %3d  outputs: %3d\n", vst3_plugin->Buffers.numInputs, vst3_plugin->Buffers.numOutputs);
            return result;
         };
-         uint32_t output_count() { 
-            return (uint32_t)opds.optext->t.outArgCount; 
-        }
-        uint32_t input_count() { 
-            return (uint32_t)opds.optext->t.inArgCount; 
-        }
-       /**
-         * Copy audio samples from the opcode audio inputs to the hostProcessData 
-         * input buffers. It is assumed the audio input is the first input buss.
-         * inArgs gives number of inputs.
-         * Should be done by assigning inputs to IAudioProcessor buffers.
-         */
-        void audio_in(CSOUND *csound) {
-            int frame_n = csound->GetKsmps(csound);
-            int plugin_input_n = vst3_plugin->hostProcessData.numInputs;
-            if (plugin_input_n < 1) {
-                return;
-            }
-            auto audio_input = vst3_plugin->hostProcessData.inputs[0];
-            int channel_n = std::min(opcode_input_n, audio_input.numChannels);
-            for (int frame_i = 0; frame_i < frame_n; ++frame_i) {
-             }
-        }
-       /**
-         * Copy audio samples from the hostProcessData output buffers to 
-         * the opcode's audio outputs. It is assumed the audio output is the first 
-         * output buss. outArgs gives number of outputs.
-         */
-        void audio_out(CSOUND *csound) {
-            int frame_n = csound->GetKsmps(csound);
-            int csound_channel_n = output_count();
-            int plugin_output_n = vst3_plugin->hostProcessData.numOutputs;
-            if (plugin_output_n < 1) {
-                return;
-            }
-            auto audio_output = vst3_plugin->hostProcessData.outputs[0];
-            int channel_n = std::min(opcode_output_n, audio_output.numChannels);
-             for (int frame_i = 0; frame_i < frame_n; ++frame_i) {
-             }
-       }
-        int audio(CSOUND *csound) {
+         int audio(CSOUND *csound) {
             int result = OK;
             size_t current_time_in_frames = csound->GetCurrentTimeSamples(csound);
-            audio_in(csound);
-            //vst3_plugin->process(buffers, current_time_in_frames);
-            audio_out(csound);
+            // TODO: Handle time offsets at start or end of kperiod.
+            vst3_plugin->process(vst3_plugin->Buffers, current_time_in_frames);
             return result;
         };
     };
@@ -692,16 +654,18 @@ namespace csound {
     struct VST3MIDIOUT : public csound::OpcodeBase<VST3MIDIOUT> {
         // Inputs.
         MYFLT *i_vst3_handle;
-        MYFLT *kstatus;
-        MYFLT *kchan;
-        MYFLT *kdata1;
-        MYFLT *kdata2;
+        MYFLT *k_status;
+        MYFLT *k_channel;
+        MYFLT *k_data1;
+        MYFLT *k_data2;
         // State.
-        size_t  vstHandle;
-        int     prvMidiData;
+        size_t i_vst3_handle;
+        Steinberg::Vst::Event midi_channel_message;
+        Steinberg::Vst::Event prior_midi_channel_message;
         vst3_plugin_t *vst3_plugin;
         int init(CSOUND *csound) {
             int result = OK;
+            vst3_plugin = get_plugin(i_vst3_handle);
             return result;
         };
         int kontrol(CSOUND *csound) {
@@ -710,22 +674,112 @@ namespace csound {
         };
     };
 
-    struct VST3NOTE : public csound::OpcodeBase<VST3NOTE> {
+    struct VST3NOTE : public csound::OpcodeNoteoffBase<VST3NOTE> {
         // Inputs.
         MYFLT *i_vst3_handle;
-        MYFLT *kchan;
-        MYFLT *knote;
-        MYFLT *kveloc;
-        MYFLT *kdur;
+        MYFLT *k_channel;
+        MYFLT *k_key;
+        MYFLT *k_velocity;
+        MYFLT *k_duration;
         // State.
-        size_t  vstHandle;
-        int     chn;
-        int     note;
-        size_t  framesRemaining;
+        size_t i_vst3_handle;
+        Steinberg::Vst::Event note_on_event;
+        Steinberg::Vst::Event note_off_event;
+        size_t framesRemaining;
         vst3_plugin_t *vst3_plugin;
         int init(CSOUND *csound) {
             int result = OK;
+            vst3_plugin = get_plugin(i_vst3_handle);
+            /*
+			auto midiData = in_event.buffer;
+			Steinberg::Vst::IMidiClient::MidiData channel = midiData[0] & kChannelMask;
+			Steinberg::Vst::IMidiClient::MidiData status = midiData[0] & kStatusMask;
+			Steinberg::Vst::IMidiClient::MidiData data0 = midiData[1];
+			Steinberg::Vst::IMidiClient::MidiData data1 = midiData[2];
+			midiClient->onEvent ({status, channel, data0, data1, in_event.time}, portIndex);
+            */    
+            p->startTime = getCurrentTime(csound);
+            double onTime = double(p->h.insdshead->p2.value);
+            double deltaTime = onTime - getCurrentTime(csound);
+            int deltaFrames = 0;
+            if (deltaTime > 0) {
+                deltaFrames = int(deltaTime / csound->GetSr(csound));
+            }
+            // Use the warped p3 to schedule the note off message.
+            if (*p->iDuration > FL(0.0)) {
+                p->offTime = p->startTime + double(p->h.insdshead->p3.value);
+                // In case of real-time performance with indefinite p3...
+            } else if (*p->iDuration == FL(0.0)) {
+                if (csound->GetDebug(csound)) {
+                    csound->Message(csound,
+                                    Str("vstnote_init: not scheduling 0 duration note.\n"));
+                }
+                return OK;
+            } else {
+                p->offTime = p->startTime + FL(1000000.0);
+            }
+            p->channel = int(*p->iChannel) & 0xf;
+            // Split the real-valued MIDI key number
+            // into an integer key number and an integer number of cents (plus or
+            // minus 50 cents).
+            p->key = int(double(*p->iKey) + 0.5);
+            int cents =
+                int(((double(*p->iKey) - double(p->key)) * double(100.0)) + double(0.5));
+            p->velocity = int(*p->iVelocity) & 0x7f;
+            p->vstplugin->AddMIDI(144 | p->channel | (p->key << 8) | (p->velocity << 16),
+                                  deltaFrames, cents);
+            // Ensure that the opcode instance is still active when we are scheduled
+            // to turn the note off!
+            p->h.insdshead->xtratim = p->h.insdshead->xtratim + 2;
+            p->on = true;
+            if (csound->GetDebug(csound)) {
+                csound->Message(csound, "vstnote_init:      on time:      %f\n", onTime);
+                csound->Message(csound, "                   csound time:  %f\n",
+                                getCurrentTime(csound));
+                csound->Message(csound, "                   delta time:   %f\n", deltaTime);
+                csound->Message(csound, "                   delta frames: %d\n",
+                                deltaFrames);
+                csound->Message(csound, "                   off time:     %f\n",
+                                p->offTime);
+                csound->Message(csound, "                   channel:      %d\n",
+                                p->channel);
+                csound->Message(csound, "                   key:          %d\n", p->key);
+                csound->Message(csound, "                   cents:        %d\n", cents);
+                csound->Message(csound, "                   velocity:     %d\n",
+                                p->velocity);
+            }            
+            Steinberg::Vst::Event note_on_event;
+            /*
+            int16 channel;		///< channel index in event bus
+            int16 pitch;		///< range [0, 127] = [C-2, G8] with A3=440Hz (12-TET)
+            float tuning;		///< 1.f = +1 cent, -1.f = -1 cent
+            float velocity;		///< range [0.0, 1.0]
+            int32 length;		///< in sample frames (optional, Note Off has to follow in any case!)
+            int32 noteId;		///< note identifier (if not available then -1)
+            */
+            note_on_event.type = Steinberg::Vst::EventType::kNoteOn;
+            note_on_event.noteOn.channel 
+            note_on_event.noteOn.pitch
+            note_on_event.noteOn.tuning
+            note_on_event.noteOn.velocity
+            note_on_event.noteOn.length
+            note_on_event.noteOn.noteId
+            if (vst3.plugin->eventList.addEvent (note_on_event) != Steinberg::kResultOk) {
+                log(csound, "vst3note: addEvent error.\n");
+            }
             return result;
+        }
+        int noteoff(CSOUND *csound) {
+            Steinberg::Vst::Event note_off_event;
+            note_off_event.type = Steinberg::Vst::EventType::kNoteOnOff;
+            note_off_event.noteOff.channel 
+            note_off_event.noteOff.pitch
+            note_off_event.noteOff.tuning
+            note_off_event.noteOff.velocity
+            note_off_event.noteOff.length
+            note_off_event.noteOff.noteId
+            return result;
+            
         };
         int kontrol(CSOUND *csound) {
             int result = OK;
@@ -794,7 +848,7 @@ namespace csound {
         {"vst3init", sizeof(VST3INIT), 0, 1, "i", "TTo", &VST3INIT::init_, 0, 0},
         {"vst3info", sizeof(VST3INFO), 0, 1, "", "i", &VST3INFO::init_, 0, 0},
         {   "vst3audio", sizeof(VST3AUDIO), 0, 3, "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
-            "iy", &VST3AUDIO::init_, &VST3AUDIO::audio_, 0
+            "M", &VST3AUDIO::init_, &VST3AUDIO::audio_, 0
         },
         {   "vst3midiout", sizeof(VST3MIDIOUT), 0, 3, "", "ikkkk", &VST3MIDIOUT::init_,
             &VST3MIDIOUT::kontrol_, 0
