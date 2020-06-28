@@ -29,15 +29,30 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 ### Description
 
+**vst3bankload** is used to load a bank of plugin presets from a file.
+
 ### Syntax
+
+**vst3bankload** i_handle, S_bank_filepath
 
 ### Initialization
 
-### Performance
+*i_handle* -- the handle that identifies the plugin, obtained from 
+[vst3init](#vst3init).
+
+*S_bank_filepath* -- the full pathname of the preset file. Remember to use '/' 
+instead of '\\' as the path separator.
 
 ### Examples
 
 ### See Also
+
+[vst3audio](#vst3audio),  
+[vst3banksave](#vst3banksave), [vst3edit](#vst3edit),
+[vst3info](#vst3info), [vst3init](#vst3init),
+[vst3midiout](#vst3midiout), [vst3note](#vst3note),
+[vst3paramget](#vst3paramget), [vst3paramset](#vst3paramset),
+[vst3progset](#vst3progset), [vts3tempo](#vts3tempo)
 
 ### Credits
 
@@ -51,17 +66,34 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 ### Description
 
+**vst3banksave** is used to save a bank of plugin presets to a file.
+
 ### Syntax
+
+**vst3banksave** i_handle, S_bank_filepath
 
 ### Initialization
 
-### Performance
+*i_handle* -- the handle that identifies the plugin, obtained from 
+[vst3init](#vst3init).
+
+*S_bank_filepath* -- the full pathname of the preset file. Remember to use '/' 
+instead of '\\' as the path separator.
 
 ### Examples
 
 ### See Also
 
+[vst3audio](#vst3audio), [vst3bankload](#vst3bankload), 
+[vst3edit](#vst3edit),
+[vst3info](#vst3info), [vst3init](#vst3init),
+[vst3midiout](#vst3midiout), [vst3note](#vst3note),
+[vst3paramget](#vst3paramget), [vst3paramset](#vst3paramset),
+[vst3progset](#vst3progset), [vts3tempo](#vts3tempo)
+
 ### Credits
+
+Author:
 
 Michael Gogins 
 http://michaelgogins.tumblr.com
@@ -132,10 +164,10 @@ i_handle **vst3init** S_module_filepath, S_plugin_name [,i_verbose]
 vst3-opcodes.
 
 *S_module_filepath* -- the full pathname of the vst plugin shared library (dll, 
-on Windows). Remember to use '/' instead of '\' as the path separator.
+on Windows). Remember to use '/' instead of '\\' as the path separator.
 
 *S_plugin_name* -- the name of the plugin within the module. If there is only 
-one plugin, this can be an empty string.
+one plugin in the module, this can be an empty string.
 
 *i_verbose* -- print plugin information when loading. This includes a list of all 
 the plugins defined in the module.
