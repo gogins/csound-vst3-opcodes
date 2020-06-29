@@ -10,6 +10,11 @@ work on Linux, Windows, and OS X, and on both 64-bit and 32-bit CPU
 architectures. VST2 plugins are not supported (but the vst4cs opcodes do 
 support VST2 plugins).
 
+For users of Csound, the advantages of VST3 over VST2 are that not only 
+notes, but also MIDI messages and parameter changes are scheduled with 
+sample-frame accuracy. In addition, the organization of inputs, outputs, 
+and parameters is more flexible.
+
 These opcodes are licensed under the terms of the GPLv3 license,
 which is compatible with both the Steinberg VST3 SDK GPLv3 license
 and Csound's LGPLv2 license (which allows re-licensing Csound as 
@@ -185,7 +190,7 @@ vst3-opcodes -- VST plugin hosting in Csound.
 ### Initialization
 
 *i_handle* -- the handle that identifies the plugin, obtained from 
-[vst3init](#vst3init).### Performance
+[vst3init](#vst3init).
 
 ### Examples
 
@@ -258,8 +263,8 @@ i_handle **vst3init** S_module_filepath, S_plugin_name [,i_verbose]
 
 ### Initialization
 
-*i_handle* -- the handle that identifies the plugin, to be passed to other 
-vst3-opcodes.
+*i_handle* -- the handle that identifies the plugin, obtained from 
+[vst3init](#vst3init).
 
 *S_module_filepath* -- the full pathname of the vst plugin shared library (dll, 
 on Windows). Remember to use '/' instead of '\\' as the path separator.
@@ -303,8 +308,8 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 ### Initialization
 
-*i_handle* -- the handle that identifies the plugin, to be passed to other 
-vst3-opcodes.
+*i_handle* -- the handle that identifies the plugin, obtained from 
+[vst3init](#vst3init).
 
 ### Performance
 
@@ -354,8 +359,8 @@ matching MIDI Note Off channel message.
 
 ### Initialization
 
-*i_handle* -- the handle that identifies the plugin, to be passed to other 
-vst3-opcodes.
+*i_handle* -- the handle that identifies the plugin, obtained from 
+[vst3init](#vst3init).
 
 *i_midi_channel* -- The zero-based MIDI channel of the message.
 
@@ -394,11 +399,25 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 ### Description
 
+**vst3paramget** is for receiving parameter values from a VST plugin.
+
 ### Syntax
+
+k_value **vst3paramset** i_handle, k_parameter
 
 ### Initialization
 
+*i_handle* -- the handle that identifies the plugin, obtained from 
+[vst3init](#vst3init).
+
 ### Performance
+
+*k_parameter* -- the identification number of the parameter. This can be 
+obtained from the plugin's documentation, or by using [vst3info](#vst3info).
+
+*k_value* -- the value of the parameter, a real number in the interval [0, 1].
+Most parameters have default values that can be printed by using 
+[vst3info](#vst3info). 
 
 ### Examples
 
@@ -419,13 +438,32 @@ michael dot gogins at gmail dot com
 
 ## vst3paramset
 
+vst3-opcodes -- VST plugin hosting in Csound.
+
 ### Description
+
+**vst3paramset** is for sending parameter values a VST3 plugin.
 
 ### Syntax
 
+**vst3paramset** i_handle, k_parameter, k_value
+
 ### Initialization
 
+*i_handle* -- the handle that identifies the plugin, obtained from 
+[vst3init](#vst3init).
+
 ### Performance
+
+*k_parameter* -- the identification number of the parameter. This can be 
+obtained from the plugin's documentation, or by using [vst3info](#vst3info).
+
+*k_value* -- the value of the parameter, a real number in the interval [0, 1].
+Most parameters have default values that can be printed by using 
+[vst3info](#vst3info). 
+
+If either of these arguments changes during performance, the plugin is 
+immediately updated with a new parameter value.
 
 ### Examples
 
@@ -450,11 +488,22 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 ### Description
 
+**vst3progset** is for selecting one of the programs in a VST3 plugin's 
+currently loaded program bank.
+
 ### Syntax
+
+**vst3progset** i_handle, k_preset_number
 
 ### Initialization
 
+*i_handle* -- the handle that identifies the plugin, obtained from 
+[vst3init](#vst3init).
+
 ### Performance
+
+*k_preset_number* -- the identification number of the preset. This can be 
+obtained from the plugin's user interface, or by using [vst3info](#vst3info).
 
 ### Examples
 
