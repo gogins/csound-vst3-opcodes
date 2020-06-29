@@ -19,6 +19,7 @@
 #include <csound/csdl.h>
 #include <csound/csound.h>
 #include <csound/OpcodeBase.hpp>
+#include <cstring>
 #include <codecvt>
 #include <functional>
 #include <locale>
@@ -86,6 +87,14 @@ namespace csound {
     using Busses = std::array<Channels, kMaxMidiMappingBusses>;
     using MidiCCMapping = Busses;
     
+    struct OpcodeAudioBuffers {
+		MYFLT** inputs;
+		int32_t numInputs;
+		MYFLT** outputs;
+		int32_t numOutputs;
+		int32_t numSamples;
+	};
+    
     static inline MidiCCMapping initMidiCtrlerAssignment (Steinberg::Vst::IComponent* component, Steinberg::Vst::IMidiMapping* midiMapping) {
         MidiCCMapping midiCCMapping {};
         if (!midiMapping || !component) {
@@ -116,14 +125,14 @@ namespace csound {
         return midiCCMapping;
     }
     
-    static inline void assignBusBuffers (const Steinberg::Vst::IAudioClient::Buffers& buffers, Steinberg::Vst::HostProcessData& hostProcessData,
+    static inline void assignBusBuffers (const OpcodeAudioBuffers& buffers, Steinberg::Vst::HostProcessData& hostProcessData,
                                   bool unassign = false) {
         auto bufferIndex = 0;
         for (auto busIndex = 0; busIndex < hostProcessData.numOutputs; busIndex++) {
             auto channelCount = hostProcessData.outputs[busIndex].numChannels;
             for (auto chanIndex = 0; chanIndex < channelCount; chanIndex++) {
                 if (bufferIndex < buffers.numOutputs) {
-                    hostProcessData.setChannelBuffer (Steinberg::Vst::BusDirections::kOutput, busIndex, chanIndex,
+                    hostProcessData.setChannelBuffer64 (Steinberg::Vst::BusDirections::kOutput, busIndex, chanIndex,
                                                   unassign ? nullptr : buffers.outputs[bufferIndex]);
                     bufferIndex++;
                 }
@@ -134,7 +143,7 @@ namespace csound {
             auto channelCount = hostProcessData.inputs[busIndex].numChannels;
             for (auto chanIndex = 0; chanIndex < channelCount; chanIndex++) {
                 if (bufferIndex < buffers.numInputs) {
-                    hostProcessData.setChannelBuffer (Steinberg::Vst::BusDirections::kInput, busIndex, chanIndex,
+                    hostProcessData.setChannelBuffer64 (Steinberg::Vst::BusDirections::kInput, busIndex, chanIndex,
                                                   unassign ? nullptr : buffers.inputs[bufferIndex]);
                     bufferIndex++;
                 }
@@ -142,7 +151,7 @@ namespace csound {
         }
     }
 
-    static inline void unassignBusBuffers (const Steinberg::Vst::IAudioClient::Buffers& buffers, Steinberg::Vst::HostProcessData& hostProcessData) {
+    static inline void unassignBusBuffers (const OpcodeAudioBuffers& buffers, Steinberg::Vst::HostProcessData& hostProcessData) {
         assignBusBuffers (buffers, hostProcessData, true);
     }
  
@@ -159,15 +168,19 @@ namespace csound {
         virtual ~vst3_plugin_t () override {
             // std::fprintf(stderr, "vst3_plugin_t deleting.\n");
         }
-        bool process (Steinberg::Vst::IAudioClient::Buffers& buffers, int64_t continousFrames) override {
+        bool process (Steinberg::Vst::IAudioClient::Buffers &buffers, int64_t continuousFrames) override {
+            csound->Message(csound, "vst3_plugin: wrong process method called!\n");
+            return false;
+        }
+        bool process (OpcodeAudioBuffers& buffers, int64_t continousFrames) /* override */ {
             if (!processor || !isProcessing) {
                 return false;
             }
-            ///preprocess (buffers, continousFrames);
+            preprocess (buffers, continousFrames);
             if (processor->process (hostProcessData) != Steinberg::kResultOk) {
                 return false;
             }
-            ///postprocess (buffers);
+            postprocess (buffers);
             return true;
         }
         bool setSamplerate (double value) override {
@@ -281,7 +294,7 @@ namespace csound {
             processor->setProcessing (false);
             component->setActive (false);
         }
-        void updateBusBuffers (Steinberg::Vst::IAudioClient::Buffers& buffers, Steinberg::Vst::HostProcessData& hostProcessData) {
+        void updateBusBuffers (OpcodeAudioBuffers& buffers, Steinberg::Vst::HostProcessData& hostProcessData) {
             // Doesn't actually seem to be defined in the VST3 SDK or examples.
         }
         void initProcessData () {
@@ -320,13 +333,13 @@ namespace csound {
             isProcessing = true;
             return isProcessing;
         }
-        void preprocess (Steinberg::Vst::IAudioClient::Buffers& buffers, int64_t continousFrames) {
+        void preprocess (OpcodeAudioBuffers& buffers, int64_t continousFrames) {
             hostProcessData.numSamples = buffers.numSamples;
             processContext.continousTimeSamples = continousFrames;
             assignBusBuffers (buffers, hostProcessData);
             paramTransferrer.transferChangesTo (inputParameterChanges);
         }
-        void postprocess (Steinberg::Vst::IAudioClient::Buffers& buffers) {
+        void postprocess (OpcodeAudioBuffers& buffers) {
             eventList.clear ();
             inputParameterChanges.clearQueue ();
             unassignBusBuffers (buffers, hostProcessData);
@@ -458,7 +471,7 @@ namespace csound {
                 }
             }
         }
-        void showPluginWindow() {
+        void showPluginEditorWindow() {
             //~ auto view = owned (controller->createView (Steinberg::Vst::ViewType::kEditor));
             //~ if (!view) {
                 //~ Steinberg::Vst::EditorHost::IPlatform::instance ().kill (-1, "EditController does not provide its own editor");
@@ -488,7 +501,6 @@ namespace csound {
         Steinberg::TUID controller_class_id;
         Steinberg::IPtr<Steinberg::Vst::IEditController> controller;
         Steinberg::Vst::HostProcessData hostProcessData;
-        Steinberg::Vst::IAudioClient::Buffers buffers;
         Steinberg::Vst::ProcessContext processContext;
         Steinberg::Vst::EventList eventList;
         Steinberg::Vst::ParameterChanges inputParameterChanges;
@@ -646,31 +658,34 @@ namespace csound {
         MYFLT *i_vst3_handle;
         MYFLT *ains[32];
         // State.
-        MYFLT   zerodbfs;
+        MYFLT zerodbfs;
         int opcode_input_n;
         int opcode_output_n;
         vst3_plugin_t *vst3_plugin;
+        // Audio input and output buffers, aliased with 
+        // this opcode's input and output arguments.
+        OpcodeAudioBuffers buffers;
         int init(CSOUND *csound) {
             int result = OK;
             vst3_plugin = get_plugin(i_vst3_handle);
             auto sr = csound->GetSr(csound);
             vst3_plugin->setSamplerate(sr);
              // Set up the client buffers.
-            vst3_plugin->numSamples = ksmps();
-            vst3_plugin->Buffers.numInputs = input_arg_count() - 1;
-            vst3_plugin->Buffers.inputs = &ains[0];
-            vst3_plugin->Buffers.numOutputs = output_arg_count();
-            vst3_plugin->Buffers.outputs = &aouts[0];
+            buffers.numSamples = ksmps();
+            buffers.numInputs = input_arg_count() - 1;
+            buffers.inputs = &ains[0];
+            buffers.numOutputs = output_arg_count();
+            buffers.outputs = &aouts[0];
             // This also prepares the host buffers.
             vst3_plugin->setBlockSize(ksmps());
-            log(csound, "vst3audio:  inputs: %3d  outputs: %3d\n", vst3_plugin->Buffers.numInputs, vst3_plugin->Buffers.numOutputs);
+            log(csound, "vst3audio:  inputs: %3d  outputs: %3d\n", buffers.numInputs, buffers.numOutputs);
            return result;
         };
-         int audio(CSOUND *csound) {
+        int audio(CSOUND *csound) {
             int result = OK;
             size_t current_time_in_frames = csound->GetCurrentTimeSamples(csound);
             // TODO: Handle time offsets at start or end of kperiod.
-            vst3_plugin->process(vst3_plugin->Buffers, current_time_in_frames);
+            vst3_plugin->process(buffers, current_time_in_frames);
             return result;
         };
     };
@@ -683,7 +698,6 @@ namespace csound {
         MYFLT *k_data1;
         MYFLT *k_data2;
         // State.
-        size_t i_vst3_handle;
         // MIDI channel message parts.
         uint8_t status;
         uint8_t channel;
@@ -700,15 +714,18 @@ namespace csound {
         };
         int kontrol(CSOUND *csound) {
             int result = OK;
-            status = static_cast<uint8_t>(*status) & 0xF0;
+            status = static_cast<uint8_t>(*k_status) & 0xF0;
             channel = static_cast<uint8_t>(*k_channel) & 0x0F;
-            data1 = static_cast<uint8_t>(*k_data1)
-            data2 = static_cast<uint8_t>(*k_data2)
-            midi_channel_message = Steinberg::Vst::midiToEvent (status, channel, data1, data2);
-            if (prior_midi_channel_message != midi_channel_message) {
-                prior_midi_channel_message = midi_channel_message;
-                if (vst3.plugin->eventList.addEvent (midi_channel_message) != Steinberg::kResultOk) {
-                    log(csound, "vst3midiout: addEvent error.\n");
+            data1 = static_cast<uint8_t>(*k_data1);
+            data2 = static_cast<uint8_t>(*k_data2);
+            auto event = Steinberg::Vst::midiToEvent (status, channel, data1, data2);
+            if (event) {
+                midi_channel_message = *event;
+                if (std::memcmp(&prior_midi_channel_message, &midi_channel_message, sizeof(Steinberg::Vst::Event)) != 0) {
+                    if (vst3_plugin->eventList.addEvent (midi_channel_message) != Steinberg::kResultOk) {
+                        log(csound, "vst3midiout: addEvent error.\n");
+                    }
+                    std::memcpy(&prior_midi_channel_message, &midi_channel_message, sizeof(Steinberg::Vst::Event));
                 }
             }
             return result;
@@ -725,7 +742,6 @@ namespace csound {
         MYFLT *i_velocity;
         MYFLT *i_duration;
         // State.
-        size_t i_vst3_handle;
         Steinberg::Vst::Event note_on_event;
         Steinberg::Vst::Event note_off_event;
         size_t framesRemaining;
@@ -802,26 +818,29 @@ namespace csound {
             int32 length;		///< in sample frames (optional, Note Off has to follow in any case!)
             int32 noteId;		///< note identifier (if not available then -1)
             */
-            note_on_event.type = Steinberg::Vst::EventType::kNoteOn;
+            note_on_event.type = Steinberg::Vst::Event::EventTypes::kNoteOnEvent;
             note_on_event.noteOn.channel ;
             note_on_event.noteOn.pitch;
             note_on_event.noteOn.tuning;
             note_on_event.noteOn.velocity;
             note_on_event.noteOn.length;
             note_on_event.noteOn.noteId;
-            if (vst3.plugin->eventList.addEvent (note_on_event) != Steinberg::kResultOk) {
+            if (vst3_plugin->eventList.addEvent (note_on_event) != Steinberg::kResultOk) {
                 log(csound, "vst3note: addEvent error.\n");
             }
             return result;
         }
         int noteoff(CSOUND *csound) {
+            int result = OK;
             Steinberg::Vst::Event note_off_event;
-            note_off_event.type = Steinberg::Vst::EventType::kNoteOnOff;
+            note_off_event.type = Steinberg::Vst::Event::EventTypes::kNoteOffEvent;
             note_off_event.noteOff.channel ;
             note_off_event.noteOff.pitch;
             note_off_event.noteOff.velocity;
-            note_off_event.noteOff.length;
             note_off_event.noteOff.noteId;
+            if (vst3_plugin->eventList.addEvent (note_off_event) != Steinberg::kResultOk) {
+                log(csound, "vst3note: addEvent error.\n");
+            }
             return result;
             
         };
@@ -877,7 +896,7 @@ namespace csound {
         int init(CSOUND *csound) {
             int result = OK;
             vst3_plugin = get_plugin(i_vst3_handle);
-            plugin->showEditor();
+            vst3_plugin->showPluginEditorWindow();
             return result;
         };
     };
