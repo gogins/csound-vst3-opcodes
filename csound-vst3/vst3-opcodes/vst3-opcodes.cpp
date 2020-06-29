@@ -30,6 +30,9 @@
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/imediaserver.h"
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/iparameterclient.h"
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/miditovst.h"
+#include "public.sdk/samples/vst-hosting/editorhost/source/platform/iapplication.h"
+#include "public.sdk/samples/vst-hosting/editorhost/source/platform/iplatform.h"
+#include "public.sdk/samples/vst-hosting/editorhost/source/platform/iwindow.h"
 //#include "public.sdk/source/vst/basewrapper/basewrapper.h"
 #include "public.sdk/source/vst/hosting/eventlist.h"
 #include "public.sdk/source/vst/hosting/hostclasses.h"
@@ -55,9 +58,6 @@
  *     user, who must pass it to all other vst3 opcodes.
  * (7) When Csound calls csoundModuleDestroy, the vst3_host_t instance 
  *     terminates all plugins and deallocates all state.
- *
- * The life cycle of the plugin is:
- * (1) 
  */
  
 #define CSOUND_LIFECYCLE_DEBUG 1
@@ -458,6 +458,28 @@ namespace csound {
                 }
             }
         }
+        void showPluginWindow() {
+            //~ auto view = owned (controller->createView (Steinberg::Vst::ViewType::kEditor));
+            //~ if (!view) {
+                //~ Steinberg::Vst::EditorHost::IPlatform::instance ().kill (-1, "EditController does not provide its own editor");
+            //~ }
+            //~ Steinberg::ViewRect plugViewSize {};
+            //~ auto result = view->getSize (&plugViewSize);
+            //~ if (result != Steinberg::kResultTrue) {
+                //~ Steinberg::Vst::EditorHost::IPlatform::instance ().kill (-1, "Could not get editor view size");
+            //~ }
+            //~ auto viewRect = Steinberg::Vst::EditorHost::ViewRectToRect (plugViewSize);
+            //~ windowController = std::make_shared<Steinberg::Vst::EditorHost::WindowController> (view);
+            //~ auto window = Steinberg::Vst::EditorHost::IPlatform::instance ().createWindow (
+            //~ "Editor", viewRect.size, view->canResize () == kResultTrue, windowController);
+            //~ if (!window) {
+                //~ Steinberg::Vst::EditorHost::IPlatform::instance ().kill (-1, "Could not create window");
+            //~ }
+            //~ window->show ();
+        }
+        void setTempo(double new_tempo) {
+            processContext.tempo = new_tempo;
+        }
         CSOUND* csound = nullptr;
         Steinberg::IPtr<Steinberg::Vst::PlugProvider> provider;
         VST3::Hosting::ClassInfo classInfo;
@@ -471,6 +493,7 @@ namespace csound {
         Steinberg::Vst::EventList eventList;
         Steinberg::Vst::ParameterChanges inputParameterChanges;
         Steinberg::Vst::ParameterChangeTransfer paramTransferrer;
+        //std::shared_ptr<Steinberg::Vst::EditorHost::WindowController> windowController;
         MidiCCMapping midiCCMapping;
         bool isProcessing = false;
         double sampleRate = 0;
@@ -661,27 +684,46 @@ namespace csound {
         MYFLT *k_data2;
         // State.
         size_t i_vst3_handle;
+        // MIDI channel message parts.
+        uint8_t status;
+        uint8_t channel;
+        uint8_t data1;
+        uint8_t data2;
         Steinberg::Vst::Event midi_channel_message;
         Steinberg::Vst::Event prior_midi_channel_message;
         vst3_plugin_t *vst3_plugin;
         int init(CSOUND *csound) {
             int result = OK;
+            prior_midi_channel_message = midi_channel_message;
             vst3_plugin = get_plugin(i_vst3_handle);
             return result;
         };
         int kontrol(CSOUND *csound) {
             int result = OK;
+            status = static_cast<uint8_t>(*status) & 0xF0;
+            channel = static_cast<uint8_t>(*k_channel) & 0x0F;
+            data1 = static_cast<uint8_t>(*k_data1)
+            data2 = static_cast<uint8_t>(*k_data2)
+            midi_channel_message = Steinberg::Vst::midiToEvent (status, channel, data1, data2);
+            if (prior_midi_channel_message != midi_channel_message) {
+                prior_midi_channel_message = midi_channel_message;
+                if (vst3.plugin->eventList.addEvent (midi_channel_message) != Steinberg::kResultOk) {
+                    log(csound, "vst3midiout: addEvent error.\n");
+                }
+            }
             return result;
         };
     };
 
     struct VST3NOTE : public csound::OpcodeNoteoffBase<VST3NOTE> {
+        // Outputs.
+        MYFLT *i_note_id;
         // Inputs.
         MYFLT *i_vst3_handle;
-        MYFLT *k_channel;
-        MYFLT *k_key;
-        MYFLT *k_velocity;
-        MYFLT *k_duration;
+        MYFLT *i_channel;
+        MYFLT *i_key;
+        MYFLT *i_velocity;
+        MYFLT *i_duration;
         // State.
         size_t i_vst3_handle;
         Steinberg::Vst::Event note_on_event;
@@ -699,6 +741,7 @@ namespace csound {
 			Steinberg::Vst::IMidiClient::MidiData data1 = midiData[2];
 			midiClient->onEvent ({status, channel, data0, data1, in_event.time}, portIndex);
             */    
+            /*
             p->startTime = getCurrentTime(csound);
             double onTime = double(p->h.insdshead->p2.value);
             double deltaTime = onTime - getCurrentTime(csound);
@@ -748,7 +791,8 @@ namespace csound {
                 csound->Message(csound, "                   cents:        %d\n", cents);
                 csound->Message(csound, "                   velocity:     %d\n",
                                 p->velocity);
-            }            
+            }      
+            */            
             Steinberg::Vst::Event note_on_event;
             /*
             int16 channel;		///< channel index in event bus
@@ -759,12 +803,12 @@ namespace csound {
             int32 noteId;		///< note identifier (if not available then -1)
             */
             note_on_event.type = Steinberg::Vst::EventType::kNoteOn;
-            note_on_event.noteOn.channel 
-            note_on_event.noteOn.pitch
-            note_on_event.noteOn.tuning
-            note_on_event.noteOn.velocity
-            note_on_event.noteOn.length
-            note_on_event.noteOn.noteId
+            note_on_event.noteOn.channel ;
+            note_on_event.noteOn.pitch;
+            note_on_event.noteOn.tuning;
+            note_on_event.noteOn.velocity;
+            note_on_event.noteOn.length;
+            note_on_event.noteOn.noteId;
             if (vst3.plugin->eventList.addEvent (note_on_event) != Steinberg::kResultOk) {
                 log(csound, "vst3note: addEvent error.\n");
             }
@@ -773,12 +817,11 @@ namespace csound {
         int noteoff(CSOUND *csound) {
             Steinberg::Vst::Event note_off_event;
             note_off_event.type = Steinberg::Vst::EventType::kNoteOnOff;
-            note_off_event.noteOff.channel 
-            note_off_event.noteOff.pitch
-            note_off_event.noteOff.tuning
-            note_off_event.noteOff.velocity
-            note_off_event.noteOff.length
-            note_off_event.noteOff.noteId
+            note_off_event.noteOff.channel ;
+            note_off_event.noteOff.pitch;
+            note_off_event.noteOff.velocity;
+            note_off_event.noteOff.length;
+            note_off_event.noteOff.noteId;
             return result;
             
         };
@@ -831,14 +874,30 @@ namespace csound {
         MYFLT *i_vst3_handle;
         // State.
         vst3_plugin_t *vst3_plugin;
+        int init(CSOUND *csound) {
+            int result = OK;
+            vst3_plugin = get_plugin(i_vst3_handle);
+            plugin->showEditor();
+            return result;
+        };
     };
 
     struct VST3TEMPO : public csound::OpcodeBase<VST3TEMPO> { 
         // Inputs.
-        MYFLT *tempo;
+        MYFLT *k_tempo;
         MYFLT *i_vst3_handle;
         // State.
         vst3_plugin_t *vst3_plugin;
+        int init(CSOUND *csound) {
+            int result = OK;
+            vst3_plugin = get_plugin(i_vst3_handle);
+            return result;
+        };
+        int kontrol(CSOUND *csound) {
+            int result = OK;
+            vst3_plugin->setTempo(*k_tempo);
+            return result;
+        };
     };
 
 #ifdef __GNUC__
@@ -848,26 +907,25 @@ namespace csound {
     static OENTRY localops[] = {
         {"vst3init", sizeof(VST3INIT), 0, 1, "i", "TTo", &VST3INIT::init_, 0, 0},
         {"vst3info", sizeof(VST3INFO), 0, 1, "", "i", &VST3INFO::init_, 0, 0},
-        {   "vst3audio", sizeof(VST3AUDIO), 0, 3, "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+        {"vst3audio", sizeof(VST3AUDIO), 0, 3, "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
             "M", &VST3AUDIO::init_, &VST3AUDIO::audio_, 0
         },
-        {   "vst3midiout", sizeof(VST3MIDIOUT), 0, 3, "", "ikkkk", &VST3MIDIOUT::init_,
+        {"vst3midiout", sizeof(VST3MIDIOUT), 0, 3, "", "ikkkk", &VST3MIDIOUT::init_,
             &VST3MIDIOUT::kontrol_, 0
         },
-        {   "vst3paramget", sizeof(VST3PARAMGET), 0, 3, "k", "ik", &VST3PARAMGET::init_,
+        {"vst3paramget", sizeof(VST3PARAMGET), 0, 3, "k", "ik", &VST3PARAMGET::init_,
             &VST3PARAMGET::kontrol_, 0
         },
-        {   "vst3paramset", sizeof(VST3PARAMSET), 0, 3, "", "ikk", &VST3PARAMSET::init_,
+        {"vst3paramset", sizeof(VST3PARAMSET), 0, 3, "", "ikk", &VST3PARAMSET::init_,
             &VST3PARAMSET::kontrol_, 0
         },
         {"vst3bankload", sizeof(VST3BANKLOAD), 0, 1, "", "iT", &VST3BANKLOAD::init_, 0, 0},
         {"vst3progset", sizeof(VST3PROGSET), 0, 1, "", "ii", &VST3PROGSET::init_, 0, 0},
         {"vst3edit", sizeof(VST3EDIT), 0, 1, "", "i", &VST3EDIT::init_, 0, 0},
-        {
-            "vst3tempo", sizeof(VST3TEMPO), 0, 2, "", "ki", 0, &VST3TEMPO::init_,
+        {"vst3tempo", sizeof(VST3TEMPO), 0, 2, "", "ki", 0, &VST3TEMPO::init_,
             0 /*, &vstedit_deinit*/
         },
-        {   "vst3note", sizeof(VST3NOTE), 0, 3, "", "iiiii", &VST3NOTE::init_,
+        {"vst3note", sizeof(VST3NOTE), 0, 3, "i", "iiiii", &VST3NOTE::init_,
             &VST3NOTE::kontrol_, 0
         },
         {"vst3banksave", sizeof(VST3BANKLOAD), 0, 1, "", "iT", &VST3BANKLOAD::init_, 0, 0},

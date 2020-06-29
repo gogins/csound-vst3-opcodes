@@ -355,9 +355,12 @@ matching MIDI Note Off channel message.
 
 ### Syntax
 
-**vst3note** i_handle, i_midi_channel, i_midi_key, i_midi_velocity, i_duration
+i_note_id **vst3note** i_handle, i_midi_channel, i_midi_key, i_midi_velocity, i_duration
 
 ### Initialization
+
+*i_note_id* -- An identifier, unique for this instance of this plugin, of this 
+note, possibly useful for per-note control.
 
 *i_handle* -- the handle that identifies the plugin, obtained from 
 [vst3init](#vst3init).
