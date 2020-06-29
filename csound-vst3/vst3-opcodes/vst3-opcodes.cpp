@@ -28,6 +28,7 @@
 #include "pluginterfaces/vst/ivstaudioprocessor.h"
 #include "pluginterfaces/vst/ivstcomponent.h"
 #include "pluginterfaces/vst/ivstprocesscontext.h"
+#include "pluginterfaces/vst/ivstunits.h"
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/imediaserver.h"
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/iparameterclient.h"
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/miditovst.h"
@@ -171,12 +172,13 @@ namespace csound {
         bool process (Steinberg::Vst::IAudioClient::Buffers &buffers, int64_t continuousFrames) override {
             csound->Message(csound, "vst3_plugin: wrong process method called!\n");
             return false;
+            
         }
-        bool process (OpcodeAudioBuffers& buffers, int64_t continousFrames) /* override */ {
+        bool process (OpcodeAudioBuffers& buffers, int64_t continuous_frames) /* override */ {
             if (!processor || !isProcessing) {
                 return false;
             }
-            preprocess (buffers, continousFrames);
+            preprocess (buffers, continuous_frames);
             if (processor->process (hostProcessData) != Steinberg::kResultOk) {
                 return false;
             }
@@ -213,7 +215,7 @@ namespace csound {
                 if (component->getBusInfo (Steinberg::Vst::MediaTypes::kAudio, Steinberg::Vst::BusDirections::kOutput, i, info) !=
                     Steinberg::kResultOk) {
                         continue;
-                    }
+                }
                 for (int32_t j = 0; j < info.channelCount; j++) {
                     auto channelName = VST3::StringConvert::convert (info.name, 128); // TODO: 128???
                     iosetup.outputs.push_back (channelName + " " + std::to_string (j));
@@ -470,6 +472,11 @@ namespace csound {
                     csound->Message(csound, "vst3_plugin: parameter: %4d: name: %-64s units: %-16s default: %9.4f\n", i, title.text8(), units.text8(), parameterInfo.defaultNormalizedValue);
                 }
             }
+            // Programs.
+            Steinberg::FUnknownPtr<Steinberg::Vst::IUnitInfo> i_unit_info (controller);
+            if (i_unit_info) {
+                int32 programListCount = i_unit_info->getProgramListCount ();
+            }
         }
         void showPluginEditorWindow() {
             //~ auto view = owned (controller->createView (Steinberg::Vst::ViewType::kEditor));
@@ -510,6 +517,10 @@ namespace csound {
         bool isProcessing = false;
         double sampleRate = 0;
         int32 blockSize = 0;
+        // Incremented for every MIDI Note On message created, 
+        // and paired with the corresponding Note Off message, 
+        // for the lifetime of this plugin instance.
+        int note_id = 0;
         std::string name;
     };
 
@@ -684,7 +695,10 @@ namespace csound {
         int audio(CSOUND *csound) {
             int result = OK;
             size_t current_time_in_frames = csound->GetCurrentTimeSamples(csound);
-            // TODO: Handle time offsets at start or end of kperiod.
+            // Because this opcode will always be on, and because the plugins 
+            // _themselves_ are actually responsible for scheduling by sample 
+            // frame, ksmps_offset and ksmps_no_end have no effect and are not 
+            // used.
             vst3_plugin->process(buffers, current_time_in_frames);
             return result;
         };
@@ -742,104 +756,126 @@ namespace csound {
         MYFLT *i_velocity;
         MYFLT *i_duration;
         // State.
+        int16 channel;		///< channel index in event bus
+        MYFLT key;
+        int16 pitch;		///< range [0, 127] = [C-2, G8] with A3=440Hz (12-TET)
+        float tuning;		///< 1.f = +1 cent, -1.f = -1 cent
+        float velocity;		///< range [0.0, 1.0]
+        int32 length;		///< in sample frames (optional, Note Off has to follow in any case!)
+        int32 noteId;		///< note identifier (if not available then -1)
         Steinberg::Vst::Event note_on_event;
         Steinberg::Vst::Event note_off_event;
         size_t framesRemaining;
         vst3_plugin_t *vst3_plugin;
+        MYFLT startTime;
+        MYFLT onTime;
+        MYFLT duration;
+        MYFLT offTime;
+        MYFLT deltaTime;
+        int deltaFrames;
+        bool on = false;
         int init(CSOUND *csound) {
             int result = OK;
             vst3_plugin = get_plugin(i_vst3_handle);
-            /*
-			auto midiData = in_event.buffer;
-			Steinberg::Vst::IMidiClient::MidiData channel = midiData[0] & kChannelMask;
-			Steinberg::Vst::IMidiClient::MidiData status = midiData[0] & kStatusMask;
-			Steinberg::Vst::IMidiClient::MidiData data0 = midiData[1];
-			Steinberg::Vst::IMidiClient::MidiData data1 = midiData[2];
-			midiClient->onEvent ({status, channel, data0, data1, in_event.time}, portIndex);
-            */    
-            /*
-            p->startTime = getCurrentTime(csound);
-            double onTime = double(p->h.insdshead->p2.value);
-            double deltaTime = onTime - getCurrentTime(csound);
+            startTime = csound->GetCurrentTimeSamples(csound) / csound->GetSr(csound);
+            onTime = opds.insdshead->p2.value;
+            duration = *i_duration;
+            deltaTime = onTime - startTime;
             int deltaFrames = 0;
             if (deltaTime > 0) {
                 deltaFrames = int(deltaTime / csound->GetSr(csound));
             }
             // Use the warped p3 to schedule the note off message.
-            if (*p->iDuration > FL(0.0)) {
-                p->offTime = p->startTime + double(p->h.insdshead->p3.value);
+            if (duration > FL(0.0)) {
+                offTime = startTime + MYFLT(opds.insdshead->p3.value);
                 // In case of real-time performance with indefinite p3...
-            } else if (*p->iDuration == FL(0.0)) {
+            } else if (duration == FL(0.0)) {
                 if (csound->GetDebug(csound)) {
                     csound->Message(csound,
                                     Str("vstnote_init: not scheduling 0 duration note.\n"));
                 }
                 return OK;
             } else {
-                p->offTime = p->startTime + FL(1000000.0);
+                offTime = startTime + FL(1000000.0);
             }
-            p->channel = int(*p->iChannel) & 0xf;
+/*
+Note-on event specific data. Used in \ref Event (union)
+Pitch uses the twelve-tone equal temperament tuning (12-TET). 
+struct NoteOnEvent
+{
+	int16 channel;		///< channel index in event bus
+	int16 pitch;		///< range [0, 127] = [C-2, G8] with A3=440Hz (12-TET)
+	float tuning;		///< 1.f = +1 cent, -1.f = -1 cent
+	float velocity;		///< range [0.0, 1.0]
+	int32 length;		///< in sample frames (optional, Note Off has to follow in any case!)
+	int32 noteId;		///< note identifier (if not available then -1)
+};
+Note-off event specific data. Used in \ref Event (union)
+struct NoteOffEvent
+{
+	int16 channel;		///< channel index in event bus
+	int16 pitch;		///< range [0, 127] = [C-2, G8] with A3=440Hz (12-TET)
+	float velocity;		///< range [0.0, 1.0]
+	int32 noteId;		///< associated noteOn identifier (if not available then -1)
+	float tuning;		///< 1.f = +1 cent, -1.f = -1 cent
+};
+*/
+            channel = static_cast<int16>(*i_channel) & 0xf;
             // Split the real-valued MIDI key number
             // into an integer key number and an integer number of cents (plus or
             // minus 50 cents).
-            p->key = int(double(*p->iKey) + 0.5);
-            int cents =
-                int(((double(*p->iKey) - double(p->key)) * double(100.0)) + double(0.5));
-            p->velocity = int(*p->iVelocity) & 0x7f;
-            p->vstplugin->AddMIDI(144 | p->channel | (p->key << 8) | (p->velocity << 16),
-                                  deltaFrames, cents);
+            key = *i_key;
+            pitch = static_cast<int16>(key + 0.5);
+            tuning = (double(*i_key) - double(key)) * double(100.0);
+            velocity = *i_velocity;
+            velocity = velocity / 127.;
             // Ensure that the opcode instance is still active when we are scheduled
             // to turn the note off!
-            p->h.insdshead->xtratim = p->h.insdshead->xtratim + 2;
-            p->on = true;
+            opds.insdshead->xtratim = opds.insdshead->xtratim + 2;
+            on = true;
             if (csound->GetDebug(csound)) {
-                csound->Message(csound, "vstnote_init:      on time:      %f\n", onTime);
+                csound->Message(csound, "vst3note_init:      on time:      %f\n", onTime);
                 csound->Message(csound, "                   csound time:  %f\n",
-                                getCurrentTime(csound));
+                                startTime);
                 csound->Message(csound, "                   delta time:   %f\n", deltaTime);
                 csound->Message(csound, "                   delta frames: %d\n",
                                 deltaFrames);
                 csound->Message(csound, "                   off time:     %f\n",
-                                p->offTime);
+                                offTime);
                 csound->Message(csound, "                   channel:      %d\n",
-                                p->channel);
-                csound->Message(csound, "                   key:          %d\n", p->key);
-                csound->Message(csound, "                   cents:        %d\n", cents);
-                csound->Message(csound, "                   velocity:     %d\n",
-                                p->velocity);
+                                channel);
+                csound->Message(csound, "                   key:          %d\n", pitch);
+                csound->Message(csound, "                   cents:        %f\n", tuning);
+                csound->Message(csound, "                   velocity:     %f\n",
+                                velocity);
             }      
-            */            
-            Steinberg::Vst::Event note_on_event;
-            /*
-            int16 channel;		///< channel index in event bus
-            int16 pitch;		///< range [0, 127] = [C-2, G8] with A3=440Hz (12-TET)
-            float tuning;		///< 1.f = +1 cent, -1.f = -1 cent
-            float velocity;		///< range [0.0, 1.0]
-            int32 length;		///< in sample frames (optional, Note Off has to follow in any case!)
-            int32 noteId;		///< note identifier (if not available then -1)
-            */
             note_on_event.type = Steinberg::Vst::Event::EventTypes::kNoteOnEvent;
-            note_on_event.noteOn.channel ;
-            note_on_event.noteOn.pitch;
-            note_on_event.noteOn.tuning;
-            note_on_event.noteOn.velocity;
-            note_on_event.noteOn.length;
-            note_on_event.noteOn.noteId;
+            note_on_event.sampleOffset = deltaFrames;
+            note_on_event.noteOn.channel = static_cast<int16_t>(*i_channel);
+            note_on_event.noteOn.pitch = pitch;
+            note_on_event.noteOn.tuning = tuning;
+            note_on_event.noteOn.velocity = velocity;
+            note_on_event.noteOn.length = duration * csound->GetSr(csound);
+            vst3_plugin->note_id++;
+            note_on_event.noteOn.noteId = vst3_plugin->note_id;
+            note_off_event.type = Steinberg::Vst::Event::EventTypes::kNoteOffEvent;
+            note_off_event.noteOff.channel = note_on_event.noteOn.channel;
+            note_off_event.noteOff.pitch = note_on_event.noteOn.pitch;
+            note_off_event.noteOff.tuning = note_on_event.noteOn.tuning;
+            note_off_event.noteOff.velocity = note_on_event.noteOn.velocity;
+            note_off_event.noteOff.noteId = note_on_event.noteOn.noteId;
             if (vst3_plugin->eventList.addEvent (note_on_event) != Steinberg::kResultOk) {
-                log(csound, "vst3note: addEvent error.\n");
-            }
+                log(csound, "vst3note: addEvent error for Note On.\n");
+            } else {
+             }
             return result;
         }
         int noteoff(CSOUND *csound) {
             int result = OK;
             Steinberg::Vst::Event note_off_event;
-            note_off_event.type = Steinberg::Vst::Event::EventTypes::kNoteOffEvent;
-            note_off_event.noteOff.channel ;
-            note_off_event.noteOff.pitch;
-            note_off_event.noteOff.velocity;
-            note_off_event.noteOff.noteId;
+            // TODO: delta_frames?
             if (vst3_plugin->eventList.addEvent (note_off_event) != Steinberg::kResultOk) {
-                log(csound, "vst3note: addEvent error.\n");
+                log(csound, "vst3note: addEvent error for Note Off.\n");
             }
             return result;
             
@@ -853,10 +889,10 @@ namespace csound {
     struct VST3PARAMGET : public csound::OpcodeBase<VST3PARAMGET> {
 
         // Outputs.
-        MYFLT *kvalue;
+        MYFLT *k_parameter_value;
         // Intputs.
         MYFLT *i_vst3_handle;
-        MYFLT *kparam;
+        MYFLT *k_parameter_id;
         // State.
         vst3_plugin_t *vst3_plugin;
     };
@@ -875,7 +911,7 @@ namespace csound {
     struct VST3BANKLOAD : public csound::OpcodeBase<VST3BANKLOAD> {
         // Inputs.
         MYFLT *i_vst3_handle;
-        MYFLT *ibank;
+        MYFLT *S_bank_filepath;
         // State.
         vst3_plugin_t *vst3_plugin;
     };
@@ -883,9 +919,14 @@ namespace csound {
     struct VST3PROGSET : public csound::OpcodeBase<VST3PROGSET> {
         // Inputs.
         MYFLT *i_vst3_handle;
-        MYFLT *iprogram;
+        MYFLT *i_program;
         // State.
         vst3_plugin_t *vst3_plugin;
+        int init(CSOUND *csound) {
+            int result = OK;
+            vst3_plugin = get_plugin(i_vst3_handle);
+            return result;
+        };
     };
 
     struct VST3EDIT : public csound::OpcodeBase<VST3EDIT> {
