@@ -23,27 +23,26 @@ and Csound's LGPLv2 license (which allows re-licensing Csound as
 The opcodes consist of:
 
   1. [vst3audio](#vst3audio)
-  2. [vst3bankload](#vst3bankload)
-  3. [vst3banksave](#vst3banksave)
-  4. [vst3edit](#vst3edit)
-  5. [vst3info](#vst3info)
-  6. [vst3init](#vst3init)
-  7. [vst3midiout](#vst3midiout)
-  8. [vst3note](#vst3note)
-  9. [vst3paramget](#vst3paramget)
-  10. [vst3paramset](#vst3paramset)
-  11. [vst3progset](#vst3progset)
-  12. [vts3tempo](#vts3tempo)
+  2. [vst3edit](#vst3edit)
+  3. [vst3info](#vst3info)
+  4. [vst3init](#vst3init)
+  5. [vst3midiout](#vst3midiout)
+  6. [vst3note](#vst3note)
+  7. [vst3paramget](#vst3paramget)
+  8. [vst3paramset](#vst3paramset)
+  9.  [vst3presetsave](#vst3presetsave)
+  10. [vst3presetset](#vst3presetset)
+  11. [vts3tempo](#vts3tempo)
   
 The typical lifecycle of a VST3 plugin in Csound is:
 
   1. Load the plugin with [vst3init](#vst3init).
-  2. Load a bank of presets with [vst3bankload](#vst3bankload).
-  3. Select a preset from the bank with [vst3progset](#vst3progset).
-  4. Send notes to the plugin with [vst3note](#vst3note).
-  5. Send parameter changes to the plugin with [vst3paramset](#vst3paramset).
-  6. Send MIDI channel messages to the plugin with [vst3midiout](#vst3midiout).
-  7. In a global, always-on instrument, send audio to 
+  2. Load a preset with [vst3presetload](#vst3presetload), 
+     or select a loaded program with [vst3paramset](#vst3paramset).
+  3. Send notes to the plugin with [vst3note](#vst3note).
+  4. Send parameter changes to the plugin with [vst3paramset](#vst3paramset).
+  5. Send MIDI channel messages to the plugin with [vst3midiout](#vst3midiout).
+  6. In a global, always-on instrument, send audio to 
      and receive audio from the plugin with [vst3audio](#vst3audio).
      
 Any number of VST3 plugins may be loaded. Any number of audio channels, VST3 
@@ -55,7 +54,7 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 ### Description
 
-**vst3audio** is used to send audio to, and receive audio from, a VST3 plugin.
+**vst3audio** sends audio to, and/or receives audio from, a VST3 plugin.
 
 ### Syntax
 
@@ -86,12 +85,17 @@ a Csound buss channel.
 
 ### See Also
 
-[vst3audio](#vst3audio), [vst3bankload](#vst3bankload), 
-[vst3banksave](#vst3banksave), [vst3edit](#vst3edit),
-[vst3info](#vst3info), [vst3init](#vst3init),
-[vst3midiout](#vst3midiout), [vst3note](#vst3note),
-[vst3paramget](#vst3paramget), [vst3paramset](#vst3paramset),
-[vst3progset](#vst3progset), [vts3tempo](#vts3tempo)
+[vst3audio](#vst3audio), 
+[vst3edit](#vst3edit),
+[vst3info](#vst3info), 
+[vst3init](#vst3init),
+[vst3midiout](#vst3midiout), 
+[vst3note](#vst3note),
+[vst3paramget](#vst3paramget), 
+[vst3paramset](#vst3paramset),
+[vst3presetload](#vst3presetload), 
+[vst3presetsave](#vst3presetsave), 
+[vts3tempo](#vts3tempo)
 
 ### Credits
 
@@ -99,36 +103,42 @@ Michael Gogins
 http://michaelgogins.tumblr.com
 michael dot gogins at gmail dot com
 
-## vst3bankload
+## vst3presetload
 
 vst3-opcodes -- VST plugin hosting in Csound.
 
 ### Description
 
-**vst3bankload** is used to load a bank of plugin presets from a file.
+**vst3presetload** loads a preset from a file. A preset consists 
+of a program identifier plus the value of each parameter in the preset.
 
 ### Syntax
 
-**vst3bankload** i_handle, S_bank_filepath
+**vst3presetload** i_handle, S_preset_filepath
 
 ### Initialization
 
 *i_handle* -- the handle that identifies the plugin, obtained from 
 [vst3init](#vst3init).
 
-*S_bank_filepath* -- the full pathname of the preset file. Remember to use '/' 
-instead of '\\' as the path separator.
+*S_preset_filepath* -- the full pathname of the preset file. Remember to 
+use '/' instead of '\\' as the path separator.
 
 ### Examples
 
 ### See Also
 
-[vst3audio](#vst3audio), [vst3bankload](#vst3bankload), 
-[vst3banksave](#vst3banksave), [vst3edit](#vst3edit),
-[vst3info](#vst3info), [vst3init](#vst3init),
-[vst3midiout](#vst3midiout), [vst3note](#vst3note),
-[vst3paramget](#vst3paramget), [vst3paramset](#vst3paramset),
-[vst3progset](#vst3progset), [vts3tempo](#vts3tempo)
+[vst3audio](#vst3audio), 
+[vst3edit](#vst3edit),
+[vst3info](#vst3info), 
+[vst3init](#vst3init),
+[vst3midiout](#vst3midiout), 
+[vst3note](#vst3note),
+[vst3paramget](#vst3paramget), 
+[vst3paramset](#vst3paramset),
+[vst3presetload](#vst3presetload), 
+[vst3presetsave](#vst3presetsave), 
+[vts3tempo](#vts3tempo)
 
 ### Credits
 
@@ -136,36 +146,43 @@ Michael Gogins
 http://michaelgogins.tumblr.com
 michael dot gogins at gmail dot com
 
-## vst3banksave
+## vst3presetsave
 
 vst3-opcodes -- VST plugin hosting in Csound.
 
 ### Description
 
-**vst3banksave** is used to save a bank of plugin presets to a file.
+**vst3presetsave** saves a plugin preset to a file. The preset consists of the 
+identifier of the current program plus the names and values of all the 
+parameters in the program.
 
 ### Syntax
 
-**vst3banksave** i_handle, S_bank_filepath
+**vst3presetsave** i_handle, S_preset_filepath
 
 ### Initialization
 
 *i_handle* -- the handle that identifies the plugin, obtained from 
 [vst3init](#vst3init).
 
-*S_bank_filepath* -- the full pathname of the preset file. Remember to use '/' 
-instead of '\\' as the path separator.
+*S_preset_filepath* -- the full pathname of the preset file. Remember to 
+use '/' instead of '\\' as the path separator.
 
 ### Examples
 
 ### See Also
 
-[vst3audio](#vst3audio), [vst3bankload](#vst3bankload), 
-[vst3banksave](#vst3banksave), [vst3edit](#vst3edit),
-[vst3info](#vst3info), [vst3init](#vst3init),
-[vst3midiout](#vst3midiout), [vst3note](#vst3note),
-[vst3paramget](#vst3paramget), [vst3paramset](#vst3paramset),
-[vst3progset](#vst3progset), [vts3tempo](#vts3tempo)
+[vst3audio](#vst3audio), 
+[vst3edit](#vst3edit),
+[vst3info](#vst3info), 
+[vst3init](#vst3init),
+[vst3midiout](#vst3midiout), 
+[vst3note](#vst3note),
+[vst3paramget](#vst3paramget), 
+[vst3paramset](#vst3paramset),
+[vst3presetload](#vst3presetload), 
+[vst3presetsave](#vst3presetsave), 
+[vts3tempo](#vts3tempo)
 
 ### Credits
 
@@ -196,12 +213,17 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 ### See Also
 
-[vst3audio](#vst3audio), [vst3bankload](#vst3bankload), 
-[vst3banksave](#vst3banksave), [vst3edit](#vst3edit),
-[vst3info](#vst3info), [vst3init](#vst3init),
-[vst3midiout](#vst3midiout), [vst3note](#vst3note),
-[vst3paramget](#vst3paramget), [vst3paramset](#vst3paramset),
-[vst3progset](#vst3progset), [vts3tempo](#vts3tempo)
+[vst3audio](#vst3audio), 
+[vst3edit](#vst3edit),
+[vst3info](#vst3info), 
+[vst3init](#vst3init),
+[vst3midiout](#vst3midiout), 
+[vst3note](#vst3note),
+[vst3paramget](#vst3paramget), 
+[vst3paramset](#vst3paramset),
+[vst3presetload](#vst3presetload), 
+[vst3presetsave](#vst3presetsave), 
+[vts3tempo](#vts3tempo)
 
 ### Credits
 
@@ -218,7 +240,7 @@ vst3-opcodes -- VST plugin hosting in Csound.
 ### Description
 
 **vst3info** prints information about the plugin module, input and output 
-busses, parameters, presets, and programs.
+busses, parameters, presets, and presets.
 
 ### Syntax
 
@@ -233,12 +255,17 @@ busses, parameters, presets, and programs.
 
 ### See Also
 
-[vst3audio](#vst3audio), [vst3bankload](#vst3bankload), 
-[vst3banksave](#vst3banksave), [vst3edit](#vst3edit),
-[vst3info](#vst3info), [vst3init](#vst3init),
-[vst3midiout](#vst3midiout), [vst3note](#vst3note),
-[vst3paramget](#vst3paramget), [vst3paramset](#vst3paramset),
-[vst3progset](#vst3progset), [vts3tempo](#vts3tempo)
+[vst3audio](#vst3audio), 
+[vst3edit](#vst3edit),
+[vst3info](#vst3info), 
+[vst3init](#vst3init),
+[vst3midiout](#vst3midiout), 
+[vst3note](#vst3note),
+[vst3paramget](#vst3paramget), 
+[vst3paramset](#vst3paramset),
+[vst3presetload](#vst3presetload), 
+[vst3presetsave](#vst3presetsave), 
+[vts3tempo](#vts3tempo)
 
 ### Credits
 
@@ -252,7 +279,7 @@ vst3-opcodes -- VST3 plugin hosting in Csound.
 
 ### Description
 
-**vst3init** is used to load a VST3 plugin into memory for use with the 
+**vst3init** loads a VST3 plugin into memory for use with the 
 other vst3-opcodes. Both VST3 effects and instruments (synthesizers) can be 
 used. Note that for VST3, there may be multiple plugins defined in one 
 loadable module.
@@ -279,12 +306,17 @@ the plugins defined in the module.
 
 ### See Also
 
-[vst3audio](#vst3audio), [vst3bankload](#vst3bankload), 
-[vst3banksave](#vst3banksave), [vst3edit](#vst3edit),
-[vst3info](#vst3info), [vst3init](#vst3init),
-[vst3midiout](#vst3midiout), [vst3note](#vst3note),
-[vst3paramget](#vst3paramget), [vst3paramset](#vst3paramset),
-[vst3progset](#vst3progset), [vts3tempo](#vts3tempo)
+[vst3audio](#vst3audio), 
+[vst3edit](#vst3edit),
+[vst3info](#vst3info), 
+[vst3init](#vst3init),
+[vst3midiout](#vst3midiout), 
+[vst3note](#vst3note),
+[vst3paramget](#vst3paramget), 
+[vst3paramset](#vst3paramset),
+[vst3presetload](#vst3presetload), 
+[vst3presetsave](#vst3presetsave), 
+[vts3tempo](#vts3tempo)
 
 ### Credits
 
@@ -300,7 +332,7 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 ### Description
 
-**vst3midiout** is used for sending MIDI channel messages to a VST3 plugin.
+**vst3midiout** sends MIDI channel messages to a VST3 plugin.
 
 ### Syntax
 
@@ -330,12 +362,17 @@ immediately sent.
 
 ### See Also
 
-[vst3audio](#vst3audio), [vst3bankload](#vst3bankload), 
-[vst3banksave](#vst3banksave), [vst3edit](#vst3edit),
-[vst3info](#vst3info), [vst3init](#vst3init),
-[vst3midiout](#vst3midiout), [vst3note](#vst3note),
-[vst3paramget](#vst3paramget), [vst3paramset](#vst3paramset),
-[vst3progset](#vst3progset), [vts3tempo](#vts3tempo)
+[vst3audio](#vst3audio), 
+[vst3edit](#vst3edit),
+[vst3info](#vst3info), 
+[vst3init](#vst3init),
+[vst3midiout](#vst3midiout), 
+[vst3note](#vst3note),
+[vst3paramget](#vst3paramget), 
+[vst3paramset](#vst3paramset),
+[vst3presetload](#vst3presetload), 
+[vst3presetsave](#vst3presetsave), 
+[vts3tempo](#vts3tempo)
 
 ### Credits
 
@@ -349,7 +386,7 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 ### Description
 
-**vst3note** is used for sending a note with a specified duration to a VST3 
+**vst3note** sends a single note with a specified duration to a VST3 
 plugin. The note is translated to a MIDI Note On channel message with a 
 matching MIDI Note Off channel message.
 
@@ -383,12 +420,17 @@ duration of the note, otherwise you'll have a 'hung' note.
 
 ### See Also
 
-[vst3audio](#vst3audio), [vst3bankload](#vst3bankload), 
-[vst3banksave](#vst3banksave), [vst3edit](#vst3edit),
-[vst3info](#vst3info), [vst3init](#vst3init),
-[vst3midiout](#vst3midiout), [vst3note](#vst3note),
-[vst3paramget](#vst3paramget), [vst3paramset](#vst3paramset),
-[vst3progset](#vst3progset), [vts3tempo](#vts3tempo)
+[vst3audio](#vst3audio), 
+[vst3edit](#vst3edit),
+[vst3info](#vst3info), 
+[vst3init](#vst3init),
+[vst3midiout](#vst3midiout), 
+[vst3note](#vst3note),
+[vst3paramget](#vst3paramget), 
+[vst3paramset](#vst3paramset),
+[vst3presetload](#vst3presetload), 
+[vst3presetsave](#vst3presetsave), 
+[vts3tempo](#vts3tempo)
 
 ### Credits
 
@@ -402,7 +444,8 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 ### Description
 
-**vst3paramget** is for receiving parameter values from a VST plugin.
+**vst3paramget** gets the current value of a single parameter from a VST3 
+plugin.
 
 ### Syntax
 
@@ -426,12 +469,17 @@ Most parameters have default values that can be printed by using
 
 ### See Also
 
-[vst3audio](#vst3audio), [vst3bankload](#vst3bankload), 
-[vst3banksave](#vst3banksave), [vst3edit](#vst3edit),
-[vst3info](#vst3info), [vst3init](#vst3init),
-[vst3midiout](#vst3midiout), [vst3note](#vst3note),
-[vst3paramget](#vst3paramget), [vst3paramset](#vst3paramset),
-[vst3progset](#vst3progset), [vts3tempo](#vts3tempo)
+[vst3audio](#vst3audio), 
+[vst3edit](#vst3edit),
+[vst3info](#vst3info), 
+[vst3init](#vst3init),
+[vst3midiout](#vst3midiout), 
+[vst3note](#vst3note),
+[vst3paramget](#vst3paramget), 
+[vst3paramset](#vst3paramset),
+[vst3presetload](#vst3presetload), 
+[vst3presetsave](#vst3presetsave), 
+[vts3tempo](#vts3tempo)
 
 ### Credits
 
@@ -445,7 +493,9 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 ### Description
 
-**vst3paramset** is for sending parameter values a VST3 plugin.
+**vst3paramset** sets the current value of a single parameter in a VST3 
+plugin. This is also used for selecting a preset from a factory list of 
+presets, or a list of presets that is loaded by the plugin itself.
 
 ### Syntax
 
@@ -472,66 +522,33 @@ immediately updated with a new parameter value.
 
 ### See Also
 
-[vst3audio](#vst3audio), [vst3bankload](#vst3bankload), 
-[vst3banksave](#vst3banksave), [vst3edit](#vst3edit),
-[vst3info](#vst3info), [vst3init](#vst3init),
-[vst3midiout](#vst3midiout), [vst3note](#vst3note),
-[vst3paramget](#vst3paramget), [vst3paramset](#vst3paramset),
-[vst3progset](#vst3progset), [vts3tempo](#vts3tempo)
+[vst3audio](#vst3audio), 
+[vst3edit](#vst3edit),
+[vst3info](#vst3info), 
+[vst3init](#vst3init),
+[vst3midiout](#vst3midiout), 
+[vst3note](#vst3note),
+[vst3paramget](#vst3paramget), 
+[vst3paramset](#vst3paramset),
+[vst3presetload](#vst3presetload), 
+[vst3presetsave](#vst3presetsave), 
+[vts3tempo](#vts3tempo)
 
 ### Credits
+
+Author:
 
 Michael Gogins 
 http://michaelgogins.tumblr.com
 michael dot gogins at gmail dot com
 
-## vst3progset
+### vst3tempo
 
 vst3-opcodes -- VST plugin hosting in Csound.
 
 ### Description
 
-**vst3progset** is for selecting one of the programs in a VST3 plugin's 
-currently loaded program bank.
-
-### Syntax
-
-**vst3progset** i_handle, k_preset_number
-
-### Initialization
-
-*i_handle* -- the handle that identifies the plugin, obtained from 
-[vst3init](#vst3init).
-
-### Performance
-
-*k_preset_number* -- the identification number of the preset. This can be 
-obtained from the plugin's user interface, or by using [vst3info](#vst3info).
-
-### Examples
-
-### See Also
-
-[vst3audio](#vst3audio), [vst3bankload](#vst3bankload), 
-[vst3banksave](#vst3banksave), [vst3edit](#vst3edit),
-[vst3info](#vst3info), [vst3init](#vst3init),
-[vst3midiout](#vst3midiout), [vst3note](#vst3note),
-[vst3paramget](#vst3paramget), [vst3paramset](#vst3paramset),
-[vst3progset](#vst3progset), [vts3tempo](#vts3tempo)
-
-### Credits
-
-Michael Gogins 
-http://michaelgogins.tumblr.com
-michael dot gogins at gmail dot com
-
-## vst3tempo
-
-vst3-opcodes -- VST plugin hosting in Csound.
-
-### Description
-
-**vst3tempo** is used to send tempo changes to a VST3 plugin.
+**vst3tempo** changes the tempo in a VST3 plugin.
 
 ### Syntax
 
@@ -555,12 +572,17 @@ match. Tempo changes can occur at k-rate.
 
 ### See Also
 
-[vst3audio](#vst3audio), [vst3bankload](#vst3bankload), 
-[vst3banksave](#vst3banksave), [vst3edit](#vst3edit),
-[vst3info](#vst3info), [vst3init](#vst3init),
-[vst3midiout](#vst3midiout), [vst3note](#vst3note),
-[vst3paramget](#vst3paramget), [vst3paramset](#vst3paramset),
-[vst3progset](#vst3progset), [vts3tempo](#vts3tempo)
+[vst3audio](#vst3audio), 
+[vst3edit](#vst3edit),
+[vst3info](#vst3info), 
+[vst3init](#vst3init),
+[vst3midiout](#vst3midiout), 
+[vst3note](#vst3note),
+[vst3paramget](#vst3paramget), 
+[vst3paramset](#vst3paramset),
+[vst3presetload](#vst3presetload), 
+[vst3presetsave](#vst3presetsave), 
+[vts3tempo](#vts3tempo)
 
 ### Credits
 

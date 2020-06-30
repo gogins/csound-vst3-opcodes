@@ -21,6 +21,7 @@ set(vst3_plugins_sources
     ${SDK_ROOT}/public.sdk/source/vst/hosting/stringconvert.h
     ${SDK_ROOT}/public.sdk/source/vst/hosting/uid.h
     ${SDK_ROOT}/public.sdk/source/vst/vstinitiids.cpp
+    ${SDK_ROOT}/public.sdk/source/common/memorystream.cpp
     vst3-opcodes.cpp
     )
 

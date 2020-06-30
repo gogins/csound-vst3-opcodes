@@ -21,6 +21,7 @@
 #include <csound/OpcodeBase.hpp>
 #include <cstring>
 #include <codecvt>
+#include <fstream>
 #include <functional>
 #include <locale>
 #include <map>
@@ -36,6 +37,7 @@
 #include "public.sdk/samples/vst-hosting/editorhost/source/platform/iplatform.h"
 #include "public.sdk/samples/vst-hosting/editorhost/source/platform/iwindow.h"
 //#include "public.sdk/source/vst/basewrapper/basewrapper.h"
+#include "public.sdk/source/common/memorystream.h"
 #include "public.sdk/source/vst/hosting/eventlist.h"
 #include "public.sdk/source/vst/hosting/hostclasses.h"
 #include "public.sdk/source/vst/hosting/module.h"
@@ -44,6 +46,7 @@
 #include "public.sdk/source/vst/hosting/plugprovider.h"
 #include "public.sdk/source/vst/hosting/processdata.h"
 #include "public.sdk/source/vst/hosting/stringconvert.h"
+#include "public.sdk/source/vst/vstpresetfile.h"
 
 /**
  * (1) VST3 Modules may implement any number of VST3 plugins.
@@ -469,7 +472,7 @@ namespace csound {
                     title.toMultiByte(Steinberg::kCP_Utf8);
                     Steinberg::String units(parameterInfo.units);
                     units.toMultiByte(Steinberg::kCP_Utf8);
-                    csound->Message(csound, "vst3_plugin: parameter: %4d: name: %-64s units: %-16s default: %9.4f\n", i, title.text8(), units.text8(), parameterInfo.defaultNormalizedValue);
+                    csound->Message(csound, "vst3_plugin: index: %4d: id: %12d name: %-64s units: %-16s default: %9.4f\n", i, parameterInfo.id, title.text8(), units.text8(), parameterInfo.defaultNormalizedValue);
                 }
             }
             // Units, program lists, and programs, in a flat list.
@@ -652,38 +655,6 @@ namespace csound {
         return plugin;
     }
     
-    struct VST3INIT : public csound::OpcodeBase<VST3INIT> {
-        // Outputs.
-        MYFLT *i_vst3_handle;
-        // Inputs.
-        MYFLT *i_module_pathname;
-        MYFLT *i_plugin_name;
-        MYFLT *i_verbose;
-        int init(CSOUND *csound) {
-            int result = OK;
-            auto &host = csound::vst3_host_t::get_instance();
-            std::string module_pathname = ((STRINGDAT *)i_module_pathname)->data;
-            std::string plugin_name = ((STRINGDAT *)i_plugin_name)->data;
-            *i_vst3_handle = host.load_module(csound, module_pathname, plugin_name, (bool)*i_verbose);
-            auto vst3_plugin = get_plugin(i_vst3_handle);
-            log(csound, "\nvst3init: created plugin: \"%s\": address: %p handle: %d\n", plugin_name.c_str(), vst3_plugin, (int) *i_vst3_handle);
-            return result;
-        };
-    };
-
-    struct VST3INFO : public csound::OpcodeBase<VST3INFO> {
-        // Inputs.
-        MYFLT *i_vst3_handle;
-        // State.
-        vst3_plugin_t *vst3_plugin;
-        int init(CSOUND *csound) {
-            int result = OK;
-            vst3_plugin = get_plugin(i_vst3_handle);
-            vst3_plugin->print_information();
-            return result;
-        };
-    };
-
     struct VST3AUDIO : public csound::OpcodeBase<VST3AUDIO> {
         // Outputs.
         MYFLT *aouts[32];
@@ -722,6 +693,51 @@ namespace csound {
             // frame, ksmps_offset and ksmps_no_end have no effect and are not 
             // used.
             vst3_plugin->process(buffers, current_time_in_frames);
+            return result;
+        };
+    };
+
+    struct VST3INFO : public csound::OpcodeBase<VST3INFO> {
+        // Inputs.
+        MYFLT *i_vst3_handle;
+        // State.
+        vst3_plugin_t *vst3_plugin;
+        int init(CSOUND *csound) {
+            int result = OK;
+            vst3_plugin = get_plugin(i_vst3_handle);
+            vst3_plugin->print_information();
+            return result;
+        };
+    };
+
+    struct VST3INIT : public csound::OpcodeBase<VST3INIT> {
+        // Outputs.
+        MYFLT *i_vst3_handle;
+        // Inputs.
+        MYFLT *i_module_pathname;
+        MYFLT *i_plugin_name;
+        MYFLT *i_verbose;
+        int init(CSOUND *csound) {
+            int result = OK;
+            auto &host = csound::vst3_host_t::get_instance();
+            std::string module_pathname = ((STRINGDAT *)i_module_pathname)->data;
+            std::string plugin_name = ((STRINGDAT *)i_plugin_name)->data;
+            *i_vst3_handle = host.load_module(csound, module_pathname, plugin_name, (bool)*i_verbose);
+            auto vst3_plugin = get_plugin(i_vst3_handle);
+            log(csound, "\nvst3init: created plugin: \"%s\": address: %p handle: %d\n", plugin_name.c_str(), vst3_plugin, (int) *i_vst3_handle);
+            return result;
+        };
+    };
+
+    struct VST3EDIT : public csound::OpcodeBase<VST3EDIT> {
+        // Inputs.
+        MYFLT *i_vst3_handle;
+        // State.
+        vst3_plugin_t *vst3_plugin;
+        int init(CSOUND *csound) {
+            int result = OK;
+            vst3_plugin = get_plugin(i_vst3_handle);
+            vst3_plugin->showPluginEditorWindow();
             return result;
         };
     };
@@ -909,7 +925,6 @@ namespace csound {
     };
 
     struct VST3PARAMGET : public csound::OpcodeBase<VST3PARAMGET> {
-
         // Outputs.
         MYFLT *k_parameter_value;
         // Intputs.
@@ -917,49 +932,110 @@ namespace csound {
         MYFLT *k_parameter_id;
         // State.
         vst3_plugin_t *vst3_plugin;
-    };
-
-    struct VST3PARAMSET : public csound::OpcodeBase<VST3PARAMSET> {
-        // Inputs.
-        MYFLT *i_vst3_handle;
-        MYFLT *kparam;
-        MYFLT *kvalue;
-        // State.
-        MYFLT   oldkparam;
-        MYFLT   oldkvalue;
-        vst3_plugin_t *vst3_plugin;
-    };
-
-    struct VST3BANKLOAD : public csound::OpcodeBase<VST3BANKLOAD> {
-        // Inputs.
-        MYFLT *i_vst3_handle;
-        MYFLT *S_bank_filepath;
-        // State.
-        vst3_plugin_t *vst3_plugin;
-    };
-
-    struct VST3PROGSET : public csound::OpcodeBase<VST3PROGSET> {
-        // Inputs.
-        MYFLT *i_vst3_handle;
-        MYFLT *i_program;
-        // State.
-        vst3_plugin_t *vst3_plugin;
         int init(CSOUND *csound) {
             int result = OK;
             vst3_plugin = get_plugin(i_vst3_handle);
             return result;
         };
+        int kontrol(CSOUND *csound) {
+            int result = OK;
+            *k_parameter_value = vst3_plugin->controller->getParamNormalized(*k_parameter_id);
+            return result;
+        };
     };
 
-    struct VST3EDIT : public csound::OpcodeBase<VST3EDIT> {
+    struct VST3PARAMSET : public csound::OpcodeBase<VST3PARAMSET> {
         // Inputs.
         MYFLT *i_vst3_handle;
+        MYFLT *k_parameter_id;
+        MYFLT *k_parameter_value;
+        // State.
+        vst3_plugin_t *vst3_plugin;
+        Steinberg::int32 parameter_id;
+        double parameter_value;
+        Steinberg::int32 prior_parameter_id;
+        double prior_parameter_value;
+        double start_time;
+        double on_time;
+        double delta_time;
+        size_t delta_frames;
+        int init(CSOUND *csound) {
+            int result = OK;
+            vst3_plugin = get_plugin(i_vst3_handle);
+            return result;
+        };
+        int kontrol(CSOUND *csound) {
+            int result = OK;
+            parameter_id = static_cast<Steinberg::int32>(*k_parameter_id);
+            parameter_value = static_cast<double>(*k_parameter_value);
+            if (parameter_id != prior_parameter_id || parameter_value != prior_parameter_value) {
+                on_time = opds.insdshead->p2.value;
+                delta_time = on_time - start_time;
+                int delta_frames = 0;
+                if (delta_time > 0) {
+                    delta_frames = int(delta_time * csound->GetSr(csound));
+                }
+                vst3_plugin->setParameter(parameter_id, parameter_value, delta_frames);
+                prior_parameter_id = parameter_id;
+                prior_parameter_value = parameter_value;
+            }
+            return result;
+        };
+    };
+
+    struct VST3PRESETLOAD : public csound::OpcodeBase<VST3PRESETLOAD> {
+        // Inputs.
+        MYFLT *i_vst3_handle;
+        MYFLT *S_preset_filepath;
         // State.
         vst3_plugin_t *vst3_plugin;
         int init(CSOUND *csound) {
             int result = OK;
             vst3_plugin = get_plugin(i_vst3_handle);
-            vst3_plugin->showPluginEditorWindow();
+            std::string preset_filepath = ((STRINGDAT *)S_preset_filepath)->data;
+            std::fstream input_stream(preset_filepath.c_str(), std::fstream::in | std::fstream::binary);
+            Steinberg::MemoryStream memory_stream;
+            //~ char c;
+            //~ int32_t bytes_to_write = 1;
+            //~ int32_t bytes_written = 0;
+            //~ while(input_stream.get(c)) {
+                //~ memory_stream.write(static_cast<void *>(&c), bytes_to_write, &bytes_written);
+            //~ }
+            //~ input_stream.close();
+            //~ auto class_id = Steinberg::FUID::fromTUID(vst3_plugin->classInfo.ID().data());
+            //~ auto loaded = Steinberg::Vst::PresetFile::loadPreset (&memory_stream, class_id, vst3_plugin->component,
+                             //~ vst3_plugin->controller);
+            //~ if (loaded == false) {
+                //~ warn(csound, "vst3presetload: failed to load: %s\n", preset_filepath.c_str());
+                //~ result = NOTOK;
+            //~ } else {
+                //~ log(csound, "vst3presetload: loaded: %s\n", preset_filepath.c_str());
+            //~ }
+            return result;
+        };
+    };
+    
+    struct VST3PRESETSAVE : public csound::OpcodeBase<VST3PRESETSAVE> {
+        // Inputs.
+        MYFLT *i_vst3_handle;
+        MYFLT *S_preset_filepath;
+        // State.
+        vst3_plugin_t *vst3_plugin;
+        int init(CSOUND *csound) {
+            int result = OK;
+            vst3_plugin = get_plugin(i_vst3_handle);
+            Steinberg::MemoryStream memory_stream;
+            auto class_id = Steinberg::FUID::fromTUID(vst3_plugin->classInfo.ID().data());
+            auto saved = Steinberg::Vst::PresetFile::savePreset (&memory_stream, class_id, vst3_plugin->component,
+                             vst3_plugin->controller);
+            std::string preset_filepath = ((STRINGDAT *)S_preset_filepath)->data;
+            if (saved == false) {
+                warn(csound, "Failed to save preset: %s\n", preset_filepath.c_str());
+                return NOTOK;
+            }
+            std::fstream output_stream(preset_filepath.c_str(), std::fstream::out | std::fstream::trunc);
+            output_stream.write(memory_stream.getData(), memory_stream.getSize());
+            output_stream.close();
             return result;
         };
     };
@@ -987,30 +1063,17 @@ namespace csound {
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 #endif
     static OENTRY localops[] = {
+        {"vst3audio", sizeof(VST3AUDIO), 0, 3, "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm", "M", &VST3AUDIO::init_, &VST3AUDIO::audio_, 0},
+        {"vst3info", sizeof(VST3INFO), 0, 1, "", "i", &VST3INFO::init_, 0, 0}, 
         {"vst3init", sizeof(VST3INIT), 0, 1, "i", "TTo", &VST3INIT::init_, 0, 0},
-        {"vst3info", sizeof(VST3INFO), 0, 1, "", "i", &VST3INFO::init_, 0, 0},
-        {"vst3audio", sizeof(VST3AUDIO), 0, 3, "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
-            "M", &VST3AUDIO::init_, &VST3AUDIO::audio_, 0
-        },
-        {"vst3midiout", sizeof(VST3MIDIOUT), 0, 3, "", "ikkkk", &VST3MIDIOUT::init_,
-            &VST3MIDIOUT::kontrol_, 0
-        },
-        {"vst3paramget", sizeof(VST3PARAMGET), 0, 3, "k", "ik", &VST3PARAMGET::init_,
-            &VST3PARAMGET::kontrol_, 0
-        },
-        {"vst3paramset", sizeof(VST3PARAMSET), 0, 3, "", "ikk", &VST3PARAMSET::init_,
-            &VST3PARAMSET::kontrol_, 0
-        },
-        {"vst3bankload", sizeof(VST3BANKLOAD), 0, 1, "", "iT", &VST3BANKLOAD::init_, 0, 0},
-        {"vst3progset", sizeof(VST3PROGSET), 0, 1, "", "ii", &VST3PROGSET::init_, 0, 0},
         {"vst3edit", sizeof(VST3EDIT), 0, 1, "", "i", &VST3EDIT::init_, 0, 0},
-        {"vst3tempo", sizeof(VST3TEMPO), 0, 2, "", "ki", 0, &VST3TEMPO::init_,
-            0 /*, &vstedit_deinit*/
-        },
-        {"vst3note", sizeof(VST3NOTE), 0, 3, "i", "iiiii", &VST3NOTE::init_,
-            &VST3NOTE::kontrol_, 0
-        },
-        {"vst3banksave", sizeof(VST3BANKLOAD), 0, 1, "", "iT", &VST3BANKLOAD::init_, 0, 0},
+        {"vst3midiout", sizeof(VST3MIDIOUT), 0, 3, "", "ikkkk", &VST3MIDIOUT::init_, &VST3MIDIOUT::kontrol_, 0},
+        {"vst3note", sizeof(VST3NOTE), 0, 3, "i", "iiiii", &VST3NOTE::init_, &VST3NOTE::kontrol_, 0},
+        {"vst3paramget", sizeof(VST3PARAMGET), 0, 3, "k", "ik", &VST3PARAMGET::init_, &VST3PARAMGET::kontrol_, 0},
+        {"vst3paramset", sizeof(VST3PARAMSET), 0, 3, "", "ikk", &VST3PARAMSET::init_, &VST3PARAMSET::kontrol_, 0},
+        {"vst3presetload", sizeof(VST3PRESETLOAD), 0, 1, "", "iT", &VST3PRESETLOAD::init_, 0, 0},
+        {"vst3presetsave", sizeof(VST3PRESETSAVE), 0, 1, "", "iT", &VST3PRESETSAVE::init_, 0, 0},
+        {"vst3tempo", sizeof(VST3TEMPO), 0, 2, "", "ki", 0, &VST3TEMPO::init_, 0 /*, &vstedit_deinit*/ },
         {0, 0, 0, 0, 0, 0, (SUBR)0, (SUBR)0, (SUBR)0}
     };
 };
