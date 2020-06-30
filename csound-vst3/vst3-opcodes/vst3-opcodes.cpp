@@ -472,10 +472,32 @@ namespace csound {
                     csound->Message(csound, "vst3_plugin: parameter: %4d: name: %-64s units: %-16s default: %9.4f\n", i, title.text8(), units.text8(), parameterInfo.defaultNormalizedValue);
                 }
             }
-            // Programs.
+            // Units, program lists, and programs, in a flat list.
             Steinberg::FUnknownPtr<Steinberg::Vst::IUnitInfo> i_unit_info (controller);
             if (i_unit_info) {
-                int32 programListCount = i_unit_info->getProgramListCount ();
+                auto unit_count = i_unit_info->getUnitCount();
+                for (auto unit_index = 0; unit_index < unit_count; ++unit_index) {
+                    Steinberg::Vst::UnitInfo unit_info;
+                    i_unit_info->getUnitInfo(unit_index, unit_info);
+                    auto program_list_count = i_unit_info->getProgramListCount ();
+                    for (auto program_list_index = 0; program_list_index < program_list_count; ++program_list_index) {
+                        Steinberg::Vst::ProgramListInfo program_list_info;
+                        if (i_unit_info->getProgramListInfo (program_list_index, program_list_info) == Steinberg::kResultOk) {
+                             for (auto program_index = 0; program_index < program_list_info.programCount; ++program_index) {
+                                Steinberg::Vst::TChar program_name[256];
+                                i_unit_info->getProgramName(unit_info.programListId, program_index, program_name);
+                                csound->Message(csound, "vst3_plugin: unit: %4d (parent %4d) %-32s program list: %12d (%4d) program: %4d %s\n", 
+                                    unit_info.id, 
+                                    unit_info.parentUnitId, 
+                                    VST3::StringConvert::convert(unit_info.name).c_str(), 
+                                    unit_info.programListId, 
+                                    program_list_index, 
+                                    program_index, 
+                                    VST3::StringConvert::convert(program_name).data());
+                             }
+                        }
+                    }
+                }
             }
         }
         void showPluginEditorWindow() {
@@ -798,28 +820,28 @@ namespace csound {
             } else {
                 offTime = startTime + FL(1000000.0);
             }
-/*
-Note-on event specific data. Used in \ref Event (union)
-Pitch uses the twelve-tone equal temperament tuning (12-TET). 
-struct NoteOnEvent
-{
-	int16 channel;		///< channel index in event bus
-	int16 pitch;		///< range [0, 127] = [C-2, G8] with A3=440Hz (12-TET)
-	float tuning;		///< 1.f = +1 cent, -1.f = -1 cent
-	float velocity;		///< range [0.0, 1.0]
-	int32 length;		///< in sample frames (optional, Note Off has to follow in any case!)
-	int32 noteId;		///< note identifier (if not available then -1)
-};
-Note-off event specific data. Used in \ref Event (union)
-struct NoteOffEvent
-{
-	int16 channel;		///< channel index in event bus
-	int16 pitch;		///< range [0, 127] = [C-2, G8] with A3=440Hz (12-TET)
-	float velocity;		///< range [0.0, 1.0]
-	int32 noteId;		///< associated noteOn identifier (if not available then -1)
-	float tuning;		///< 1.f = +1 cent, -1.f = -1 cent
-};
-*/
+            /*
+            Note-on event specific data. Used in \ref Event (union)
+            Pitch uses the twelve-tone equal temperament tuning (12-TET). 
+            struct NoteOnEvent
+            {
+                int16 channel;		///< channel index in event bus
+                int16 pitch;		///< range [0, 127] = [C-2, G8] with A3=440Hz (12-TET)
+                float tuning;		///< 1.f = +1 cent, -1.f = -1 cent
+                float velocity;		///< range [0.0, 1.0]
+                int32 length;		///< in sample frames (optional, Note Off has to follow in any case!)
+                int32 noteId;		///< note identifier (if not available then -1)
+            };
+            Note-off event specific data. Used in \ref Event (union)
+            struct NoteOffEvent
+            {
+                int16 channel;		///< channel index in event bus
+                int16 pitch;		///< range [0, 127] = [C-2, G8] with A3=440Hz (12-TET)
+                float velocity;		///< range [0.0, 1.0]
+                int32 noteId;		///< associated noteOn identifier (if not available then -1)
+                float tuning;		///< 1.f = +1 cent, -1.f = -1 cent
+            };
+            */
             channel = static_cast<int16>(*i_channel) & 0xf;
             // Split the real-valued MIDI key number
             // into an integer key number and an integer number of cents (plus or
@@ -834,7 +856,7 @@ struct NoteOffEvent
             opds.insdshead->xtratim = opds.insdshead->xtratim + 2;
             on = true;
             if (csound->GetDebug(csound)) {
-                csound->Message(csound, "vst3note_init:      on time:      %f\n", onTime);
+                csound->Message(csound, "vst3note_init:     on time:      %f\n", onTime);
                 csound->Message(csound, "                   csound time:  %f\n",
                                 startTime);
                 csound->Message(csound, "                   delta time:   %f\n", deltaTime);
