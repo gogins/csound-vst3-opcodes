@@ -383,6 +383,7 @@ Author:
 Michael Gogins<br>
 http://michaelgogins.tumblr.com<br>
 michael dot gogins at gmail dot com<br>
+
 ## vst3note
 
 vst3-opcodes -- VST plugin hosting in Csound.
@@ -569,8 +570,8 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 ### Initialization
 
-*i_handle* -- the handle that identifies the plugin, to be passed to other 
-vst3-opcodes.
+*i_handle* -- the handle that identifies the plugin, obtained from 
+[vst3init](#vst3init).
 
 ### Performance
 
