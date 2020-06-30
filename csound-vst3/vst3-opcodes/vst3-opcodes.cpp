@@ -33,10 +33,10 @@
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/imediaserver.h"
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/iparameterclient.h"
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/miditovst.h"
+#include "public.sdk/samples/vst-hosting/editorhost/source/editorhost.h"
 #include "public.sdk/samples/vst-hosting/editorhost/source/platform/iapplication.h"
 #include "public.sdk/samples/vst-hosting/editorhost/source/platform/iplatform.h"
 #include "public.sdk/samples/vst-hosting/editorhost/source/platform/iwindow.h"
-//#include "public.sdk/source/vst/basewrapper/basewrapper.h"
 #include "public.sdk/source/common/memorystream.h"
 #include "public.sdk/source/vst/hosting/eventlist.h"
 #include "public.sdk/source/vst/hosting/hostclasses.h"
@@ -86,6 +86,7 @@ namespace csound {
         kMaxMidiMappingBusses = 4,
         kMaxMidiChannels = 16
     };
+    
     using Controllers = std::vector<int32>;
     using Channels = std::array<Controllers, kMaxMidiChannels>;
     using Busses = std::array<Channels, kMaxMidiMappingBusses>;
@@ -399,23 +400,24 @@ namespace csound {
             char cidString[50];
             controllerClassUID.toRegistryString (cidString);
             // Class information.
-            csound->Message(csound, "vst3_plugin: plugin controller class id: %s\n", cidString);
-            csound->Message(csound, "vst3_plugin: UID:                    %s\n", classInfo.ID().toString().c_str());
-            csound->Message(csound, "vst3_plugin: cardinality:            %i\n", classInfo.cardinality());
-            csound->Message(csound, "vst3_plugin: category:               %s\n", classInfo.category().c_str());
-            csound->Message(csound, "vst3_plugin: name:                   %s\n", classInfo.name().c_str());
-            csound->Message(csound, "vst3_plugin: vendor:                 %s\n", classInfo.vendor().c_str());
-            csound->Message(csound, "vst3_plugin: version:                %s\n", classInfo.version().c_str());
-            csound->Message(csound, "vst3_plugin: sdkVersion:             %s\n", classInfo.sdkVersion().c_str());
-            csound->Message(csound, "vst3_plugin: subCategoriesString:    %s\n", classInfo.subCategoriesString().c_str());
-            csound->Message(csound, "vst3_plugin: classFlags:             %i\n", classInfo.classFlags());
-            // Input busses.
+            csound->Message(csound, "vst3_plugin: class:      controller class id: %s\n", cidString);
+            csound->Message(csound, "vst3_plugin: class:      UID:                 %s\n", classInfo.ID().toString().c_str());
+            csound->Message(csound, "vst3_plugin: class:      cardinality:         %i\n", classInfo.cardinality());
+            csound->Message(csound, "vst3_plugin: class:      category:            %s\n", classInfo.category().c_str());
+            csound->Message(csound, "vst3_plugin: class:      name:                %s\n", classInfo.name().c_str());
+            csound->Message(csound, "vst3_plugin: class:      vendor:              %s\n", classInfo.vendor().c_str());
+            csound->Message(csound, "vst3_plugin: class:      version:             %s\n", classInfo.version().c_str());
+            csound->Message(csound, "vst3_plugin: class:      sdkVersion:          %s\n", classInfo.sdkVersion().c_str());
+            csound->Message(csound, "vst3_plugin: class:      subCategoriesString: %s\n", classInfo.subCategoriesString().c_str());
+            csound->Message(csound, "vst3_plugin: class:      classFlags:          %i\n", classInfo.classFlags());
+            // Input and output busses.
+            // There is no ID in a BusInfo.
             int32 n = component->getBusCount( Steinberg::Vst::MediaTypes::kAudio, Steinberg::Vst::kInput);
             for (int32 i = 0; i < n; i++) {
                 Steinberg::Vst::BusInfo busInfo = {};
                 auto result = component->getBusInfo (Steinberg::Vst::MediaTypes::kAudio, Steinberg::Vst::kInput, i, busInfo);
                 auto name = VST3::StringConvert::convert(busInfo.name);
-                csound->Message(csound, "vst3_plugin: buss: direction: %s  media: %s  channels: %3d  bus type: %s  flags: %d  name: %-32s \n", 
+                csound->Message(csound, "vst3_plugin: buss:       direction: %s  media: %s  channels: %3d  bus type: %s  flags: %d  name: %-32s \n", 
                     busInfo.direction == 0 ? "Input " : "Output",
                     busInfo.mediaType == 0 ? "Audio" : "Event",
                     busInfo.channelCount,
@@ -428,7 +430,7 @@ namespace csound {
                 Steinberg::Vst::BusInfo busInfo = {};
                 auto result = component->getBusInfo (Steinberg::Vst::MediaTypes::kEvent, Steinberg::Vst::kInput, i, busInfo);
                 auto name = VST3::StringConvert::convert(busInfo.name);
-                csound->Message(csound, "vst3_plugin: buss: direction: %s  media: %s  channels: %3d  bus type: %s  flags: %d  name: %-32s \n", 
+                csound->Message(csound, "vst3_plugin: buss:       direction: %s  media: %s  channels: %3d  bus type: %s  flags: %d  name: %-32s \n", 
                     busInfo.direction == 0 ? "Input " : "Output",
                     busInfo.mediaType == 0 ? "Audio" : "Event",
                     busInfo.channelCount,
@@ -441,7 +443,7 @@ namespace csound {
                 Steinberg::Vst::BusInfo busInfo = {};
                 auto result = component->getBusInfo (Steinberg::Vst::MediaTypes::kAudio, Steinberg::Vst::kOutput, i, busInfo);
                 auto name = VST3::StringConvert::convert(busInfo.name);
-                csound->Message(csound, "vst3_plugin: buss: direction: %s  media: %s  channels: %3d  bus type: %s  flags: %d  name: %-32s \n", 
+                csound->Message(csound, "vst3_plugin: buss:       direction: %s  media: %s  channels: %3d  bus type: %s  flags: %d  name: %-32s \n", 
                     busInfo.direction == 0 ? "Input " : "Output",
                     busInfo.mediaType == 0 ? "Audio" : "Event",
                     busInfo.channelCount,
@@ -454,7 +456,7 @@ namespace csound {
                 Steinberg::Vst::BusInfo busInfo = {};
                 auto result = component->getBusInfo (Steinberg::Vst::MediaTypes::kEvent, Steinberg::Vst::kOutput, i, busInfo);
                 auto name = VST3::StringConvert::convert(busInfo.name);
-                 csound->Message(csound, "vst3_plugin: buss: direction: %s  media: %s  channels: %3d  bus type: %s  flags: %d  name: %-32s \n", 
+                 csound->Message(csound, "vst3_plugin: buss:       direction: %s  media: %s  channels: %3d  bus type: %s  flags: %d  name: %-32s \n", 
                     busInfo.direction == 0 ? "Input " : "Output",
                     busInfo.mediaType == 0 ? "Audio" : "Event",
                     busInfo.channelCount,
@@ -472,7 +474,7 @@ namespace csound {
                     title.toMultiByte(Steinberg::kCP_Utf8);
                     Steinberg::String units(parameterInfo.units);
                     units.toMultiByte(Steinberg::kCP_Utf8);
-                    csound->Message(csound, "vst3_plugin: index: %4d: id: %12d name: %-64s units: %-16s default: %9.4f\n", i, parameterInfo.id, title.text8(), units.text8(), parameterInfo.defaultNormalizedValue);
+                    csound->Message(csound, "vst3_plugin: parameter:  index: %4d: id: %12d name: %-64s units: %-16s default: %9.4f\n", i, parameterInfo.id, title.text8(), units.text8(), parameterInfo.defaultNormalizedValue);
                 }
             }
             // Units, program lists, and programs, in a flat list.
@@ -489,7 +491,7 @@ namespace csound {
                              for (auto program_index = 0; program_index < program_list_info.programCount; ++program_index) {
                                 Steinberg::Vst::TChar program_name[256];
                                 i_unit_info->getProgramName(unit_info.programListId, program_index, program_name);
-                                csound->Message(csound, "vst3_plugin: unit: %4d (parent %4d) %-32s program list: %12d (%4d) program: %4d %s\n", 
+                                csound->Message(csound, "vst3_plugin: unit:       id: %4d (parent id: %4d) name: %-32s program list: id: %12d (index: %4d) program: id: %4d name: %s\n", 
                                     unit_info.id, 
                                     unit_info.parentUnitId, 
                                     VST3::StringConvert::convert(unit_info.name).c_str(), 
@@ -504,17 +506,17 @@ namespace csound {
             }
         }
         void showPluginEditorWindow() {
-            //~ auto view = owned (controller->createView (Steinberg::Vst::ViewType::kEditor));
-            //~ if (!view) {
-                //~ Steinberg::Vst::EditorHost::IPlatform::instance ().kill (-1, "EditController does not provide its own editor");
-            //~ }
-            //~ Steinberg::ViewRect plugViewSize {};
-            //~ auto result = view->getSize (&plugViewSize);
-            //~ if (result != Steinberg::kResultTrue) {
-                //~ Steinberg::Vst::EditorHost::IPlatform::instance ().kill (-1, "Could not get editor view size");
-            //~ }
+            auto view = owned (controller->createView (Steinberg::Vst::ViewType::kEditor));
+            if (!view) {
+                //Steinberg::Vst::EditorHost::IPlatform::instance ().kill (-1, "EditController does not provide its own editor");
+            }
+            Steinberg::ViewRect plugViewSize {};
+            auto result = view->getSize (&plugViewSize);
+            if (result != Steinberg::kResultTrue) {
+                //Steinberg::Vst::EditorHost::IPlatform::instance ().kill (-1, "Could not get editor view size");
+            }
             //~ auto viewRect = Steinberg::Vst::EditorHost::ViewRectToRect (plugViewSize);
-            //~ windowController = std::make_shared<Steinberg::Vst::EditorHost::WindowController> (view);
+            //~ auto windowController = std::make_shared<Steinberg::WindowController> (view);
             //~ auto window = Steinberg::Vst::EditorHost::IPlatform::instance ().createWindow (
             //~ "Editor", viewRect.size, view->canResize () == kResultTrue, windowController);
             //~ if (!window) {
@@ -555,7 +557,7 @@ namespace csound {
     class vst3_host_t : public Steinberg::Vst::HostApplication {
     public:
         vst3_host_t(){};
-        static vst3_host_t &get_instance();
+        static vst3_host_t &get_singleton();
         vst3_host_t(vst3_host_t const&) = delete;
         void operator=(vst3_host_t const&) = delete;
         ~vst3_host_t () noexcept override {
@@ -642,7 +644,7 @@ namespace csound {
         std::vector<std::shared_ptr<vst3_plugin_t>> vst3_plugins_for_handles;
     };
     
-    inline vst3_host_t &vst3_host_t::get_instance() {
+    inline vst3_host_t &vst3_host_t::get_singleton() {
         static vst3_host_t vst3_host;
         if (Steinberg::gStandardPluginContext == nullptr) {
             Steinberg::gStandardPluginContext = &vst3_host;
@@ -651,7 +653,7 @@ namespace csound {
     };
     
     inline static vst3_plugin_t *get_plugin(MYFLT *handle) {
-        auto plugin = vst3_host_t::get_instance().plugin_for_handle(handle);
+        auto plugin = vst3_host_t::get_singleton().plugin_for_handle(handle);
         return plugin;
     }
     
@@ -719,7 +721,7 @@ namespace csound {
         MYFLT *i_verbose;
         int init(CSOUND *csound) {
             int result = OK;
-            auto &host = csound::vst3_host_t::get_instance();
+            auto &host = csound::vst3_host_t::get_singleton();
             std::string module_pathname = ((STRINGDAT *)i_module_pathname)->data;
             std::string plugin_name = ((STRINGDAT *)i_plugin_name)->data;
             *i_vst3_handle = host.load_module(csound, module_pathname, plugin_name, (bool)*i_verbose);
@@ -1120,7 +1122,7 @@ extern "C" {
                         csound,
                         thread_hasher(std::this_thread::get_id()));
 #endif
-        auto &vst3_host = csound::vst3_host_t::get_instance();
+        auto &vst3_host = csound::vst3_host_t::get_singleton();
         auto range = vst3_host.vst3_plugins_for_csounds.equal_range(csound);
         for (auto it = range.first; it != range.second; ++it) {
             it->second = nullptr;
