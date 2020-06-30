@@ -14,7 +14,7 @@ effects in Csound.
 
 These opcodes are a port of the older vst4cs opcodes, which supports only the 
 VST2 protocol, to the newer and more capable VST3 protocol. The opcodes have 
-the same behavior as the vst4cs opcodes,
+more or less the same behavior as the vst4cs opcodes,
 
 These opcodes are designed to be cross-platform and to run at least on Linux, 
 Windows, and OS X. Development is currently being done only on Linux.

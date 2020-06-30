@@ -198,7 +198,8 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 ### Description
 
-**vst3edit** opens the GUI editor widow for a VST3 plugin.
+**vst3edit** opens the GUI editor widow for a VST3 plugin. Currently, this 
+opcode is not implemented.
 
 ### Syntax
 
@@ -290,8 +291,8 @@ i_handle **vst3init** S_module_filepath, S_plugin_name [,i_verbose]
 
 ### Initialization
 
-*i_handle* -- the handle that identifies the plugin, obtained from 
-[vst3init](#vst3init).
+*i_handle* -- the handle that identifies the plugin, to be passed to the other 
+vst3opcodes that use the plugin.
 
 *S_module_filepath* -- the full pathname of the vst plugin shared library (dll, 
 on Windows). Remember to use '/' instead of '\\' as the path separator.
@@ -388,7 +389,11 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 **vst3note** sends a single note with a specified duration to a VST3 
 plugin. The note is translated to a MIDI Note On channel message with a 
-matching MIDI Note Off channel message.
+matching MIDI Note Off channel message. 
+
+The VST3 protocol supports fractional pitches, which are sent as cents of 
+detuning from the integer MIDI key number. In this way, any pitch can be sent 
+to a plugin, which may or may not be equipped to render it.
 
 ### Syntax
 
@@ -459,7 +464,9 @@ k_value **vst3paramset** i_handle, k_parameter
 ### Performance
 
 *k_parameter* -- the identification number of the parameter. This can be 
-obtained from the plugin's documentation, or by using [vst3info](#vst3info).
+obtained from the plugin's documentation, or by using [vst3info](#vst3info). 
+Note that this must be the id number of the parameter, not its index in the 
+list of parameters.
 
 *k_value* -- the value of the parameter, a real number in the interval [0, 1].
 Most parameters have default values that can be printed by using 
@@ -510,6 +517,8 @@ presets, or a list of presets that is loaded by the plugin itself.
 
 *k_parameter* -- the identification number of the parameter. This can be 
 obtained from the plugin's documentation, or by using [vst3info](#vst3info).
+Note that this must be the id number of the parameter, not its index in the 
+list of parameters.
 
 *k_value* -- the value of the parameter, a real number in the interval [0, 1].
 Most parameters have default values that can be printed by using 
