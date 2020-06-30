@@ -142,9 +142,11 @@ use '/' instead of '\\' as the path separator.
 
 ### Credits
 
-Michael Gogins 
-http://michaelgogins.tumblr.com
-michael dot gogins at gmail dot com
+Author:
+
+Michael Gogins<br>
+http://michaelgogins.tumblr.com<br>
+michael dot gogins at gmail dot com<br>
 
 ## vst3presetsave
 
@@ -188,10 +190,9 @@ use '/' instead of '\\' as the path separator.
 
 Author:
 
-Michael Gogins 
-http://michaelgogins.tumblr.com
-michael dot gogins at gmail dot com
-
+Michael Gogins<br>
+http://michaelgogins.tumblr.com<br>
+michael dot gogins at gmail dot com<br>
 ## vst3edit
 
 vst3-opcodes -- VST plugin hosting in Csound.
@@ -230,10 +231,9 @@ opcode is not implemented.
 
 Author:
 
-Michael Gogins 
-http://michaelgogins.tumblr.com
-michael dot gogins at gmail dot com
-
+Michael Gogins<br>
+http://michaelgogins.tumblr.com<br>
+michael dot gogins at gmail dot com<br>
 ## vst3info
 
 vst3-opcodes -- VST plugin hosting in Csound.
@@ -270,10 +270,11 @@ busses, parameters, presets, and presets.
 
 ### Credits
 
-Michael Gogins 
-http://michaelgogins.tumblr.com
-michael dot gogins at gmail dot com
+Author:
 
+Michael Gogins<br>
+http://michaelgogins.tumblr.com<br>
+michael dot gogins at gmail dot com<br>
 ## vst3init
 
 vst3-opcodes -- VST3 plugin hosting in Csound.
@@ -323,9 +324,9 @@ the plugins defined in the module.
 
 Author:
 
-Michael Gogins 
-http://michaelgogins.tumblr.com
-michael dot gogins at gmail dot com
+Michael Gogins<br>
+http://michaelgogins.tumblr.com<br>
+michael dot gogins at gmail dot com<br>
 
 ## vst3midiout
 
@@ -377,10 +378,11 @@ immediately sent.
 
 ### Credits
 
-Michael Gogins 
-http://michaelgogins.tumblr.com
-michael dot gogins at gmail dot com
+Author:
 
+Michael Gogins<br>
+http://michaelgogins.tumblr.com<br>
+michael dot gogins at gmail dot com<br>
 ## vst3note
 
 vst3-opcodes -- VST plugin hosting in Csound.
@@ -439,10 +441,11 @@ duration of the note, otherwise you'll have a 'hung' note.
 
 ### Credits
 
-Michael Gogins 
-http://michaelgogins.tumblr.com
-michael dot gogins at gmail dot com
+Author:
 
+Michael Gogins<br>
+http://michaelgogins.tumblr.com<br>
+michael dot gogins at gmail dot com<br>
 ## vst3paramget
 
 vst3-opcodes -- VST plugin hosting in Csound.
@@ -490,10 +493,11 @@ Most parameters have default values that can be printed by using
 
 ### Credits
 
-Michael Gogins 
-http://michaelgogins.tumblr.com
-michael dot gogins at gmail dot com
+Author:
 
+Michael Gogins<br>
+http://michaelgogins.tumblr.com<br>
+michael dot gogins at gmail dot com<br>
 ## vst3paramset
 
 vst3-opcodes -- VST plugin hosting in Csound.
@@ -547,9 +551,9 @@ immediately updated with a new parameter value.
 
 Author:
 
-Michael Gogins 
-http://michaelgogins.tumblr.com
-michael dot gogins at gmail dot com
+Michael Gogins<br>
+http://michaelgogins.tumblr.com<br>
+michael dot gogins at gmail dot com<br>
 
 ### vst3tempo
 
@@ -597,8 +601,6 @@ match. Tempo changes can occur at k-rate.
 
 Author:
 
-Michael Gogins 
-http://michaelgogins.tumblr.com
-michael dot gogins at gmail dot com
-
-
+Michael Gogins<br>
+http://michaelgogins.tumblr.com<br>
+michael dot gogins at gmail dot com<br>
