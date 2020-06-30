@@ -103,96 +103,6 @@ Michael Gogins
 http://michaelgogins.tumblr.com
 michael dot gogins at gmail dot com
 
-## vst3presetload
-
-vst3-opcodes -- VST plugin hosting in Csound.
-
-### Description
-
-**vst3presetload** loads a preset from a file. A preset consists 
-of a program identifier plus the value of each parameter in the preset.
-
-### Syntax
-
-**vst3presetload** i_handle, S_preset_filepath
-
-### Initialization
-
-*i_handle* -- the handle that identifies the plugin, obtained from 
-[vst3init](#vst3init).
-
-*S_preset_filepath* -- the full pathname of the preset file. Remember to 
-use '/' instead of '\\' as the path separator.
-
-### Examples
-
-### See Also
-
-[vst3audio](#vst3audio), 
-[vst3edit](#vst3edit),
-[vst3info](#vst3info), 
-[vst3init](#vst3init),
-[vst3midiout](#vst3midiout), 
-[vst3note](#vst3note),
-[vst3paramget](#vst3paramget), 
-[vst3paramset](#vst3paramset),
-[vst3presetload](#vst3presetload), 
-[vst3presetsave](#vst3presetsave), 
-[vts3tempo](#vts3tempo)
-
-### Credits
-
-Author:
-
-Michael Gogins<br>
-http://michaelgogins.tumblr.com<br>
-michael dot gogins at gmail dot com<br>
-
-## vst3presetsave
-
-vst3-opcodes -- VST plugin hosting in Csound.
-
-### Description
-
-**vst3presetsave** saves a plugin preset to a file. The preset consists of the 
-identifier of the current program plus the names and values of all the 
-parameters in the program.
-
-### Syntax
-
-**vst3presetsave** i_handle, S_preset_filepath
-
-### Initialization
-
-*i_handle* -- the handle that identifies the plugin, obtained from 
-[vst3init](#vst3init).
-
-*S_preset_filepath* -- the full pathname of the preset file. Remember to 
-use '/' instead of '\\' as the path separator.
-
-### Examples
-
-### See Also
-
-[vst3audio](#vst3audio), 
-[vst3edit](#vst3edit),
-[vst3info](#vst3info), 
-[vst3init](#vst3init),
-[vst3midiout](#vst3midiout), 
-[vst3note](#vst3note),
-[vst3paramget](#vst3paramget), 
-[vst3paramset](#vst3paramset),
-[vst3presetload](#vst3presetload), 
-[vst3presetsave](#vst3presetsave), 
-[vts3tempo](#vts3tempo)
-
-### Credits
-
-Author:
-
-Michael Gogins<br>
-http://michaelgogins.tumblr.com<br>
-michael dot gogins at gmail dot com<br>
 ## vst3edit
 
 vst3-opcodes -- VST plugin hosting in Csound.
@@ -499,6 +409,7 @@ Author:
 Michael Gogins<br>
 http://michaelgogins.tumblr.com<br>
 michael dot gogins at gmail dot com<br>
+
 ## vst3paramset
 
 vst3-opcodes -- VST plugin hosting in Csound.
@@ -531,6 +442,97 @@ Most parameters have default values that can be printed by using
 
 If either of these arguments changes during performance, the plugin is 
 immediately updated with a new parameter value.
+
+### Examples
+
+### See Also
+
+[vst3audio](#vst3audio), 
+[vst3edit](#vst3edit),
+[vst3info](#vst3info), 
+[vst3init](#vst3init),
+[vst3midiout](#vst3midiout), 
+[vst3note](#vst3note),
+[vst3paramget](#vst3paramget), 
+[vst3paramset](#vst3paramset),
+[vst3presetload](#vst3presetload), 
+[vst3presetsave](#vst3presetsave), 
+[vts3tempo](#vts3tempo)
+
+### Credits
+
+Author:
+
+Michael Gogins<br>
+http://michaelgogins.tumblr.com<br>
+michael dot gogins at gmail dot com<br>
+
+## vst3presetload
+
+vst3-opcodes -- VST plugin hosting in Csound.
+
+### Description
+
+**vst3presetload** loads a preset from a file. A preset consists 
+of a program identifier plus the value of each parameter in the preset.
+
+### Syntax
+
+**vst3presetload** i_handle, S_preset_filepath
+
+### Initialization
+
+*i_handle* -- the handle that identifies the plugin, obtained from 
+[vst3init](#vst3init).
+
+*S_preset_filepath* -- the full pathname of the preset file. Remember to 
+use '/' instead of '\\' as the path separator.
+
+### Examples
+
+### See Also
+
+[vst3audio](#vst3audio), 
+[vst3edit](#vst3edit),
+[vst3info](#vst3info), 
+[vst3init](#vst3init),
+[vst3midiout](#vst3midiout), 
+[vst3note](#vst3note),
+[vst3paramget](#vst3paramget), 
+[vst3paramset](#vst3paramset),
+[vst3presetload](#vst3presetload), 
+[vst3presetsave](#vst3presetsave), 
+[vts3tempo](#vts3tempo)
+
+### Credits
+
+Author:
+
+Michael Gogins<br>
+http://michaelgogins.tumblr.com<br>
+michael dot gogins at gmail dot com<br>
+
+## vst3presetsave
+
+vst3-opcodes -- VST plugin hosting in Csound.
+
+### Description
+
+**vst3presetsave** saves a plugin preset to a file. The preset consists of the 
+identifier of the current program plus the names and values of all the 
+parameters in the program.
+
+### Syntax
+
+**vst3presetsave** i_handle, S_preset_filepath
+
+### Initialization
+
+*i_handle* -- the handle that identifies the plugin, obtained from 
+[vst3init](#vst3init).
+
+*S_preset_filepath* -- the full pathname of the preset file. Remember to 
+use '/' instead of '\\' as the path separator.
 
 ### Examples
 
