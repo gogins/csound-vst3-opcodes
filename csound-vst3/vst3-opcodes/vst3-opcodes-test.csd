@@ -6,11 +6,11 @@
 sr      = 48000
 ksmps   = 128
 nchnls  = 2
-0dbfs   = .001
+0dbfs   = 1
 
 alwayson "Output"
 
-gi_vst3_handle vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Release/mda-vst3.vst3", "mda JX10", 1
+gi_vst3_handle vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Release/mda-vst3.vst3", "mda Piano", 1
 vst3info gi_vst3_handle
 
 // Currently the Pianoteq does not support vst3 on Linux. I asked Modartt.
