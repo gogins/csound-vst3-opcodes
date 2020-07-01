@@ -1,4 +1,26 @@
 <CsoundSynthesizer>
+<CsLicense>
+
+V S T 3   O P C O D E S   T E S T
+
+Author: Michael Gogins
+
+This Csound piece includes basic unit tests for the following vst3 opcodes:
+
+  1.  vst3init
+  2.  vst3info
+  3.  vst3note
+  4.  vst3audio
+  5.  vst3paramset
+  6.  vst3paramget
+  7.  vst3savepreset
+  8.  vst3loadpreset
+  9.  vst3edit
+  
+These are all the opcodes that are actually needed to fully use VST3 
+instruments and effects in Csound.
+
+</CsLicense>
 <CsOptions>
 -m195 --opcode-lib="/home/mkg/csound-vst3-opcodes/build-debug/lib/Debug/libvst3_plugins.so" -z1
 </CsOptions>
@@ -10,7 +32,7 @@ nchnls  = 2
 
 alwayson "Output"
 
-gi_vst3_handle vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Release/mda-vst3.vst3", "mda Piano", 1
+gi_vst3_handle vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Release/mda-vst3.vst3", "mda JX10", 1
 vst3info gi_vst3_handle
 
 // Currently the Pianoteq does not support vst3 on Linux. I asked Modartt.
@@ -34,6 +56,6 @@ endin
 </CsInstruments>
 <CsScore>
 i 1 1 1 60 60
-i 1 5 5 72 60
+i 1 .5 5 72 60
 </CsScore>
 </CsoundSynthesizer>
