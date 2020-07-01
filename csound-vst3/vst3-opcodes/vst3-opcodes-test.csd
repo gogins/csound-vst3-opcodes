@@ -55,7 +55,7 @@ endin
 
 </CsInstruments>
 <CsScore>
-i 1 1 1 60 60
-i 1 .5 5 72 60
+i 1 1 4.5 60 60
+i 1 .5 5.20384 72 60
 </CsScore>
 </CsoundSynthesizer>

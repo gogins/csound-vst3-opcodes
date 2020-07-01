@@ -57,8 +57,8 @@
  *(4) Either the first PlugProvider, or the PlugProviders that is named in 
  *     the vst3init call, is used to create a vst3_plugin_t instance, which 
  *     actually obtains the interfaces called by Csound to use the plugin.
- *(5) The vst3_plugin initializes its IComponent and IEditController interfaces 
- *     for communication with Csound.
+ *(5) The vst3_plugin initializes its IComponent, IAudioProcessor, and 
+ *    IEditController interfaces for communication with Csound.
  *(6) A handle to the vst3_plugin_t instance is returned by vst3init to the 
  *     user, who must pass it to all other vst3 opcodes.
  *(7) When Csound calls csoundModuleDestroy, the vst3_host_t instance 
@@ -72,15 +72,7 @@ namespace Steinberg {
 };
 
 namespace csound {
-    
-    /**
-     * Persistent state:
-     *(1) There is one and only one vst3_host_t instance in a process.
-     *(2) There are zero or more vst3_plugin_t instances for each CSOUND 
-     *     instance, and these plugins are deleted when csoundModuleDestroy 
-     *     is called.
-     */
-    
+        
     enum
     {
         kMaxMidiMappingBusses = 4,
@@ -127,19 +119,12 @@ namespace csound {
      * communications with Csound, including audio input and output, 
      * MIDI input and output, and parameter input and output.
      */    
-    struct vst3_plugin_t : 
-            public Steinberg::Vst::IAudioClient, 
-            public Steinberg::Vst::IMidiClient, 
-            public Steinberg::Vst::IParameterClient {
+    struct vst3_plugin_t  {
         vst3_plugin_t() {};
-        virtual ~vst3_plugin_t() override {
+        virtual ~vst3_plugin_t() {
 #if defined(DEBUGGING)
             std::fprintf(stderr, "vst3_plugin_t::~vst3_plugin_t.\n");
 #endif
-        }
-        bool process(Steinberg::Vst::IAudioClient::Buffers &buffers, int64_t continuousFrames) override {
-            csound->Message(csound, "vst3_plugin_t: wrong process method called!\n");
-            return false;
         }
         void preprocess(int64_t continousFrames) {
 #if defined(DEBUGGING2)
@@ -153,7 +138,7 @@ namespace csound {
             eventList.clear();
             inputParameterChanges.clearQueue();
         }
-        bool process(int64_t continuous_frames) /* override */ {
+        bool process(int64_t continuous_frames) {
 #if defined(DEBUGGING2)
             csound->Message(csound, "vst3_plugin_t::process: time in frames: %ld.\n", continuous_frames);
 #endif
@@ -170,7 +155,7 @@ namespace csound {
             postprocess();
             return true;
         }
-        bool setSamplerate(double value) override {
+        bool setSamplerate(double value) {
             if (sampleRate == value) {
                 return true;
             }
@@ -181,7 +166,7 @@ namespace csound {
             }
             return updateProcessSetup();
         }
-        bool setBlockSize(int32 value) override {
+        bool setBlockSize(int32 value) {
             if (blockSize == value) {
                 return true;
             }
@@ -195,70 +180,7 @@ namespace csound {
             csound->Message(csound, "vst3_plugin::setBlockSize: blockSize:  %9d\n", blockSize);
             return result;
         }
-        Steinberg::Vst::IAudioClient::IOSetup getIOSetup() const override {
-            Steinberg::Vst::IAudioClient::IOSetup iosetup;
-            auto count = component->getBusCount(Steinberg::Vst::kAudio, Steinberg::Vst::BusDirections::kOutput);
-            for (int32_t i = 0; i < count; i++) {
-                Steinberg::Vst::BusInfo info;
-                if (component->getBusInfo(Steinberg::Vst::MediaTypes::kAudio, Steinberg::Vst::BusDirections::kOutput, i, info) !=
-                    Steinberg::kResultOk) {
-                        continue;
-                }
-                for (int32_t j = 0; j < info.channelCount; j++) {
-                    auto channelName = VST3::StringConvert::convert(info.name, 128);
-                    iosetup.outputs.push_back(channelName + " " + std::to_string(j));
-                }
-            }
-            count = component->getBusCount(Steinberg::Vst::MediaTypes::kAudio, Steinberg::Vst::BusDirections::kInput);
-            for (int32_t i = 0; i < count; i++) {
-                Steinberg::Vst::BusInfo info;
-                if (component->getBusInfo(Steinberg::Vst::MediaTypes::kAudio, Steinberg::Vst::BusDirections::kInput, i, info) != Steinberg::kResultOk) {
-                    continue;
-                }
-                for (int32_t j = 0; j < info.channelCount; j++) {
-                    auto channelName = VST3::StringConvert::convert(info.name, 128);
-                    iosetup.inputs.push_back(channelName + " " + std::to_string(j));
-                }
-            }
-            return iosetup;
-        }
-        // IMidiClient
-        bool onEvent(const Steinberg::Vst::IMidiClient::Event& event, int32_t port) override {
-            // Try to create Event first.
-            if (processVstEvent(event, port)) {
-                return true;
-            }
-            // In case this is no event it must be a parameter.
-            if (processParamChange(event, port)) {
-                return true;
-            }
-            return true;
-        }
-        Steinberg::Vst::IMidiClient::IOSetup getMidiIOSetup() const override {
-            Steinberg::Vst::IMidiClient::IOSetup iosetup;
-            auto count = component->getBusCount(Steinberg::Vst::MediaTypes::kEvent, Steinberg::Vst::BusDirections::kInput);
-            for (int32_t i = 0; i < count; i++) {
-                Steinberg::Vst::BusInfo info;
-                if (component->getBusInfo(Steinberg::Vst::MediaTypes::kEvent, Steinberg::Vst::BusDirections::kInput, i, info) != Steinberg::kResultOk) {
-                    continue;
-                }
-                auto busName = VST3::StringConvert::convert(info.name, 128);
-                iosetup.inputs.push_back(busName);
-            }
-            count = component->getBusCount(Steinberg::Vst::MediaTypes::kEvent, Steinberg::Vst::BusDirections::kOutput);
-            for (int32_t i = 0; i < count; i++) {
-                Steinberg::Vst::BusInfo info;
-                if (component->getBusInfo(Steinberg::Vst::MediaTypes::kEvent, Steinberg::Vst::BusDirections::kOutput, i, info) !=
-                    Steinberg::kResultOk) {
-                    continue;
-                }
-                auto busName = VST3::StringConvert::convert(info.name, 128);
-                iosetup.outputs.push_back(busName);
-            }
-            return iosetup;
-        }
-        // IParameterClient
-        void setParameter(uint32  id, double value, int32 sampleOffset) override {
+        void setParameter(uint32  id, double value, int32 sampleOffset) {
             paramTransferrer.addChange(id, value, sampleOffset);
         }
         bool initialize(CSOUND *csound_, const VST3::Hosting::ClassInfo &classInfo_, Steinberg::Vst::PlugProvider *provider_) {
@@ -525,7 +447,11 @@ namespace csound {
     };
 
     /**
-     * Singleton class for managing all persistent VST3 state.
+     * Singleton class for managing all persistent VST3 state:
+     * (1) There is one and only one vst3_host_t instance in a process.
+     * (2) There are zero or more vst3_plugin_t instances for each CSOUND 
+     *     instance, and these plugins are deleted when csoundModuleDestroy 
+     *     is called.
      */
     class vst3_host_t : public Steinberg::Vst::HostApplication {
     public:
@@ -534,7 +460,7 @@ namespace csound {
         vst3_host_t(vst3_host_t const&) = delete;
         void operator=(vst3_host_t const&) = delete;
         ~vst3_host_t() noexcept override {
-            std::fprintf(stderr, "vst3_host_t deleting.\n");
+            std::fprintf(stderr, "vst3_host_t::~vst3_host_t.\n");
         }
         /**
          * Loads a VST3 Module and obtains all plugins in it.
@@ -662,9 +588,12 @@ namespace csound {
             // Because Csound and the plugin may not use the same sample word 
             // size, allowance must be made for different buffer shapes and 
             // sample word sizes, and the audio streams must be copied in and 
-            // out word for word. 
-            // TODO: find 'Main' buffers instead of assuming they are at 
-            // buss index 0?
+            // out word for word. Csound will try to match its input and 
+            // output channels with the hosted plugin, and the maximum matching 
+            // set will be used. Whether the HostProcessData busses are "Main"
+            // is not considered. The Csound instrument hosting this opcode 
+            // may ignore or duplicate channels depending on documentation or 
+            // experience.
             opcode_input_channel_count = input_arg_count();
             auto &process_data = vst3_plugin->hostProcessData;
             if (process_data.numInputs > 0) {
@@ -833,41 +762,39 @@ namespace csound {
         float tuning;		// 1.f = +1 cent, -1.f = -1 cent
         float velocity;		// range [0.0, 1.0]
         int32 length;		// in sample frames(optional, Note Off has to follow in any case!)
-        int32 noteId;		// note identifier (if not available then -1)
         Steinberg::Vst::Event note_on_event;
         Steinberg::Vst::Event note_off_event;
         size_t framesRemaining;
         vst3_plugin_t *vst3_plugin;
-        MYFLT start_time;
-        MYFLT onTime;
-        MYFLT duration;
-        MYFLT offTime;
-        MYFLT deltaTime;
+        MYFLT note_on_time;
+        MYFLT note_duration;
+        MYFLT note_off_time;
+        MYFLT delta_time;
         int delta_frames;
         bool on = false;
         int init(CSOUND *csound) {
             int result = OK;
             vst3_plugin = get_plugin(i_vst3_handle);
-            start_time = csound->GetCurrentTimeSamples(csound) / csound->GetSr(csound);
-            onTime = opds.insdshead->p2.value;
-            duration = *i_duration;
-            deltaTime = onTime - start_time;
+            auto current_time = csound->GetCurrentTimeSamples(csound) / csound->GetSr(csound);
+            note_on_time = opds.insdshead->p2.value;
+            note_duration = *i_duration;
+            delta_time = note_on_time - current_time;
             int delta_frames = 0;
-            if (deltaTime > 0) {
-                delta_frames = int(deltaTime * csound->GetSr(csound));
+            if (delta_time > 0) {
+                delta_frames = int(delta_time * csound->GetSr(csound));
             }
             // Use the warped p3 to schedule the note off message.
-            if (duration > FL(0.0)) {
-                offTime = start_time + MYFLT(opds.insdshead->p3.value);
+            if (note_duration > FL(0.0)) {
+                note_off_time = note_on_time + MYFLT(opds.insdshead->p3.value);
                 // In case of real-time performance with indefinite p3...
-            } else if (duration == FL(0.0)) {
+            } else if (note_duration == FL(0.0)) {
 #if defined(DEBUGGING)
                 csound->Message(csound,
                                     Str("vstnote::init: not scheduling 0 duration note.\n"));
 #endif
                 return OK;
             } else {
-                offTime = start_time + FL(1000000.0);
+                note_off_time = note_on_time + FL(1000000.0);
             }
             channel = static_cast<int16>(*i_channel) & 0xf;
             // Split the real-valued MIDI key number
@@ -875,7 +802,7 @@ namespace csound {
             // minus 50 cents).
             key = *i_key;
             pitch = static_cast<int16>(key + 0.5);
-            tuning =(double(*i_key) - double(key)) * double(100.0);
+            tuning = (double(*i_key) - double(key)) * double(100.0);
             velocity = *i_velocity;
             velocity = velocity / 127.;
             // Ensure that the opcode instance is still active when we are scheduled
@@ -889,7 +816,7 @@ namespace csound {
             note_on_event.noteOn.pitch = pitch;
             note_on_event.noteOn.tuning = tuning;
             note_on_event.noteOn.velocity = velocity;
-            note_on_event.noteOn.length = duration * csound->GetSr(csound);
+            note_on_event.noteOn.length = note_duration * csound->GetSr(csound);
             note_on_event.noteOn.noteId = vst3_plugin->note_id;
             note_off_event.type = Steinberg::Vst::Event::EventTypes::kNoteOffEvent;
             note_off_event.noteOff.channel = note_on_event.noteOn.channel;
@@ -898,7 +825,8 @@ namespace csound {
             note_off_event.noteOff.velocity = 0;
             note_off_event.noteOff.noteId = note_on_event.noteOn.noteId;
 #if defined(DEBUGGING)
-            log(csound, "vst3note::init:    note_on_event time:          %f\n", start_time);
+            log(csound, "vst3note::init:    current_time:                %12.5f [%12d]\n", current_time, csound->GetCurrentTimeSamples(csound));
+            log(csound, "                   note_on_event time:          %12.5f\n", note_on_time);
             log(csound, "                   note_on_event.type:          %d\n", note_on_event.type);
             log(csound, "                   note_on_event.sampleOffset:  %d\n", note_on_event.sampleOffset);
             log(csound, "                   note_on_event.channel:       %d\n", note_on_event.noteOn.channel);
@@ -911,13 +839,21 @@ namespace csound {
             if (vst3_plugin->eventList.addEvent(note_on_event) != Steinberg::kResultOk) {
                 log(csound, "vst3note::init: addEvent error for Note On.\n");
             }
+            *i_note_id = note_on_event.noteOn.noteId;
             return result;
         }
         int noteoff(CSOUND *csound) {
             int result = OK;
-            // TODO: delta_frames?
+            auto current_time = csound->GetCurrentTimeSamples(csound) / csound->GetSr(csound);
+            auto noteoff_delta_time = note_off_time - current_time;
+            int noteoff_delta_frames = 0;
+            if (noteoff_delta_time > 0) {
+                noteoff_delta_frames = int(noteoff_delta_frames * csound->GetSr(csound));
+            }
+            note_off_event.sampleOffset = noteoff_delta_frames;
 #if defined(DEBUGGING)
-            log(csound, "vst3note::noteoff: note_off_event time:         %f\n", csound->GetCurrentTimeSamples(csound) / csound->GetSr(csound));
+            log(csound, "vst3note::noteoff: current_time:                %12.5f [%12d]\n", current_time, csound->GetCurrentTimeSamples(csound));
+            log(csound, "                   note_off_event time:         %12.5f\n", note_off_time);
             log(csound, "                   note_off_event.type:         %d\n", note_off_event.type);
             log(csound, "                   note_off_event.sampleOffset: %d\n", note_off_event.sampleOffset);
             log(csound, "                   note_off_event.channel:      %d\n", note_off_event.noteOff.channel);
