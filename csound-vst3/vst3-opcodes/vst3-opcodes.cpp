@@ -26,6 +26,8 @@
 #include <locale>
 #include <map>
 #include <string>
+#include "pluginterfaces/gui/iplugview.h"
+#include "pluginterfaces/gui/iplugviewcontentscalesupport.h"
 #include "pluginterfaces/vst/ivstaudioprocessor.h"
 #include "pluginterfaces/vst/ivstcomponent.h"
 #include "pluginterfaces/vst/ivstprocesscontext.h"
@@ -34,6 +36,7 @@
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/iparameterclient.h"
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/miditovst.h"
 #include "public.sdk/samples/vst-hosting/editorhost/source/editorhost.h"
+#include "public.sdk/samples/vst-hosting/editorhost/source/platform/appinit.h"
 #include "public.sdk/samples/vst-hosting/editorhost/source/platform/iapplication.h"
 #include "public.sdk/samples/vst-hosting/editorhost/source/platform/iplatform.h"
 #include "public.sdk/samples/vst-hosting/editorhost/source/platform/iwindow.h"
@@ -68,7 +71,7 @@
 #define DEBUGGING 1
 
 namespace Steinberg {
-    FUnknown* gStandardPluginContext;
+    extern FUnknown* gStandardPluginContext;
 };
 
 namespace csound {
@@ -113,6 +116,134 @@ namespace csound {
         }
         return midiCCMapping;
     }
+    
+#if 1
+    
+    static Steinberg::Vst::EditorHost::AppInit gInit (std::make_unique<Steinberg::Vst::EditorHost::App> ());
+
+    struct CsoundWindowController : public Steinberg::Vst::EditorHost::IWindowController, public Steinberg::IPlugFrame
+    {
+    public:
+        CsoundWindowController (const Steinberg::IPtr<Steinberg::IPlugView>& plugView_) : plugView(plugView_) {}
+        ~CsoundWindowController () noexcept override {}
+        void onShow (Steinberg::Vst::EditorHost::IWindow& w) override {
+            SMTG_DBPRT1 ("onShow called (%p)\n", (void*)&w);
+            window = &w;
+            if (!plugView) {
+                return;
+            }
+            auto platformWindow = window->getNativePlatformWindow ();
+            if (plugView->isPlatformTypeSupported (platformWindow.type) != Steinberg::kResultTrue) {
+                Steinberg::Vst::EditorHost::IPlatform::instance ().kill (-1, std::string ("PlugView does not support platform type:") +
+                                                     platformWindow.type);
+            }
+            plugView->setFrame (this);
+            if (plugView->attached (platformWindow.ptr, platformWindow.type) != Steinberg::kResultTrue) {
+                Steinberg::Vst::EditorHost::IPlatform::instance ().kill (-1, "Attaching PlugView failed");
+            }
+        }
+        void onClose (Steinberg::Vst::EditorHost::IWindow& w) override {
+            SMTG_DBPRT1 ("onClose called (%p)\n", (void*)&w);
+            closePlugView ();
+            // TODO maybe quit only when the last window is closed
+            ///Steinberg::Vst::EditorHost::IPlatform::instance ().quit ();
+        }
+        void onResize (Steinberg::Vst::EditorHost::IWindow& w, Steinberg::Vst::EditorHost::Size newSize) override {
+            SMTG_DBPRT1 ("onResize called (%p)\n", (void*)&w);
+            if (plugView) {
+                Steinberg::ViewRect r {};
+                r.right = newSize.width;
+                r.bottom = newSize.height;
+                Steinberg::ViewRect r2 {};
+                if (plugView->getSize (&r2) == Steinberg::kResultTrue && std::memcmp(&r, &r2, sizeof(Steinberg::ViewRect)) != 0) {
+                    plugView->onSize (&r);
+                }
+            }
+        }
+        Steinberg::Vst::EditorHost::Size constrainSize (Steinberg::Vst::EditorHost::IWindow& w, Steinberg::Vst::EditorHost::Size requestedSize) override {
+            SMTG_DBPRT1 ("constrainSize called (%p)\n", (void*)&w);
+            Steinberg::ViewRect r {};
+            r.right = requestedSize.width;
+            r.bottom = requestedSize.height;
+            if (plugView && plugView->checkSizeConstraint (&r) != Steinberg::kResultTrue)
+            {
+                plugView->getSize (&r);
+            }
+            requestedSize.width = r.right - r.left;
+            requestedSize.height = r.bottom - r.top;
+            return requestedSize;
+        }
+        void onContentScaleFactorChanged (Steinberg::Vst::EditorHost::IWindow& window, float newScaleFactor) override {
+            SMTG_DBPRT1 ("onContentScaleFactorChanged called (%p)\n", (void*)&window);
+            Steinberg::FUnknownPtr<Steinberg::IPlugViewContentScaleSupport> css (plugView);
+            if (css) {
+                css->setContentScaleFactor (newScaleFactor);
+            }
+        }
+        // IPlugFrame
+        Steinberg::tresult resizeView (Steinberg::IPlugView* view, Steinberg::ViewRect* newSize) override {
+            SMTG_DBPRT1 ("resizeView called (%p)\n", (void*)view);
+            if (newSize == nullptr || view == nullptr || view != plugView) {
+                return Steinberg::kInvalidArgument;
+            }
+            if (!window) {
+                return Steinberg::kInternalError;
+            }
+            if (resizeViewRecursionGard) {
+                return Steinberg::kResultFalse;
+            }
+            Steinberg::ViewRect r;
+            if (plugView->getSize (&r) != Steinberg::kResultTrue) {
+                return Steinberg::kInternalError;
+            }
+            if (std::memcmp(&r, newSize, sizeof(Steinberg::ViewRect)) == 0) {
+                return Steinberg::kResultTrue;
+            }
+            resizeViewRecursionGard = true;
+            Steinberg::Vst::EditorHost::Size size {newSize->right - newSize->left, newSize->bottom - newSize->top};
+            window->resize (size);
+            resizeViewRecursionGard = false;
+            if (plugView->getSize (&r) != Steinberg::kResultTrue) {
+                return Steinberg::kInternalError;
+            }
+            if (std::memcmp(&r, newSize, sizeof(Steinberg::ViewRect)) != 0) {
+                plugView->onSize (newSize);
+            }
+            return Steinberg::kResultTrue;
+        }
+        void closePlugView () {
+            if (plugView) {
+                plugView->setFrame (nullptr);
+                if (plugView->removed () != Steinberg::kResultTrue) {
+                    Steinberg::Vst::EditorHost::IPlatform::instance ().kill (-1, "Removing PlugView failed");
+                }
+                plugView = nullptr;
+            }
+            window = nullptr;
+        }
+        Steinberg::tresult queryInterface (const Steinberg::TUID _iid, void** obj) override {
+            if (Steinberg::FUnknownPrivate::iidEqual (_iid, Steinberg::IPlugFrame::iid) ||
+                Steinberg::FUnknownPrivate::iidEqual (_iid, Steinberg::FUnknown::iid)) {
+                *obj = this;
+                addRef ();
+                return Steinberg::kResultTrue;
+            }
+            if (window) {
+                return window->queryInterface (_iid, obj);
+            }
+            return Steinberg::kNoInterface;
+        }
+        uint32 addRef () override { 
+            return 1000; 
+        }
+        uint32 release () override { 
+            return 1000; 
+        }
+        Steinberg::IPtr<Steinberg::IPlugView> plugView;
+        Steinberg::Vst::EditorHost::IWindow* window {nullptr};
+        bool resizeViewRecursionGard {false};
+    };
+#endif
     
     /**
      * This class manages one instance of one plugin and all of its 
@@ -400,24 +531,31 @@ namespace csound {
                 }
             }
         }
+        
         void showPluginEditorWindow() {
+            Steinberg::Vst::EditorHost::IPlatform::instance().run(std::vector<std::string>());
             auto view = owned(controller->createView(Steinberg::Vst::ViewType::kEditor));
             if (!view) {
-                //Steinberg::Vst::EditorHost::IPlatform::instance().kill(-1, "EditController does not provide its own editor");
+                csound->Message(csound, "vst3_plugin_t::showPluginEditorWindow: controller does not provide its own editor!\n");\
+                return;
             }
             Steinberg::ViewRect plugViewSize {};
             auto result = view->getSize(&plugViewSize);
             if (result != Steinberg::kResultTrue) {
-                //Steinberg::Vst::EditorHost::IPlatform::instance().kill(-1, "Could not get editor view size");
+                  csound->Message(csound, "vst3_plugin_t::showPluginEditorWindow: could not get editor view size.\n");\
             }
-            //~ auto viewRect = Steinberg::Vst::EditorHost::ViewRectToRect(plugViewSize);
-            //~ auto windowController = std::make_shared<Steinberg::WindowController>(view);
-            //~ auto window = Steinberg::Vst::EditorHost::IPlatform::instance().createWindow(
-            //~ "Editor", viewRect.size, view->canResize() == kResultTrue, windowController);
-            //~ if (!window) {
-                //~ Steinberg::Vst::EditorHost::IPlatform::instance().kill(-1, "Could not create window");
-            //~ }
-            //~ window->show();
+            auto viewRect = Steinberg::Vst::EditorHost::ViewRectToRect(plugViewSize);
+#if 1
+            auto windowController = std::make_shared<CsoundWindowController>(view);
+            auto window = Steinberg::Vst::EditorHost::IPlatform::instance().createWindow("Editor", 
+                viewRect.size, view->canResize() == Steinberg::kResultTrue, windowController);
+            if (result != Steinberg::kResultTrue) {
+                  csound->Message(csound, "vst3_plugin_t::showPluginEditorWindow: could not create window for plugin editor.\n");\
+            }
+            if (window) {
+                window->show();
+            }
+#endif
         }
         void setTempo(double new_tempo) {
             processContext.tempo = new_tempo;

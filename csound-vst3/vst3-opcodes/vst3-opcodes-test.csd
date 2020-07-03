@@ -5,7 +5,9 @@ V S T 3   O P C O D E S   T E S T
 
 Author: Michael Gogins
 
-This Csound piece includes basic unit tests for the following vst3 opcodes:
+The code is licensed under the terms of the GPLv3 license.
+
+This Csound piece performs basic unit tests for the following vst3 opcodes:
 
   1.  vst3init
   2.  vst3info
@@ -22,7 +24,7 @@ instruments and effects in Csound.
 
 </CsLicense>
 <CsOptions>
--m195 --opcode-lib="/home/mkg/csound-vst3-opcodes/build-debug/lib/Debug/libvst3_plugins.so" -z1
+-m195 --opcode-lib="/home/mkg/csound-vst3-opcodes/build/lib/Debug/libvst3_plugins.so" -z1
 </CsOptions>
 <CsInstruments>
 sr      = 48000
@@ -32,11 +34,13 @@ nchnls  = 2
 
 alwayson "Output"
 
-gi_vst3_handle vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Release/mda-vst3.vst3", "mda JX10", 1
+//gi_vst3_handle vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/mda-vst3.vst3", "mda JX10", 1
+gi_vst3_handle vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/DEBUG/noteexpressionsynth.vst3", "Note Expression Synth With UI", 1
 vst3info gi_vst3_handle
+vst3edit gi_vst3_handle
 
-// Currently the Pianoteq does not support vst3 on Linux. I asked Modartt.
-// Julien said it is because Pianoteq uses JUCE which currently does not 
+// Currently the Pianoteq does not support vst3 on Linux. I asked Modartt about this.
+// Julien said it is because Pianoteq uses JUCE, which currently does not 
 // support vst3 on Linux. I may go ahead and add VST2 support to this project, 
 // at least privately.
 // gi_vst3_handle vst3init "/home/mkg/Pianoteq_6.vst3", 1
