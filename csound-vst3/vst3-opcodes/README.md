@@ -15,29 +15,26 @@ notes, but also MIDI messages and parameter changes are scheduled with
 sample-frame accuracy. In addition, the organization of inputs, outputs, 
 and parameters is more flexible.
 
-Currently, opening a VST3 plugin's editor window from Csound is not supported.
+Currently, opening a plugin's editor window from Csound, which is a feature of 
+the vst4cs opcodes, is not supported.
 
 These opcodes are licensed under the terms of the GPLv3 license,
 which is compatible with both the Steinberg VST3 SDK GPLv3 license
 and Csound's LGPLv2 license (which allows re-licensing Csound as 
 "any later version of the GPL license").
 
-
 The opcodes consist of:
 
   1. [vst3audio](#vst3audio)
-<!--
-  2. [vst3edit](#vst3edit)
--->
-  3. [vst3info](#vst3info)
-  4. [vst3init](#vst3init)
-  5. [vst3midiout](#vst3midiout)
-  6. [vst3note](#vst3note)
-  7. [vst3paramget](#vst3paramget)
-  8. [vst3paramset](#vst3paramset)
-  9.  [vst3presetsave](#vst3presetsave)
-  10. [vst3presetset](#vst3presetset)
-  11. [vts3tempo](#vts3tempo)
+  2. [vst3info](#vst3info)
+  3. [vst3init](#vst3init)
+  4. [vst3midiout](#vst3midiout)
+  5. [vst3note](#vst3note)
+  6. [vst3paramget](#vst3paramget)
+  7. [vst3paramset](#vst3paramset)
+  8.  [vst3presetsave](#vst3presetsave)
+  9. [vst3presetset](#vst3presetset)
+  10. [vts3tempo](#vts3tempo)
   
 The typical lifecycle of a VST3 plugin in Csound is:
 
@@ -91,7 +88,6 @@ a Csound buss channel.
 ### See Also
 
 [vst3audio](#vst3audio), 
-[vst3edit](#vst3edit),
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
 [vst3midiout](#vst3midiout), 
@@ -108,47 +104,6 @@ Michael Gogins
 http://michaelgogins.tumblr.com
 michael dot gogins at gmail dot com
 
-## vst3edit
-
-vst3-opcodes -- VST plugin hosting in Csound.
-
-### Description
-
-**vst3edit** opens the GUI editor widow for a VST3 plugin. Currently, this 
-opcode is not implemented.
-
-### Syntax
-
-**vst3edit** i_handle
-
-### Initialization
-
-*i_handle* -- the handle that identifies the plugin, obtained from 
-[vst3init](#vst3init).
-
-### Examples
-
-### See Also
-
-[vst3audio](#vst3audio), 
-[vst3edit](#vst3edit),
-[vst3info](#vst3info), 
-[vst3init](#vst3init),
-[vst3midiout](#vst3midiout), 
-[vst3note](#vst3note),
-[vst3paramget](#vst3paramget), 
-[vst3paramset](#vst3paramset),
-[vst3presetload](#vst3presetload), 
-[vst3presetsave](#vst3presetsave), 
-[vts3tempo](#vts3tempo)
-
-### Credits
-
-Author:
-
-Michael Gogins<br>
-http://michaelgogins.tumblr.com<br>
-michael dot gogins at gmail dot com<br>
 ## vst3info
 
 vst3-opcodes -- VST plugin hosting in Csound.
@@ -172,7 +127,7 @@ busses, parameters, presets, and presets.
 ### See Also
 
 [vst3audio](#vst3audio), 
-[vst3edit](#vst3edit),
+
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
 [vst3midiout](#vst3midiout), 
@@ -224,7 +179,7 @@ the plugins defined in the module.
 ### See Also
 
 [vst3audio](#vst3audio), 
-[vst3edit](#vst3edit),
+
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
 [vst3midiout](#vst3midiout), 
@@ -280,7 +235,6 @@ immediately sent.
 ### See Also
 
 [vst3audio](#vst3audio), 
-[vst3edit](#vst3edit),
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
 [vst3midiout](#vst3midiout), 
@@ -344,7 +298,6 @@ duration of the note, otherwise you'll have a 'hung' note.
 ### See Also
 
 [vst3audio](#vst3audio), 
-[vst3edit](#vst3edit),
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
 [vst3midiout](#vst3midiout), 
@@ -396,7 +349,7 @@ Most parameters have default values that can be printed by using
 ### See Also
 
 [vst3audio](#vst3audio), 
-[vst3edit](#vst3edit),
+
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
 [vst3midiout](#vst3midiout), 
@@ -453,7 +406,7 @@ immediately updated with a new parameter value.
 ### See Also
 
 [vst3audio](#vst3audio), 
-[vst3edit](#vst3edit),
+
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
 [vst3midiout](#vst3midiout), 
@@ -498,7 +451,7 @@ use '/' instead of '\\' as the path separator.
 ### See Also
 
 [vst3audio](#vst3audio), 
-[vst3edit](#vst3edit),
+
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
 [vst3midiout](#vst3midiout), 
@@ -544,7 +497,7 @@ use '/' instead of '\\' as the path separator.
 ### See Also
 
 [vst3audio](#vst3audio), 
-[vst3edit](#vst3edit),
+
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
 [vst3midiout](#vst3midiout), 
@@ -594,7 +547,6 @@ match. Tempo changes can occur at k-rate.
 ### See Also
 
 [vst3audio](#vst3audio), 
-[vst3edit](#vst3edit),
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
 [vst3midiout](#vst3midiout), 
