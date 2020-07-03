@@ -35,9 +35,9 @@ nchnls  = 2
 alwayson "Output"
 
 //gi_vst3_handle vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/mda-vst3.vst3", "mda JX10", 1
-gi_vst3_handle vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/DEBUG/noteexpressionsynth.vst3", "Note Expression Synth With UI", 1
+gi_vst3_handle vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/noteexpressionsynth.vst3", "Note Expression Synth With UI", 1
 vst3info gi_vst3_handle
-vst3edit gi_vst3_handle
+//vst3edit gi_vst3_handle
 
 // Currently the Pianoteq does not support vst3 on Linux. I asked Modartt about this.
 // Julien said it is because Pianoteq uses JUCE, which currently does not 

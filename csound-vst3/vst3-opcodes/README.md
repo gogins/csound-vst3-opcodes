@@ -15,15 +15,20 @@ notes, but also MIDI messages and parameter changes are scheduled with
 sample-frame accuracy. In addition, the organization of inputs, outputs, 
 and parameters is more flexible.
 
+Currently, opening a VST3 plugin's editor window from Csound is not supported.
+
 These opcodes are licensed under the terms of the GPLv3 license,
 which is compatible with both the Steinberg VST3 SDK GPLv3 license
 and Csound's LGPLv2 license (which allows re-licensing Csound as 
 "any later version of the GPL license").
 
+
 The opcodes consist of:
 
   1. [vst3audio](#vst3audio)
+<!--
   2. [vst3edit](#vst3edit)
+-->
   3. [vst3info](#vst3info)
   4. [vst3init](#vst3init)
   5. [vst3midiout](#vst3midiout)

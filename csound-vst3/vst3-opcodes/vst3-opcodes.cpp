@@ -35,11 +35,13 @@
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/imediaserver.h"
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/iparameterclient.h"
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/miditovst.h"
+#if defined(IMPLEMENTED_EDITOR)
 #include "public.sdk/samples/vst-hosting/editorhost/source/editorhost.h"
 #include "public.sdk/samples/vst-hosting/editorhost/source/platform/appinit.h"
 #include "public.sdk/samples/vst-hosting/editorhost/source/platform/iapplication.h"
 #include "public.sdk/samples/vst-hosting/editorhost/source/platform/iplatform.h"
 #include "public.sdk/samples/vst-hosting/editorhost/source/platform/iwindow.h"
+#endif
 #include "public.sdk/source/common/memorystream.h"
 #include "public.sdk/source/vst/hosting/eventlist.h"
 #include "public.sdk/source/vst/hosting/hostclasses.h"
@@ -117,10 +119,8 @@ namespace csound {
         return midiCCMapping;
     }
     
-#if 1
-    
-    static Steinberg::Vst::EditorHost::AppInit gInit (std::make_unique<Steinberg::Vst::EditorHost::App> ());
-
+#if defined(IMPLEMENTED_EDITOR)
+        
     struct CsoundWindowController : public Steinberg::Vst::EditorHost::IWindowController, public Steinberg::IPlugFrame
     {
     public:
@@ -243,6 +243,34 @@ namespace csound {
         Steinberg::Vst::EditorHost::IWindow* window {nullptr};
         bool resizeViewRecursionGard {false};
     };
+    
+    //~ class App : public Steinberg::VST3::Hosting::IApplication
+    //~ {
+    //~ public:
+        //~ ~App () noexcept override {
+        //~ }
+        //~ void init (const std::vector<std::string>& args) override {
+        //~ }
+        //~ void terminate () override {
+        //~ }
+    //~ private:
+        //~ enum OpenFlags
+        //~ {
+            //~ kSetComponentHandler = 1 << 0,
+            //~ kSecondWindow = 1 << 1,
+        //~ };
+        //~ void openEditor (const std::string& path, VST3::Optional<VST3::UID> effectID, uint32 flags) {
+        //~ }
+        //~ void createViewAndShow (IEditController* controller) {
+        //~ }
+        //~ Steinberg::VST3::Hosting::Module::Ptr module {nullptr};
+        //~ Steinberg::IPtr<Steinberg::Vst::PlugProvider> plugProvider {nullptr};
+        //~ Vst::HostApplication pluginContext;
+        //~ std::shared_ptr<WindowController> windowController;
+    //~ };
+    
+    //~ static Steinberg::Vst::EditorHost::AppInit gInit (std::make_unique<App> ());
+
 #endif
     
     /**
@@ -531,9 +559,8 @@ namespace csound {
                 }
             }
         }
-        
+#if defined(IMPLEMENTED_EDITOR)
         void showPluginEditorWindow() {
-            Steinberg::Vst::EditorHost::IPlatform::instance().run(std::vector<std::string>());
             auto view = owned(controller->createView(Steinberg::Vst::ViewType::kEditor));
             if (!view) {
                 csound->Message(csound, "vst3_plugin_t::showPluginEditorWindow: controller does not provide its own editor!\n");\
@@ -557,6 +584,7 @@ namespace csound {
             }
 #endif
         }
+#endif
         void setTempo(double new_tempo) {
             processContext.tempo = new_tempo;
         }
@@ -829,18 +857,45 @@ namespace csound {
         };
     };
 
+#if defined(IMPLEMENTED_EDITOR)
+
     struct VST3EDIT : public csound::OpcodeBase<VST3EDIT> {
         // Inputs.
         MYFLT *i_vst3_handle;
         // State.
         vst3_plugin_t *vst3_plugin;
+        /** 
+         * Set up a display, a window, and an associated event loop 
+         * for showing the plugin editor. These will run until the user 
+         * closes the editor window,
+         */
         int init(CSOUND *csound) {
             int result = OK;
             vst3_plugin = get_plugin(i_vst3_handle);
+#if defined(LINUXX)
+#ifdef EDITORHOST_GTK
+        app = Gtk::Application::create ("net.steinberg.vstsdk.editorhost");
+        application->init (cmdArgs);
+        eventLoop ();
+
+#else
+            // Connect to X server
+            std::string displayName (getenv ("DISPLAY"));
+            if (displayName.empty ())
+                displayName = ":0.0";
+            auto display = XOpenDisplay (displayName.data ());
+            RunLoop::instance ().setDisplay (display);
+            application->init (cmdArgs);
+            eventLoop ();
+            XCloseDisplay (display);
+#endif
+#endif
             vst3_plugin->showPluginEditorWindow();
             return result;
         };
     };
+    
+#endif
 
     struct VST3MIDIOUT : public csound::OpcodeBase<VST3MIDIOUT> {
         // Inputs.
@@ -1155,7 +1210,9 @@ namespace csound {
         {"vst3audio",       sizeof(VST3AUDIO),      0, 3, "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm", "M", &VST3AUDIO::init_, &VST3AUDIO::audio_, 0},
         {"vst3info",        sizeof(VST3INFO),       0, 1, "", "i", &VST3INFO::init_, 0, 0}, 
         {"vst3init",        sizeof(VST3INIT),       0, 1, "i", "TTo", &VST3INIT::init_, 0, 0},
+#if defined(IMPLEMENTED_EDITOR)
         {"vst3edit",        sizeof(VST3EDIT),       0, 1, "", "i", &VST3EDIT::init_, 0, 0},
+#endif
         {"vst3midiout",     sizeof(VST3MIDIOUT),    0, 3, "", "ikkkk", &VST3MIDIOUT::init_, &VST3MIDIOUT::kontrol_, 0},
         {"vst3note",        sizeof(VST3NOTE),       0, 3, "i", "iiiii", &VST3NOTE::init_, &VST3NOTE::kontrol_, 0},
         {"vst3paramget",    sizeof(VST3PARAMGET),   0, 3, "k", "ik", &VST3PARAMGET::init_, &VST3PARAMGET::kontrol_, 0},
