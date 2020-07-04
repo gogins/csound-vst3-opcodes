@@ -298,7 +298,7 @@ a Csound buss channel.
 
 ### Examples
 
-See [vst3-opcodes.csd](#vst3-opcodes.csd).
+See [vst3-opcodes.csd](#example).
 
 ### See Also
 
