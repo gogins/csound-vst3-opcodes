@@ -71,7 +71,8 @@
  *     terminates all plugins and deallocates all state.
  */
  
-#define DEBUGGING 1
+#define DEBUGGING 0
+#define PARAMETER_DEBUGGING 1
 
 namespace Steinberg {
     extern FUnknown* gStandardPluginContext;
@@ -309,7 +310,7 @@ namespace csound {
     struct vst3_plugin_t  {
         vst3_plugin_t() {};
         virtual ~vst3_plugin_t() {
-#if defined(DEBUGGING)
+#if DEBUGGING
             std::fprintf(stderr, "vst3_plugin_t::~vst3_plugin_t.\n");
 #endif
         }
@@ -320,7 +321,7 @@ namespace csound {
             hostProcessData.numSamples = blockSize;
             processContext.continousTimeSamples = continousFrames;
             paramTransferrer.transferChangesTo(inputParameterChanges);
-#if defined(DEBUGGING)
+#if DEBUGGING
             if (inputParameterChanges.getParameterCount() > 0) {
                 csound->Message(csound, "vst3_plugin_t::preprocess: inputParameterChanges parameters: %d.\n", 
                     inputParameterChanges.getParameterCount());
@@ -375,7 +376,7 @@ namespace csound {
         }
         void setParameter(uint32 id, double value, int32 sampleOffset) {
             paramTransferrer.addChange(id, value, sampleOffset);
-#if defined(DEBUGGING)
+#if PARAMETER_DEBUGGING
             csound->Message(csound, "vst3_plugin_t::setParameter: id: %4d  value: %9.4f  offset: %d\n", id, value, sampleOffset);
 #endif
         }
@@ -1027,7 +1028,7 @@ namespace csound {
                 note_off_time = note_on_time + MYFLT(opds.insdshead->p3.value);
                 // In case of real-time performance with indefinite p3...
             } else if (note_duration == FL(0.0)) {
-#if defined(DEBUGGING)
+#if DEBUGGING
                 csound->Message(csound,
                                     Str("vstnote::init: not scheduling 0 duration note.\n"));
 #endif
@@ -1063,7 +1064,7 @@ namespace csound {
             note_off_event.noteOff.tuning = note_on_event.noteOn.tuning;
             note_off_event.noteOff.velocity = 0;
             note_off_event.noteOff.noteId = note_on_event.noteOn.noteId;
-#if defined(DEBUGGING)
+#if DEBUGGING
             log(csound, "vst3note::init:    current_time:                %12.5f [%12d]\n", current_time, csound->GetCurrentTimeSamples(csound));
             log(csound, "                   note_on_event time:          %12.5f\n", note_on_time);
             log(csound, "                   delta_time:                  %12.5f\n", delta_time);
@@ -1089,7 +1090,7 @@ namespace csound {
             // Offset does not seem to apply to the notoff callback.
             auto current_time = csound->GetCurrentTimeSamples(csound) / csound->GetSr(csound);
             note_off_event.sampleOffset = 0; 
-#if defined(DEBUGGING)
+#if DEBUGGING
             log(csound, "vst3note::noteoff: current_time:                %12.5f [%12d]\n", current_time, csound->GetCurrentTimeSamples(csound));
             log(csound, "                   note_off_event.type:         %d\n", note_off_event.type);
             log(csound, "                   note_off_event.sampleOffset: %d\n", note_off_event.sampleOffset);
@@ -1131,7 +1132,7 @@ namespace csound {
             int result = OK;
             parameter_id = int(*k_parameter_id);
             *k_parameter_value = vst3_plugin->controller->getParamNormalized(parameter_id);
-#if defined(DEBUGGING)
+#if PARAMETER_DEBUGGING
             if (*k_parameter_value != old_parameter_value) {
                 log(csound, "vst3paramget::kontrol: id: %4d  value: %9.4f\n", parameter_id, *k_parameter_value);
                 old_parameter_value = *k_parameter_value;
@@ -1170,7 +1171,7 @@ namespace csound {
                 int64_t current_time_frames = csound->GetCurrentTimeSamples(csound);
                 Steinberg::int32 delta_frames = current_time_frames - block_start_frames;
                 vst3_plugin->setParameter(parameter_id, parameter_value, delta_frames);;
-#if defined(DEBUGGING)
+#if PARAMETER_DEBUGGING
                 log(csound, "vst3paramset::kontrol: id: %4d  value: %9.4f  delta_frames: %4d\n", parameter_id, parameter_value, delta_frames);
 #endif
                 prior_parameter_id = parameter_id;
@@ -1283,12 +1284,12 @@ namespace csound {
 #endif
 
 extern "C" {
-#if defined(DEBUGGING)
+#if DEBUGGING
     std::hash<std::thread::id> thread_hasher;
 #endif
     
     PUBLIC int csoundModuleCreate(CSOUND *csound) {
-#if defined(DEBUGGING)
+#if DEBUGGING
         csound->Message(csound, "csoundModuleCreate: csound: %p thread: %ld\n", csound,
                         thread_hasher(std::this_thread::get_id()));
 #endif
@@ -1297,7 +1298,7 @@ extern "C" {
     }
 
     PUBLIC int csoundModuleInit(CSOUND *csound) {
-#if defined(DEBUGGING)
+#if DEBUGGING
         csound->Message(csound, "csoundModuleInit: csound: %p thread: %ld\n", csound,
                         thread_hasher(std::this_thread::get_id()));
 #endif
@@ -1315,7 +1316,7 @@ extern "C" {
     }
 
     PUBLIC int csoundModuleDestroy(CSOUND *csound) {
-#if defined(DEBUGGING)
+#if DEBUGGING
         csound->Message(csound, "csoundModuleDestroy: csound: %p thread: %ld\n",
                         csound,
                         thread_hasher(std::this_thread::get_id()));

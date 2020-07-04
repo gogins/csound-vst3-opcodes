@@ -49,7 +49,7 @@ connect "Reverb", "outleft", "Master_Output", "inleft"
 connect "Reverb", "outright", "Master_Output", "inright"
 
 alwayson "JX10_Output"
-alwayson "Piano_Output""
+alwayson "Piano_Output"
 alwayson "Note_Expression_Output"
 alwayson "Delay"
 alwayson "Reverb"
@@ -70,11 +70,40 @@ vst3info gi_vst3_handle_adelay
 gi_vst3_handle_ambience vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/mda-vst3.vst3", "mda Ambience", 1
 vst3info gi_vst3_handle_ambience
 
+// Array of instrument plugins indexed by instrument number.
 
-// Currently the Pianoteq does not support vst3 on Linux. I asked Modartt about this.
-// Julien said it is because Pianoteq uses JUCE, which currently does not 
-// support vst3 on Linux. 
-// gi_vst3_handle vst3init "/home/mkg/Pianoteq_6.vst3", 1
+gi_plugins[] init 4
+gi_plugins[2] init gi_vst3_handle_piano
+gi_plugins[3] init gi_vst3_handle_jx10
+gi_plugins[4] init gi_vst3_handle_noteexpression
+
+// Score generating instrument.
+
+gi_iterations init 500
+gi_duration init 2
+gi_time_step init .125
+gi_loudness init 70
+instr Score_Generator
+i_time = p2
+i_instrument = p4
+i_c = p5
+i_y = p6
+i_bass = p7
+i_range = p8
+i_time_step = 1 / 8
+i_iteration = 0
+while i_iteration < gi_iterations do
+    i_iteration = i_iteration + 1
+    i_time = p2 + (i_iteration * gi_time_step)
+    // Normalized logistic equation:
+    i_y1 = i_c * i_y * (1 - i_y) * 4
+    i_y = i_y1
+    i_pitch = floor(i_bass + (i_y * i_range)) 
+    event_i "i", i_instrument, i_time, gi_duration, i_pitch, gi_loudness
+    prints "   %f => i %f %f %f %f %f\n", i_y, i_instrument, i_time, gi_duration, i_pitch, gi_loudness
+od
+prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+endin
 
 instr Piano
 i_note_id vst3note gi_vst3_handle_piano, 0, p4, p5, p3
@@ -105,7 +134,6 @@ outleta "outright", a_out_right
 prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
-
 instr JX10_Output
 a_out_left, a_out_right vst3audio gi_vst3_handle_jx10 
 outleta "outleft", a_out_left
@@ -114,12 +142,27 @@ prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrst
 endin
 
 instr Print_Info
-// Parameter values should have been changed.
-vst3info gi_vst3_handle_noteexpression
+i_target_plugin = p4
+i_vst3_plugin init gi_plugins[p4]
+vst3info i_vst3_plugin
 prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 instr Param_Change
+i_target_plugin = p4
+i_vst3_plugin init gi_plugins[p4]
+k_parameter_id init p5
+k_parameter_value init p6
+vst3paramset i_vst3_plugin, k_parameter_id, k_parameter_value
+prints "%-24.24s i %9.4f t %9.4f d %9.4f target: %3d  id: %3d  value: %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p6, active(p1)
+endin
+
+instr Save_Preset
+vst3paramset gi_vst3_handle_noteexpression, 16, .1
+prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+endin
+
+instr Load_Preset
 vst3paramset gi_vst3_handle_noteexpression, 16, .1
 prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
@@ -137,7 +180,7 @@ instr Reverb
 a_in_left inleta "inleft"
 a_in_right inleta "inright"
 k_old_size vst3paramget gi_vst3_handle_ambience, 0
-vst3paramset gi_vst3_handle_ambience, 0, 20
+vst3paramset gi_vst3_handle_ambience, 0, .95
 vst3paramset gi_vst3_handle_ambience, 3, .9
 vst3presetsave gi_vst3_handle_ambience, "ambience.preset"
 a_out_left, a_out_right vst3audio gi_vst3_handle_ambience, a_in_left, a_in_right
@@ -155,9 +198,10 @@ endin
 
 </CsInstruments>
 <CsScore>
-i 1 1.382 4.5 60 60
-i 1 .503 5.20384 72 60
-i "Param_Change" 2 1
-i "Print_Info" 3 1
+f 0 240
+i "Score_Generator" 1 1 2 .989 .5 36 60
+i "Print_Info" 3, 1, 3
+// Change to "Broken Piano".
+i "Param_Change" 10 1 2 1886548852 4
 </CsScore>
 </CsoundSynthesizer>
