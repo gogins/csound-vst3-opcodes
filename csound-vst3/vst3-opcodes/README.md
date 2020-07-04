@@ -170,7 +170,7 @@ plugin module and its resources. Remember to use '/' instead of '\\' as the
 path separator.
 
 *S_plugin_name* -- the name of a plugin within the module. If you do not know 
-the name of the plugin, run with *i_verbse" set to true to find the name.
+the name of the plugin, run with *i_verbose" set to true to find the name.
 
 *i_verbose* -- print a list of all the plugins defined in the module.
 
@@ -450,7 +450,6 @@ use '/' instead of '\\' as the path separator.
 ### See Also
 
 [vst3audio](#vst3audio), 
-
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
 [vst3midiout](#vst3midiout), 

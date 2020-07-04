@@ -13,6 +13,11 @@
  * favor of spelling out all namespaces. 
  */
  
+#define DEBUGGING 0
+#define PARAMETER_DEBUGGING 0
+#define PROCESS_DEBUGGING 0
+#define EDITOR_IMPLEMENTED 0 
+ 
 // This one must come first to avoid conflict with Csound #defines.
 #include <thread>
 
@@ -36,7 +41,7 @@
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/imediaserver.h"
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/iparameterclient.h"
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/miditovst.h"
-#if defined(IMPLEMENTED_EDITOR)
+#if EDITOR_IMPLEMENTED
 #include "public.sdk/samples/vst-hosting/editorhost/source/editorhost.h"
 #include "public.sdk/samples/vst-hosting/editorhost/source/platform/appinit.h"
 #include "public.sdk/samples/vst-hosting/editorhost/source/platform/iapplication.h"
@@ -55,25 +60,22 @@
 #include "public.sdk/source/vst/vstpresetfile.h"
 
 /**
- *(1) VST3 Modules may implement any number of VST3 plugins.
- *(2) The vst3init opcode uses a singleton vst3_host_t instance to load a 
+ * (1) VST3 Modules may implement any number of VST3 plugins.
+ * (2) The vst3init opcode uses a singleton vst3_host_t instance to load a 
  *     VST3 Module, and obtains from the Module a VST3 PluginFactory.
- *(3) All of the VST3 ClassInfo objects exposed by the PluginFactory 
+ * (3) All of the VST3 ClassInfo objects exposed by the PluginFactory 
  *     are iterated.
- *(4) Either the first PlugProvider, or the PlugProviders that is named in 
- *     the vst3init call, is used to create a vst3_plugin_t instance, which 
- *     actually obtains the interfaces called by Csound to use the plugin.
- *(5) The vst3_plugin initializes its IComponent, IAudioProcessor, and 
- *    IEditController interfaces for communication with Csound.
- *(6) A handle to the vst3_plugin_t instance is returned by vst3init to the 
+ * (4) The plugin that is named in the vst3init call is used to create a 
+ *     vst3_plugin_t instance, which actually obtains the interfaces called 
+ *     by Csound to use the plugin.
+ * (5) The vst3_plugin initializes its IComponent, IAudioProcessor, and 
+ *     IEditController interfaces for communication with Csound.
+ * (6) A handle to the vst3_plugin_t instance is returned by vst3init to the 
  *     user, who must pass it to all other vst3 opcodes.
- *(7) When Csound calls csoundModuleDestroy, the vst3_host_t instance 
+ * (7) When Csound calls csoundModuleDestroy, the vst3_host_t instance 
  *     terminates all plugins and deallocates all state.
  */
  
-#define DEBUGGING 0
-#define PARAMETER_DEBUGGING 1
-
 namespace Steinberg {
     extern FUnknown* gStandardPluginContext;
 };
@@ -121,7 +123,7 @@ namespace csound {
         return midiCCMapping;
     }
     
-#if defined(IMPLEMENTED_EDITOR)
+#if EDITOR_IMPLEMENTED
         
     struct CsoundWindowController : public Steinberg::Vst::EditorHost::IWindowController, public Steinberg::IPlugFrame
     {
@@ -275,6 +277,8 @@ namespace csound {
 
 #endif
 
+    // Does this do any good? I dunno.
+
     class ComponentHandler : public Steinberg::Vst::IComponentHandler
     {
     public:
@@ -315,13 +319,13 @@ namespace csound {
 #endif
         }
         void preprocess(int64_t continousFrames) {
-#if defined(DEBUGGING2)
+#if PROCESS_DEBUGGING
             csound->Message(csound, "vst3_plugin_t::preprocess: hostProcessData.numSamples: %d.\n", hostProcessData.numSamples);
 #endif
             hostProcessData.numSamples = blockSize;
             processContext.continousTimeSamples = continousFrames;
             paramTransferrer.transferChangesTo(inputParameterChanges);
-#if DEBUGGING
+#if PARAMETER_DEBUGGING
             if (inputParameterChanges.getParameterCount() > 0) {
                 csound->Message(csound, "vst3_plugin_t::preprocess: inputParameterChanges parameters: %d.\n", 
                     inputParameterChanges.getParameterCount());
@@ -333,7 +337,7 @@ namespace csound {
             inputParameterChanges.clearQueue();
         }
         bool process(int64_t continuous_frames) {
-#if defined(DEBUGGING2)
+#if PROCESS_DEBUGGING
             csound->Message(csound, "vst3_plugin_t::process: time in frames: %ld.\n", continuous_frames);
 #endif
             if (!processor || !isProcessing) {
@@ -602,7 +606,7 @@ namespace csound {
                 }
             }
         }
-#if defined(IMPLEMENTED_EDITOR)
+#if EDITOR_IMPLEMENTED
         void showPluginEditorWindow() {
             auto view = owned(controller->createView(Steinberg::Vst::ViewType::kEditor));
             if (!view) {
@@ -843,7 +847,7 @@ namespace csound {
                 vst3_plugin->process(current_time_in_frames);
                 for (int channel_index = 0; channel_index < output_channel_count; ++channel_index) {
                     for (int frame_index = 0; frame_index < frame_count; ++frame_index) {
-#if defined(DEBUGGING2)
+#if PROCESS_DEBUGGING
                         log(csound, "vst3audio::audio for 32 bits: sample[%4d][%4d]: opcode: %f plugin: %f\n", 
                             channel_index, frame_index, a_output_channels[channel_index][frame_index], plugin_output_channels_32[channel_index][frame_index]);
 #endif
@@ -860,7 +864,7 @@ namespace csound {
                 for (int channel_index = 0; channel_index < output_channel_count; ++channel_index) {
                     for (int frame_index = 0; frame_index < frame_count; ++frame_index) {
                         a_output_channels[channel_index][frame_index] = plugin_output_channels_64[channel_index][frame_index];
-#if defined(DEBUGGING2)
+#if PROCESS_DEBUGGING
                         log(csound, "vst3audio::audio for 64 bits: sample[%4d][%4d]: opcode: %f plugin: %f\n", 
                             channel_index, frame_index, a_output_channels[channel_index][frame_index], plugin_output_channels_64[channel_index][frame_index]);
 #endif
@@ -904,7 +908,7 @@ namespace csound {
         };
     };
 
-#if defined(IMPLEMENTED_EDITOR)
+#if EDITOR_IMPLEMENTED
 
     struct VST3EDIT : public csound::OpcodeBase<VST3EDIT> {
         // Inputs.
@@ -1265,7 +1269,7 @@ namespace csound {
         {"vst3audio",       sizeof(VST3AUDIO),      0, 3, "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm", "M", &VST3AUDIO::init_, &VST3AUDIO::audio_, 0},
         {"vst3info",        sizeof(VST3INFO),       0, 1, "", "i", &VST3INFO::init_, 0, 0}, 
         {"vst3init",        sizeof(VST3INIT),       0, 1, "i", "TTo", &VST3INIT::init_, 0, 0},
-#if defined(IMPLEMENTED_EDITOR)
+#if EDITOR_IMPLEMENTED
         {"vst3edit",        sizeof(VST3EDIT),       0, 1, "", "i", &VST3EDIT::init_, 0, 0},
 #endif
         {"vst3midiout",     sizeof(VST3MIDIOUT),    0, 3, "", "ikkkk", &VST3MIDIOUT::init_, &VST3MIDIOUT::kontrol_, 0},

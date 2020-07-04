@@ -74,6 +74,6 @@ The VST3 opcodes have exactly the same names as the vst4cs opcodes, except
 that in each opcode name, "vst" is replaced by "vst3", for example "vstinit" 
 becomes "vst3init".
 
-The VST3 opcodes behave exactly the same way as the vst4cs opcodes, except 
+The VST3 opcodes behave more or less the same way as the vst4cs opcodes, except 
 that the VST3 protocol applies parameter changes with sample frame accuracy 
 and interpolation.

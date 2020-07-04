@@ -35,14 +35,12 @@ several other plugins in the VST3 SDK. Parameters and presets also are used.
 sr      = 48000
 ksmps   = 100
 nchnls  = 2
-0dbfs   = 5
+0dbfs   = 20
 
 connect "JX10_Output", "outleft", "Delay", "inleft"
 connect "JX10_Output", "outright", "Delay", "inright"
 connect "Piano_Output", "outleft", "Delay", "inleft"
 connect "Piano_Output", "outright", "Delay", "inright"
-connect "Note_Expression_Output", "outleft", "Delay", "inleft"
-connect "Note_Expression_Output", "outright", "Delay", "inright"
 connect "Delay", "outleft", "Reverb", "inleft"
 connect "Delay", "outright", "Reverb", "inright"
 connect "Reverb", "outleft", "Master_Output", "inleft"
@@ -50,7 +48,6 @@ connect "Reverb", "outright", "Master_Output", "inright"
 
 alwayson "JX10_Output"
 alwayson "Piano_Output"
-alwayson "Note_Expression_Output"
 alwayson "Delay"
 alwayson "Reverb"
 alwayson "Master_Output"
@@ -61,21 +58,18 @@ vst3info gi_vst3_handle_jx10
 gi_vst3_handle_piano vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/mda-vst3.vst3", "mda Piano", 1
 vst3info gi_vst3_handle_piano
 
-gi_vst3_handle_noteexpression vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/noteexpressionsynth.vst3", "Note Expression Synth", 1
-vst3info gi_vst3_handle_noteexpression
-
 gi_vst3_handle_adelay vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/mda-vst3.vst3", "mda Delay", 1
 vst3info gi_vst3_handle_adelay
 
 gi_vst3_handle_ambience vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/mda-vst3.vst3", "mda Ambience", 1
 vst3info gi_vst3_handle_ambience
 
-// Array of instrument plugins indexed by instrument number.
+// Array of instrument plugins indexed by instrument number, for sending 
+// parameter changes.
 
-gi_plugins[] init 4
-gi_plugins[2] init gi_vst3_handle_piano
-gi_plugins[3] init gi_vst3_handle_jx10
-gi_plugins[4] init gi_vst3_handle_noteexpression
+gi_plugins[] init 5
+gi_plugins[3] init gi_vst3_handle_piano
+gi_plugins[4] init gi_vst3_handle_jx10
 
 // Score generating instrument.
 
@@ -105,6 +99,15 @@ od
 prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
+instr Param_Change
+i_target_plugin = p4
+i_vst3_plugin init gi_plugins[p4]
+k_parameter_id init p5
+k_parameter_value init p6
+vst3paramset i_vst3_plugin, k_parameter_id, k_parameter_value
+prints "%-24.24s i %9.4f t %9.4f d %9.4f target: %3d  id: %3d  value: %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p6, active(p1)
+endin
+
 instr Piano
 i_note_id vst3note gi_vst3_handle_piano, 0, p4, p5, p3
 prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
@@ -127,13 +130,6 @@ outleta "outright", a_out_right
 prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
-instr Note_Expression_Output
-a_out_left, a_out_right vst3audio gi_vst3_handle_noteexpression
-outleta "outleft", a_out_left
-outleta "outright", a_out_right
-prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
-endin
-
 instr JX10_Output
 a_out_left, a_out_right vst3audio gi_vst3_handle_jx10 
 outleta "outleft", a_out_left
@@ -148,23 +144,20 @@ vst3info i_vst3_plugin
 prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
-instr Param_Change
-i_target_plugin = p4
-i_vst3_plugin init gi_plugins[p4]
-k_parameter_id init p5
-k_parameter_value init p6
-vst3paramset i_vst3_plugin, k_parameter_id, k_parameter_value
-prints "%-24.24s i %9.4f t %9.4f d %9.4f target: %3d  id: %3d  value: %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p6, active(p1)
-endin
-
 instr Save_Preset
-vst3paramset gi_vst3_handle_noteexpression, 16, .1
-prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+i_target_plugin = p4
+S_preset_name init p5
+i_vst3_plugin init gi_plugins[p4]
+vst3presetsave i_vst3_plugin, S_preset_name
+prints "%-24.24s i %9.4f t %9.4f d %9.4f target: %3d  preset: %s #%3d\n", nstrstr(p1), p1, p2, p3, i_target_plugin, S_preset_name, active(p1)
 endin
 
 instr Load_Preset
-vst3paramset gi_vst3_handle_noteexpression, 16, .1
-prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+i_target_plugin = p4
+S_preset_name init p5
+i_vst3_plugin init gi_plugins[p4]
+vst3presetload i_vst3_plugin, S_preset_name
+prints "%-24.24s i %9.4f t %9.4f d %9.4f target: %3d  preset: %s #%3d\n", nstrstr(p1), p1, p2, p3, i_target_plugin, S_preset_name, active(p1)
 endin
 
 instr Delay
@@ -198,10 +191,16 @@ endin
 
 </CsInstruments>
 <CsScore>
-f 0 240
-i "Score_Generator" 1 1 2 .989 .5 36 60
-i "Print_Info" 3, 1, 3
-// Change to "Broken Piano".
-i "Param_Change" 10 1 2 1886548852 4
+f 0 72
+i "Score_Generator" 1 1 3 .989 .5 36 60
+i "Score_Generator" 2 1 4 .989 .5 78 12
+; Stores original filter state...
+i "Save_Preset" 1 1 4 "jx10.preset"
+; Changes filter state...
+i "Param_Change" 10 1 4 6 .1
+i "Print_Info" 10.5, 1, 4
+; Restores original filter state.
+i "Load_Preset" 12 1 4 "jx10.preset"
+i "Print_Info" 12.5, 1, 4
 </CsScore>
 </CsoundSynthesizer>
