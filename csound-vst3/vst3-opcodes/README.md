@@ -52,7 +52,7 @@ parameters, or notes may be used.
 
 ## Example
 
-### `vst3-opcodes.csd'
+### vst3-opcodes.csd
 
 ```
 <CsoundSynthesizer>
@@ -297,6 +297,8 @@ plugin must be sent to some other sink in Csound, such as an opcode output or
 a Csound buss channel.
 
 ### Examples
+
+See [vst3-opcodes.csd](#vst3-opcodes.csd).
 
 ### See Also
 
