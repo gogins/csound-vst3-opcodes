@@ -38,8 +38,10 @@
 #include "pluginterfaces/vst/ivsteditcontroller.h"
 #include "pluginterfaces/vst/ivstprocesscontext.h"
 #include "pluginterfaces/vst/ivstunits.h"
+#if EDITOR_IMPLEMENTED
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/imediaserver.h"
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/iparameterclient.h"
+#endif
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/miditovst.h"
 #if EDITOR_IMPLEMENTED
 #include "public.sdk/samples/vst-hosting/editorhost/source/editorhost.h"
@@ -77,7 +79,7 @@
  */
  
 namespace Steinberg {
-    extern FUnknown* gStandardPluginContext;
+    FUnknown* gStandardPluginContext;
 };
 
 namespace csound {
@@ -275,8 +277,6 @@ namespace csound {
     
     //~ static Steinberg::Vst::EditorHost::AppInit gInit (std::make_unique<App> ());
 
-#endif
-
     // Does this do any good? I dunno.
 
     class ComponentHandler : public Steinberg::Vst::IComponentHandler
@@ -305,6 +305,8 @@ namespace csound {
         Steinberg::uint32 PLUGIN_API addRef () override { return 1000; }
         Steinberg::uint32 PLUGIN_API release () override { return 1000; }
     };
+
+#endif
 
     /**
      * This class manages one instance of one plugin and all of its 
@@ -390,14 +392,16 @@ namespace csound {
             classInfo = classInfo_;
             component = provider->getComponent();
             controller = provider->getController();
+#if EDITOR_IMPLEMENTED
             if (controller) {
                 controller->setComponentHandler(component_handler());
             }
+#endif
             processor = component.get();
             Steinberg::FUnknownPtr<Steinberg::Vst::IMidiMapping> midiMapping(controller);
             initProcessData();
             paramTransferrer.setMaxParameters(1000);
-            midiCCMapping = initMidiCtrlerAssignment(component, midiMapping);
+            // midiCCMapping = initMidiCtrlerAssignment(component, midiMapping);
             csound->Message(csound, "vst3_plugin_t::initialize completed.\n");
             return true;
         }
@@ -450,6 +454,7 @@ namespace csound {
         bool isPortInRange(int32 port, int32 channel) const {
             return port < kMaxMidiMappingBusses && !midiCCMapping[port][channel].empty();
         }
+#if EDITOR_IMPLEMENTED
         bool processVstEvent(const Steinberg::Vst::IMidiClient::Event& event, int32 port) {
             auto vstEvent = Steinberg::Vst::midiToEvent(event.type, event.channel, event.data0, event.data1);
             if (vstEvent) {
@@ -483,6 +488,7 @@ namespace csound {
             }
             return false;
         }
+#endif
         void print_information() {
             Steinberg::TUID controllerClassTUID;
             if (component->getControllerClassId(controllerClassTUID) != Steinberg::kResultOk) {
@@ -606,6 +612,9 @@ namespace csound {
                 }
             }
         }
+        void setTempo(double new_tempo) {
+            processContext.tempo = new_tempo;
+        }
 #if EDITOR_IMPLEMENTED
         void showPluginEditorWindow() {
             auto view = owned(controller->createView(Steinberg::Vst::ViewType::kEditor));
@@ -631,14 +640,11 @@ namespace csound {
             }
 #endif
         }
-#endif
-        void setTempo(double new_tempo) {
-            processContext.tempo = new_tempo;
-        }
         static ComponentHandler *component_handler() {
             static ComponentHandler component_handler_;
             return &component_handler_;
         }
+#endif
         CSOUND* csound = nullptr;
         Steinberg::IPtr<Steinberg::Vst::PlugProvider> provider;
         VST3::Hosting::ClassInfo classInfo;
