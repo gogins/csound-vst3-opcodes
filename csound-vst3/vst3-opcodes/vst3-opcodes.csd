@@ -118,11 +118,6 @@ i_note_id vst3note gi_vst3_handle_jx10, 0, p4, p5, p3
 prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
-instr Piano
-i_note_id vst3note gi_vst3_handle_piano, 0, p4, p5, p3
-prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
-endin
-
 instr Piano_Output
 a_out_left, a_out_right vst3audio gi_vst3_handle_piano 
 outleta "outleft", a_out_left
