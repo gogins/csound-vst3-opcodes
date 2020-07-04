@@ -346,11 +346,11 @@ See [vst3-opcodes.csd](#example).
 [vst3audio](#vst3audio), 
 
 [vst3info](#vst3info), 
-[vst3init](#vst3init),
+[vst3init](#vst3init), 
 [vst3midiout](#vst3midiout), 
-[vst3note](#vst3note),
+[vst3note](#vst3note), 
 [vst3paramget](#vst3paramget), 
-[vst3paramset](#vst3paramset),
+[vst3paramset](#vst3paramset), 
 [vst3presetload](#vst3presetload), 
 [vst3presetsave](#vst3presetsave), 
 [vts3tempo](#vts3tempo)
