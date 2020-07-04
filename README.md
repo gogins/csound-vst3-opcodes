@@ -88,3 +88,5 @@ becomes "vst3init".
 The VST3 opcodes behave more or less the same way as the vst4cs opcodes, except 
 that the VST3 protocol applies parameter changes with sample frame accuracy 
 and interpolation.
+
+For a reference to the opcodes, see their [README.md](csound-vst3/vst3-opcodes/README.md).
