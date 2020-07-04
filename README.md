@@ -56,11 +56,10 @@ Possibly your build will at first fail because you are missing some package
 dependency. Use the Ubuntu package search to identify the missing packages and 
 install them.
 
-When the VST3 SDK builds 100% including the tests passing, then still in the 
-build diretory, execute:
+When the VST3 SDK builds 100% including the tests passing, then return to the 
+main directory and execute:
 ```
-cmake ../vst3sdk -DCMAKE_BUILD_TYPE=Release -DSMTG_MYPLUGINS_SRC_PATH=../csound-vst3
-make -j4
+bash clean-build.bash
 ```
 
 ## Installation

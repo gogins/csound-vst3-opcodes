@@ -339,6 +339,8 @@ busses, parameters, presets, and presets.
 
 ### Examples
 
+See [vst3-opcodes.csd](#example).
+
 ### See Also
 
 [vst3audio](#vst3audio), 
@@ -391,6 +393,8 @@ the name of the plugin, run with *i_verbose" set to true to find the name.
 *i_verbose* -- print a list of all the plugins defined in the module.
 
 ### Examples
+
+See [vst3-opcodes.csd](#example).
 
 ### See Also
 
@@ -446,6 +450,8 @@ parameters changes during performance, a new MIDI channel message is
 immediately sent.
 
 ### Examples
+
+See [vst3-opcodes.csd](#example).
 
 ### See Also
 
@@ -508,8 +514,6 @@ Csound is 1 second).
 Note: Be sure the instrument containing **vst3note** is not finished before the 
 duration of the note, otherwise you'll have a 'hung' note.
 
-### Examples
-
 ### See Also
 
 [vst3audio](#vst3audio), 
@@ -561,6 +565,8 @@ Most parameters have default values that can be printed by using
 [vst3info](#vst3info). 
 
 ### Examples
+
+See [vst3-opcodes.csd](#example).
 
 ### See Also
 
@@ -618,6 +624,8 @@ immediately updated with a new parameter value.
 
 ### Examples
 
+See [vst3-opcodes.csd](#example).
+
 ### See Also
 
 [vst3audio](#vst3audio), 
@@ -661,6 +669,8 @@ of a program identifier plus the value of each parameter in the preset.
 use '/' instead of '\\' as the path separator.
 
 ### Examples
+
+See [vst3-opcodes.csd](#example).
 
 ### See Also
 
@@ -706,6 +716,8 @@ parameters in the program.
 use '/' instead of '\\' as the path separator.
 
 ### Examples
+
+See [vst3-opcodes.csd](#example).
 
 ### See Also
 
@@ -753,8 +765,6 @@ By default, Csound's musical tempo is 1 beat per second, so that note onsets
 and durations can be specified in seconds. But Csound's musical tempo can be 
 changed and, if it does change, the plugin's tempo should be changed to 
 match. Tempo changes can occur at k-rate.
-
-### Examples
 
 ### See Also
 

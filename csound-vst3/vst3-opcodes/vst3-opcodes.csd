@@ -193,7 +193,7 @@ endin
 <CsScore>
 f 0 72
 i "Score_Generator" 1 1 3 .989 .5 36 60
-i "Score_Generator" 2 1 4 .989 .5 78 12
+i "Score_Generator" 2 1 4 .989 .5 78 6
 ; Stores original filter state...
 i "Save_Preset" 1 1 4 "jx10.preset"
 ; Changes filter state...
