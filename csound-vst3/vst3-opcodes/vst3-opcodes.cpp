@@ -30,6 +30,7 @@
 #include "pluginterfaces/gui/iplugviewcontentscalesupport.h"
 #include "pluginterfaces/vst/ivstaudioprocessor.h"
 #include "pluginterfaces/vst/ivstcomponent.h"
+#include "pluginterfaces/vst/ivsteditcontroller.h"
 #include "pluginterfaces/vst/ivstprocesscontext.h"
 #include "pluginterfaces/vst/ivstunits.h"
 #include "public.sdk/samples/vst-hosting/audiohost/source/media/imediaserver.h"
@@ -77,7 +78,7 @@ namespace Steinberg {
 };
 
 namespace csound {
-        
+            
     enum
     {
         kMaxMidiMappingBusses = 4,
@@ -272,7 +273,34 @@ namespace csound {
     //~ static Steinberg::Vst::EditorHost::AppInit gInit (std::make_unique<App> ());
 
 #endif
-    
+
+    class ComponentHandler : public Steinberg::Vst::IComponentHandler
+    {
+    public:
+        Steinberg::tresult PLUGIN_API beginEdit (Steinberg::Vst::ParamID id) override {
+            SMTG_DBPRT1 ("beginEdit called (%d)\n", id);
+            return Steinberg::kNotImplemented;
+        }
+        Steinberg::tresult PLUGIN_API performEdit (Steinberg::Vst::ParamID id, Steinberg::Vst::ParamValue valueNormalized) override {
+            SMTG_DBPRT2 ("performEdit called (%d, %f)\n", id, valueNormalized);
+            return Steinberg::kNotImplemented;
+        }
+        Steinberg::tresult PLUGIN_API endEdit (Steinberg::Vst::ParamID id) override {
+            SMTG_DBPRT1 ("endEdit called (%d)\n", id);
+            return Steinberg::kNotImplemented;
+        }
+        Steinberg::tresult PLUGIN_API restartComponent (Steinberg::int32 flags) override {
+            SMTG_DBPRT1 ("restartComponent called (%d)\n", flags);
+            return Steinberg::kNotImplemented;
+        }
+    private:
+        Steinberg::tresult PLUGIN_API queryInterface (const Steinberg::TUID /*_iid*/, void** /*obj*/) override {
+            return Steinberg::kNoInterface;
+        }
+        Steinberg::uint32 PLUGIN_API addRef () override { return 1000; }
+        Steinberg::uint32 PLUGIN_API release () override { return 1000; }
+    };
+
     /**
      * This class manages one instance of one plugin and all of its 
      * communications with Csound, including audio input and output, 
@@ -292,6 +320,12 @@ namespace csound {
             hostProcessData.numSamples = blockSize;
             processContext.continousTimeSamples = continousFrames;
             paramTransferrer.transferChangesTo(inputParameterChanges);
+#if defined(DEBUGGING)
+            if (inputParameterChanges.getParameterCount() > 0) {
+                csound->Message(csound, "vst3_plugin_t::preprocess: inputParameterChanges parameters: %d.\n", 
+                    inputParameterChanges.getParameterCount());
+            }
+#endif
         }
         void postprocess() { 
             eventList.clear();
@@ -339,8 +373,11 @@ namespace csound {
             csound->Message(csound, "vst3_plugin::setBlockSize: blockSize:  %9d\n", blockSize);
             return result;
         }
-        void setParameter(uint32  id, double value, int32 sampleOffset) {
+        void setParameter(uint32 id, double value, int32 sampleOffset) {
             paramTransferrer.addChange(id, value, sampleOffset);
+#if defined(DEBUGGING)
+            csound->Message(csound, "vst3_plugin_t::setParameter: id: %4d  value: %9.4f  offset: %d\n", id, value, sampleOffset);
+#endif
         }
         bool initialize(CSOUND *csound_, const VST3::Hosting::ClassInfo &classInfo_, Steinberg::Vst::PlugProvider *provider_) {
             csound = csound_;
@@ -348,6 +385,9 @@ namespace csound {
             classInfo = classInfo_;
             component = provider->getComponent();
             controller = provider->getController();
+            if (controller) {
+                controller->setComponentHandler(component_handler());
+            }
             processor = component.get();
             Steinberg::FUnknownPtr<Steinberg::Vst::IMidiMapping> midiMapping(controller);
             initProcessData();
@@ -528,7 +568,9 @@ namespace csound {
                     title.toMultiByte(Steinberg::kCP_Utf8);
                     Steinberg::String units(parameterInfo.units);
                     units.toMultiByte(Steinberg::kCP_Utf8);
-                    csound->Message(csound, "               parameter:  index: %4d: id: %12d name: %-64s units: %-16s default: %9.4f\n", i, parameterInfo.id, title.text8(), units.text8(), parameterInfo.defaultNormalizedValue);
+                    auto value = controller->getParamNormalized(parameterInfo.id);
+                    csound->Message(csound, "               parameter:  index: %4d: id: %12d name: %-64s units: %-16s default: %9.4f value: %9.4f\n", 
+                        i, parameterInfo.id, title.text8(), units.text8(), parameterInfo.defaultNormalizedValue, value);
                 }
             }
             // Units, program lists, and programs, in a flat list.
@@ -587,6 +629,10 @@ namespace csound {
 #endif
         void setTempo(double new_tempo) {
             processContext.tempo = new_tempo;
+        }
+        static ComponentHandler *component_handler() {
+            static ComponentHandler component_handler_;
+            return &component_handler_;
         }
         CSOUND* csound = nullptr;
         Steinberg::IPtr<Steinberg::Vst::PlugProvider> provider;
@@ -964,18 +1010,18 @@ namespace csound {
         MYFLT note_off_time;
         MYFLT delta_time;
         int delta_frames;
+        MYFLT note_off_delta_time;
+        int note_off_delta_frames;
         bool on = false;
         int init(CSOUND *csound) {
             int result = OK;
             vst3_plugin = get_plugin(i_vst3_handle);
             auto current_time = csound->GetCurrentTimeSamples(csound) / csound->GetSr(csound);
+            // If scheduled after the beginning of the kperiod, will be slightly later.
             note_on_time = opds.insdshead->p2.value;
             note_duration = *i_duration;
             delta_time = note_on_time - current_time;
-            int delta_frames = 0;
-            if (delta_time > 0) {
-                delta_frames = int(delta_time * csound->GetSr(csound));
-            }
+            int delta_frames = delta_time * csound->GetSr(csound);
             // Use the warped p3 to schedule the note off message.
             if (note_duration > FL(0.0)) {
                 note_off_time = note_on_time + MYFLT(opds.insdshead->p3.value);
@@ -989,12 +1035,12 @@ namespace csound {
             } else {
                 note_off_time = note_on_time + FL(1000000.0);
             }
-            channel = static_cast<int16>(*i_channel) & 0xf;
+            channel = Steinberg::int16(*i_channel) & 0xf;
             // Split the real-valued MIDI key number
             // into an integer key number and an integer number of cents(plus or
             // minus 50 cents).
             key = *i_key;
-            pitch = static_cast<int16>(key + 0.5);
+            pitch = int16(key + 0.5);
             tuning = (double(*i_key) - double(key)) * double(100.0);
             velocity = *i_velocity;
             velocity = velocity / 127.;
@@ -1005,7 +1051,7 @@ namespace csound {
             vst3_plugin->note_id++;
             note_on_event.type = Steinberg::Vst::Event::EventTypes::kNoteOnEvent;
             note_on_event.sampleOffset = delta_frames;
-            note_on_event.noteOn.channel = static_cast<int16_t>(*i_channel);
+            note_on_event.noteOn.channel = Steinberg::int16(*i_channel);
             note_on_event.noteOn.pitch = pitch;
             note_on_event.noteOn.tuning = tuning;
             note_on_event.noteOn.velocity = velocity;
@@ -1020,6 +1066,9 @@ namespace csound {
 #if defined(DEBUGGING)
             log(csound, "vst3note::init:    current_time:                %12.5f [%12d]\n", current_time, csound->GetCurrentTimeSamples(csound));
             log(csound, "                   note_on_event time:          %12.5f\n", note_on_time);
+            log(csound, "                   delta_time:                  %12.5f\n", delta_time);
+            log(csound, "                   delta_frames:                %1d\n", delta_frames);
+            log(csound, "                   offset:                      %d\n", note_on_event.sampleOffset);
             log(csound, "                   note_on_event.type:          %d\n", note_on_event.type);
             log(csound, "                   note_on_event.sampleOffset:  %d\n", note_on_event.sampleOffset);
             log(csound, "                   note_on_event.channel:       %d\n", note_on_event.noteOn.channel);
@@ -1037,16 +1086,11 @@ namespace csound {
         }
         int noteoff(CSOUND *csound) {
             int result = OK;
+            // Offset does not seem to apply to the notoff callback.
             auto current_time = csound->GetCurrentTimeSamples(csound) / csound->GetSr(csound);
-            auto noteoff_delta_time = note_off_time - current_time;
-            int noteoff_delta_frames = 0;
-            if (noteoff_delta_time > 0) {
-                noteoff_delta_frames = int(noteoff_delta_frames * csound->GetSr(csound));
-            }
-            note_off_event.sampleOffset = noteoff_delta_frames;
+            note_off_event.sampleOffset = 0; 
 #if defined(DEBUGGING)
             log(csound, "vst3note::noteoff: current_time:                %12.5f [%12d]\n", current_time, csound->GetCurrentTimeSamples(csound));
-            log(csound, "                   note_off_event time:         %12.5f\n", note_off_time);
             log(csound, "                   note_off_event.type:         %d\n", note_off_event.type);
             log(csound, "                   note_off_event.sampleOffset: %d\n", note_off_event.sampleOffset);
             log(csound, "                   note_off_event.channel:      %d\n", note_off_event.noteOff.channel);
@@ -1075,14 +1119,24 @@ namespace csound {
         MYFLT *k_parameter_id;
         // State.
         vst3_plugin_t *vst3_plugin;
+        Steinberg::int32 parameter_id;
+        MYFLT old_parameter_value;
         int init(CSOUND *csound) {
             int result = OK;
             vst3_plugin = get_plugin(i_vst3_handle);
+            log(csound, "vst3paramget::kontrol: id: %4d  value: %9.4f\n", parameter_id, *k_parameter_value);
             return result;
         };
         int kontrol(CSOUND *csound) {
             int result = OK;
-            *k_parameter_value = vst3_plugin->controller->getParamNormalized(*k_parameter_id);
+            parameter_id = int(*k_parameter_id);
+            *k_parameter_value = vst3_plugin->controller->getParamNormalized(parameter_id);
+#if defined(DEBUGGING)
+            if (*k_parameter_value != old_parameter_value) {
+                log(csound, "vst3paramget::kontrol: id: %4d  value: %9.4f\n", parameter_id, *k_parameter_value);
+                old_parameter_value = *k_parameter_value;
+            }
+#endif
             return result;
         };
     };
@@ -1095,30 +1149,30 @@ namespace csound {
         // State.
         vst3_plugin_t *vst3_plugin;
         Steinberg::int32 parameter_id;
-        double parameter_value;
         Steinberg::int32 prior_parameter_id;
+        double parameter_value;
         double prior_parameter_value;
-        double start_time;
-        double on_time;
-        double delta_time;
-        size_t delta_frames;
+        int64_t frames_per_kperiod;
         int init(CSOUND *csound) {
             int result = OK;
             vst3_plugin = get_plugin(i_vst3_handle);
+            frames_per_kperiod = csound->GetKsmps(csound);
             return result;
         };
         int kontrol(CSOUND *csound) {
             int result = OK;
-            parameter_id = static_cast<Steinberg::int32>(*k_parameter_id);
-            parameter_value = static_cast<double>(*k_parameter_value);
+            parameter_id = int(*k_parameter_id);
+            parameter_value = double(*k_parameter_value);
+            // Find the frame at the beginning of the kperiod, and compute the 
+            // delta frames for "now."
             if (parameter_id != prior_parameter_id || parameter_value != prior_parameter_value) {
-                on_time = opds.insdshead->p2.value;
-                delta_time = on_time - start_time;
-                int delta_frames = 0;
-                if (delta_time > 0) {
-                    delta_frames = int(delta_time * csound->GetSr(csound));
-                }
-                vst3_plugin->setParameter(parameter_id, parameter_value, delta_frames);
+                int64_t block_start_frames = opds.insdshead->kcounter * frames_per_kperiod;
+                int64_t current_time_frames = csound->GetCurrentTimeSamples(csound);
+                Steinberg::int32 delta_frames = current_time_frames - block_start_frames;
+                vst3_plugin->setParameter(parameter_id, parameter_value, delta_frames);;
+#if defined(DEBUGGING)
+                log(csound, "vst3paramset::kontrol: id: %4d  value: %9.4f  delta_frames: %4d\n", parameter_id, parameter_value, delta_frames);
+#endif
                 prior_parameter_id = parameter_id;
                 prior_parameter_value = parameter_value;
             }

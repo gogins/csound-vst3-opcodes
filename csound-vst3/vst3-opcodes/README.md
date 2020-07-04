@@ -32,7 +32,7 @@ The opcodes consist of:
   5. [vst3note](#vst3note)
   6. [vst3paramget](#vst3paramget)
   7. [vst3paramset](#vst3paramset)
-  8.  [vst3presetsave](#vst3presetsave)
+  8. [vst3presetsave](#vst3presetsave)
   9. [vst3presetset](#vst3presetset)
   10. [vts3tempo](#vts3tempo)
   
@@ -158,28 +158,27 @@ loadable module.
 
 ### Syntax
 
-i_handle **vst3init** S_module_filepath, S_plugin_name [,i_verbose]
+i_handle **vst3init** S_module_pathname, S_plugin_name [,i_verbose]
 
 ### Initialization
 
 *i_handle* -- the handle that identifies the plugin, to be passed to the other 
 vst3opcodes that use the plugin.
 
-*S_module_filepath* -- the full pathname of the vst plugin shared library (dll, 
-on Windows). Remember to use '/' instead of '\\' as the path separator.
+*S_module_pathname* -- the pathname of a ".vst3" directory that contains a 
+plugin module and its resources. Remember to use '/' instead of '\\' as the 
+path separator.
 
-*S_plugin_name* -- the name of the plugin within the module. If there is only 
-one plugin in the module, this can be an empty string.
+*S_plugin_name* -- the name of a plugin within the module. If you do not know 
+the name of the plugin, run with *i_verbse" set to true to find the name.
 
-*i_verbose* -- print plugin information when loading. This includes a list of all 
-the plugins defined in the module.
+*i_verbose* -- print a list of all the plugins defined in the module.
 
 ### Examples
 
 ### See Also
 
 [vst3audio](#vst3audio), 
-
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
 [vst3midiout](#vst3midiout), 
@@ -315,6 +314,7 @@ Author:
 Michael Gogins<br>
 http://michaelgogins.tumblr.com<br>
 michael dot gogins at gmail dot com<br>
+
 ## vst3paramget
 
 vst3-opcodes -- VST plugin hosting in Csound.
@@ -349,7 +349,6 @@ Most parameters have default values that can be printed by using
 ### See Also
 
 [vst3audio](#vst3audio), 
-
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
 [vst3midiout](#vst3midiout), 
@@ -497,7 +496,6 @@ use '/' instead of '\\' as the path separator.
 ### See Also
 
 [vst3audio](#vst3audio), 
-
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
 [vst3midiout](#vst3midiout), 
