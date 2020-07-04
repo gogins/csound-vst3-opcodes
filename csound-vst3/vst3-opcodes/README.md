@@ -115,8 +115,8 @@ vst3info gi_vst3_handle_jx10
 gi_vst3_handle_piano vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/mda-vst3.vst3", "mda Piano", 1
 vst3info gi_vst3_handle_piano
 
-gi_vst3_handle_adelay vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/mda-vst3.vst3", "mda Delay", 1
-vst3info gi_vst3_handle_adelay
+gi_vst3_handle_delay vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/mda-vst3.vst3", "mda Delay", 1
+vst3info gi_vst3_handle_delay
 
 gi_vst3_handle_ambience vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/mda-vst3.vst3", "mda Ambience", 1
 vst3info gi_vst3_handle_ambience
@@ -215,7 +215,7 @@ endin
 instr Delay
 a_in_left inleta "inleft"
 a_in_right inleta "inright"
-a_out_left, a_out_right vst3audio gi_vst3_handle_adelay, a_in_left, a_in_right
+a_out_left, a_out_right vst3audio gi_vst3_handle_delay, a_in_left, a_in_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
 prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
