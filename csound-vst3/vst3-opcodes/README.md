@@ -71,12 +71,12 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 *a_audio_input_n* -- one of zero or more, up to 32, audio input channels.
 
-*a_audio_output_n* -- one of zero or more audio output channels.
+*a_audio_output_n* -- one of zero or more, up to 32, auto output channels.
 
 Note that the mininum of the plugin inputs and the opcode inputs, and the 
 minimum of the plugin outputs and the opcode outputs, are used. It is assumed 
-that the main audio busses in the plugin are the first input buss and first 
-output buss.
+that the "Main" audio and event busses in the plugin are the first input 
+busses and first output busses.
 
 The audio sent to the plugin must come from some other source in Csound, such
 as an input opcode or a Csound buss channel, and the audio received from the 
@@ -100,9 +100,9 @@ a Csound buss channel.
 
 ### Credits
 
-Michael Gogins 
-http://michaelgogins.tumblr.com
-michael dot gogins at gmail dot com
+Michael Gogins<br>
+http://michaelgogins.tumblr.com<br>
+michael dot gogins at gmail dot com<br>
 
 ## vst3info
 
@@ -145,6 +145,7 @@ Author:
 Michael Gogins<br>
 http://michaelgogins.tumblr.com<br>
 michael dot gogins at gmail dot com<br>
+
 ## vst3init
 
 vst3-opcodes -- VST3 plugin hosting in Csound.
@@ -405,7 +406,6 @@ immediately updated with a new parameter value.
 ### See Also
 
 [vst3audio](#vst3audio), 
-
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
 [vst3midiout](#vst3midiout), 
