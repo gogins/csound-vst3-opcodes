@@ -344,7 +344,6 @@ See [vst3-opcodes.csd](#example).
 ### See Also
 
 [vst3audio](#vst3audio), 
-
 [vst3info](#vst3info), 
 [vst3init](#vst3init), 
 [vst3midiout](#vst3midiout), 
