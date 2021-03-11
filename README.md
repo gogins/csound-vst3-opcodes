@@ -33,6 +33,12 @@ itself.
 
 ### Linux
 
+The build does not work from the release archive. You must clone the Git 
+repository:
+```
+git clone https://github.com/gogins/csound-vst3-opcodes.git
+```
+
 In the root directory of your local repository, execute 
 `bash update-submodules.bash` to initialize the Steinberg VST SDK submodules. 
 
