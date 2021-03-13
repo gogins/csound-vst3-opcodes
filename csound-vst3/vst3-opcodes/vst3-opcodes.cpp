@@ -24,6 +24,7 @@
 #include <csound/csdl.h>
 #include <csound/csound.h>
 #include <csound/OpcodeBase.hpp>
+#include <array>
 #include <cstring>
 #include <codecvt>
 #include <fstream>
