@@ -15,7 +15,7 @@ set(vst3_plugins_sources
     ${SDK_ROOT}/public.sdk/source/vst/hosting/hostclasses.h
     ${SDK_ROOT}/public.sdk/source/vst/hosting/module.cpp
     ${SDK_ROOT}/public.sdk/source/vst/hosting/module.h
-    ${SDK_ROOT}/public.sdk/source/vst/hosting/optional.h
+    ${SDK_ROOT}/public.sdk/source/vst/utility/optional.h
     ${SDK_ROOT}/public.sdk/source/vst/hosting/parameterchanges.cpp
     ${SDK_ROOT}/public.sdk/source/vst/hosting/parameterchanges.h 
     ${SDK_ROOT}/public.sdk/source/vst/hosting/pluginterfacesupport.cpp
@@ -24,9 +24,9 @@ set(vst3_plugins_sources
     ${SDK_ROOT}/public.sdk/source/vst/hosting/plugprovider.h
     ${SDK_ROOT}/public.sdk/source/vst/hosting/processdata.cpp
     ${SDK_ROOT}/public.sdk/source/vst/hosting/processdata.h
-    ${SDK_ROOT}/public.sdk/source/vst/hosting/stringconvert.cpp
-    ${SDK_ROOT}/public.sdk/source/vst/hosting/stringconvert.h
-    ${SDK_ROOT}/public.sdk/source/vst/hosting/uid.h
+    ${SDK_ROOT}/public.sdk/source/vst/utility/stringconvert.cpp
+    ${SDK_ROOT}/public.sdk/source/vst/utility/stringconvert.h
+    ${SDK_ROOT}/public.sdk/source/vst/utility/uid.h
     ${SDK_ROOT}/public.sdk/source/vst/vstinitiids.cpp
     vst3-opcodes.cpp
     )

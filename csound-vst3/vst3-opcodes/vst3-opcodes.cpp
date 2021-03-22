@@ -55,11 +55,11 @@
 #include "public.sdk/source/vst/hosting/eventlist.h"
 #include "public.sdk/source/vst/hosting/hostclasses.h"
 #include "public.sdk/source/vst/hosting/module.h"
-#include "public.sdk/source/vst/hosting/optional.h"
+#include "public.sdk/source/vst/utility/optional.h"
 #include "public.sdk/source/vst/hosting/parameterchanges.h"
 #include "public.sdk/source/vst/hosting/plugprovider.h"
 #include "public.sdk/source/vst/hosting/processdata.h"
-#include "public.sdk/source/vst/hosting/stringconvert.h"
+#include "public.sdk/source/vst/utility/stringconvert.h"
 #include "public.sdk/source/vst/vstpresetfile.h"
 
 /**
@@ -930,7 +930,7 @@ namespace csound {
         int init(CSOUND *csound) {
             int result = OK;
             vst3_plugin = get_plugin(i_vst3_handle);
-#if defined(LINUXX)
+#if defined(LINUX)
 #ifdef EDITORHOST_GTK
         app = Gtk::Application::create ("net.steinberg.vstsdk.editorhost");
         application->init (cmdArgs);
