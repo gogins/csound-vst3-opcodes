@@ -1273,19 +1273,20 @@ namespace csound {
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 #endif
     static OENTRY localops[] = {
-        {"vst3audio",       sizeof(VST3AUDIO),      0, 3, "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm", "M", &VST3AUDIO::init_, &VST3AUDIO::audio_, 0},
-        {"vst3info",        sizeof(VST3INFO),       0, 1, "", "i", &VST3INFO::init_, 0, 0}, 
-        {"vst3init",        sizeof(VST3INIT),       0, 1, "i", "TTo", &VST3INIT::init_, 0, 0},
+        {"vst3audio",           sizeof(VST3AUDIO),      0, 3, "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm", "M", &VST3AUDIO::init_, &VST3AUDIO::audio_, 0},
+        {"vst3info",            sizeof(VST3INFO),       0, 1, "", "i", &VST3INFO::init_, 0, 0}, 
+        {"vst3init",            sizeof(VST3INIT),       0, 1, "i", "TTo", &VST3INIT::init_, 0, 0},
 #if EDITOR_IMPLEMENTED
-        {"vst3edit",        sizeof(VST3EDIT),       0, 1, "", "i", &VST3EDIT::init_, 0, 0},
+        {"vst3edit",            sizeof(VST3EDIT),       0, 1, "", "i", &VST3EDIT::init_, 0, 0},
 #endif
-        {"vst3midiout",     sizeof(VST3MIDIOUT),    0, 3, "", "ikkkk", &VST3MIDIOUT::init_, &VST3MIDIOUT::kontrol_, 0},
-        {"vst3note",        sizeof(VST3NOTE),       0, 3, "i", "iiiii", &VST3NOTE::init_, &VST3NOTE::kontrol_, 0},
-        {"vst3paramget",    sizeof(VST3PARAMGET),   0, 3, "k", "ik", &VST3PARAMGET::init_, &VST3PARAMGET::kontrol_, 0},
-        {"vst3paramset",    sizeof(VST3PARAMSET),   0, 3, "", "ikk", &VST3PARAMSET::init_, &VST3PARAMSET::kontrol_, 0},
-        {"vst3presetload",  sizeof(VST3PRESETLOAD), 0, 1, "", "iT", &VST3PRESETLOAD::init_, 0, 0},
-        {"vst3presetsave",  sizeof(VST3PRESETSAVE), 0, 1, "", "iT", &VST3PRESETSAVE::init_, 0, 0},
-        {"vst3tempo",       sizeof(VST3TEMPO),      0, 2, "", "ki", 0, &VST3TEMPO::init_, 0 /*, &vstedit_deinit*/ },
+        {"vst3midiout",         sizeof(VST3MIDIOUT),    0, 3, "", "ikkkk", &VST3MIDIOUT::init_, &VST3MIDIOUT::kontrol_, 0},
+        {"vst3channelmessage",  sizeof(VST3MIDIOUT),    0, 3, "", "ikkkk", &VST3MIDIOUT::init_, &VST3MIDIOUT::kontrol_, 0},
+        {"vst3note",            sizeof(VST3NOTE),       0, 3, "i", "iiiii", &VST3NOTE::init_, &VST3NOTE::kontrol_, 0},
+        {"vst3paramget",        sizeof(VST3PARAMGET),   0, 3, "k", "ik", &VST3PARAMGET::init_, &VST3PARAMGET::kontrol_, 0},
+        {"vst3paramset",        sizeof(VST3PARAMSET),   0, 3, "", "ikk", &VST3PARAMSET::init_, &VST3PARAMSET::kontrol_, 0},
+        {"vst3presetload",      sizeof(VST3PRESETLOAD), 0, 1, "", "iT", &VST3PRESETLOAD::init_, 0, 0},
+        {"vst3presetsave",      sizeof(VST3PRESETSAVE), 0, 1, "", "iT", &VST3PRESETSAVE::init_, 0, 0},
+        {"vst3tempo",           sizeof(VST3TEMPO),      0, 2, "", "ki", 0, &VST3TEMPO::init_, 0 /*, &vstedit_deinit*/ },
         {0, 0, 0, 0, 0, 0,(SUBR)0,(SUBR)0,(SUBR)0}
     };
 };
