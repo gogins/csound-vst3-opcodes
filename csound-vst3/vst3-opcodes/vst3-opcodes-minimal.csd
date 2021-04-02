@@ -139,6 +139,15 @@ vst3presetload i_vst3_plugin, S_preset_name
 prints "%-24.24s i %9.4f t %9.4f d %9.4f target: %3d  preset: %s #%3d\n", nstrstr(p1), p1, p2, p3, i_target_plugin, S_preset_name, active(p1)
 endin
 
+instr Program_Change
+i_target_plugin = p4
+i_vst3_plugin init gi_plugins[p4]
+p6 = 1886548852
+k_parameter_id init p5
+k_parameter_value init p6
+vst3paramset i_vst3_plugin, k_parameter_id, k_parameter_value
+prints "%-24.24s i %9.4f t %9.4f d %9.4f target: %3d  id: %3d  value: %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p6, active(p1)
+endin
 
 instr Master_Output
 a_in_left inleta "inleft"
@@ -159,6 +168,7 @@ i "Param_Change" 10 1 4 6 .1
 i "Print_Info" 10.5, 1, 4
 ; Restores original filter state.
 i "Load_Preset" 12 1 4 "jx10.preset"
+i "Program_Change" 15 1 4 0 .5
 i "Print_Info" 12.5, 1, 4
 </CsScore>
 </CsoundSynthesizer>

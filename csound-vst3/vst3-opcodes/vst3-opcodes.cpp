@@ -14,7 +14,7 @@
  */
  
 #define DEBUGGING 0
-#define PARAMETER_DEBUGGING 0
+#define PARAMETER_DEBUGGING 1
 #define PROCESS_DEBUGGING 0
 #define EDITOR_IMPLEMENTED 0 
  
@@ -580,7 +580,7 @@ namespace csound {
                     title.toMultiByte(Steinberg::kCP_Utf8);
                     Steinberg::String units(parameterInfo.units);
                     units.toMultiByte(Steinberg::kCP_Utf8);
-                    auto value = controller->getParamNormalized(parameterInfo.id);
+                    double value = controller->getParamNormalized(parameterInfo.id);
                     csound->Message(csound, "               parameter:  index: %4d: id: %12d name: %-64s units: %-16s default: %9.4f value: %9.4f\n", 
                         i, parameterInfo.id, title.text8(), units.text8(), parameterInfo.defaultNormalizedValue, value);
                 }
@@ -599,7 +599,7 @@ namespace csound {
                              for (auto program_index = 0; program_index < program_list_info.programCount; ++program_index) {
                                 Steinberg::Vst::TChar program_name[256];
                                 i_unit_info->getProgramName(unit_info.programListId, program_index, program_name);
-                                csound->Message(csound, "               unit:       id: %4d(parent id: %4d) name: %-32s program list: id: %12d(index: %4d) program: id: %4d name: %s\n", 
+                                csound->Message(csound, "               unit:       id: %7d (parent id: %4d) name: %-32s program list: id: %12d (index: %4d) program: id: %4d name: %s\n", 
                                     unit_info.id, 
                                     unit_info.parentUnitId, 
                                     VST3::StringConvert::convert(unit_info.name).c_str(), 

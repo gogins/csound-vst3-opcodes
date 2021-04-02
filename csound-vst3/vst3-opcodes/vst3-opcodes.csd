@@ -147,6 +147,16 @@ vst3presetsave i_vst3_plugin, S_preset_name
 prints "%-24.24s i %9.4f t %9.4f d %9.4f target: %3d  preset: %s #%3d\n", nstrstr(p1), p1, p2, p3, i_target_plugin, S_preset_name, active(p1)
 endin
 
+instr Program_Change
+i_target_plugin = p4
+i_vst3_plugin init gi_plugins[p4]
+; May only be relevant to the MDA example plugins.
+k_parameter_id init 1886548852 
+k_parameter_value init p5
+vst3paramset i_vst3_plugin, k_parameter_id, k_parameter_value
+prints "%-24.24s i %9.4f t %9.4f d %9.4f target: %3d  id: %3d  value: %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, i_target_plugin, k_parameter_id, k_parameter_value, active(p1)
+endin
+
 instr Load_Preset
 i_target_plugin = p4
 S_preset_name init p5
@@ -188,14 +198,22 @@ endin
 <CsScore>
 f 0 72
 i "Score_Generator" 1 1 3 .989 .5 36 60
-i "Score_Generator" 2 1 4 .989 .5 78 6
-; Stores original filter state...
-i "Save_Preset" 1 1 4 "jx10.preset"
+i "Score_Generator" 1 1 4 .989 .5 78 6
+; Stores original parameter state...
+i "Print_Info" 1.1 1 4
+i "Save_Preset" 1.2 1 4 "jx10.preset"
+i "Print_Info" 1.3 1 4
 ; Changes filter state...
-i "Param_Change" 10 1 4 6 .1
+i "Param_Change" 10 10 4 0 .7
+i "Param_Change" 10 1 4 4 1
 i "Print_Info" 10.5 1 4
-; Restores original filter state.
-i "Load_Preset" 12 1 4 "jx10.preset"
-i "Print_Info" 12.5 1 4
+; Restores original parameter state.
+i "Load_Preset" 15 1 4 "jx10.preset"
+i "Print_Info" 15.5 1 4
+i "Program_Change" 25 1 4 12
+i "Print_Info" 30.0 1 3
+i "Program_Change" 30.1 1 3 4
+i "Print_Info" 30.2 1 3
+
 </CsScore>
 </CsoundSynthesizer>

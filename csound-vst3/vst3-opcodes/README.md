@@ -50,6 +50,36 @@ The typical lifecycle of a VST3 plugin in Csound is:
 Any number of VST3 plugins may be loaded. Any number of audio channels, VST3 
 parameters, or notes may be used. 
 
+To change to a different program (i.e., factory-defined preset), examine the 
+`vst3info` printout for a plugin and change the program using `vstparamset`, 
+with the parameter ID equal to the program list ID. The parameter value is 
+normalized, but will be mapped to the appropriate program number in the 
+program list as follows.
+
+_Normalize_
+
+double normalized = program / (double) programs;
+
+_Denormalize_
+
+int program = min (programs, normalized * (programs + 1));
+
+This however does not seem to work with the VST3 SDK example programs, and 
+they also do not work properly in the Reaper host.
+
+At this time the best practice for changing the preset of a VST3 plugin in 
+Csound is as follows:
+
+  1. Open the plugin in its standalone mode (if it has one) or in a VST3 host 
+     such as Reaper.
+  2. Edit the parameters interactively until you achieve a sound you want to 
+     use. Save the current state of the parameters as a user-defined preset.
+  3. In Csound, use vst3presetload to load your custom preset.
+  4. Alternatively, simply uset vst3paramset to send all the parameter changes 
+     that you need to define your preset before you play any notes, or define 
+     a Csound instrument that will send such parameters for you from your 
+     score.
+
 ## Example
 
 ### vst3-opcodes.csd
