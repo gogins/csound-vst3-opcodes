@@ -577,7 +577,8 @@ namespace csound {
             if (controller) {
                 int32 n = controller->getParameterCount();
                 Steinberg::Vst::ParameterInfo parameterInfo;
-                 for (int i = 0; i < n; ++i) {
+                csound->Message(csound, "               parameter count:   %4d\n", n);
+                for (int i = 0; i < n; ++i) {
                     controller->getParameterInfo(i, parameterInfo);
                     Steinberg::String title(parameterInfo.title);
                     title.toMultiByte(Steinberg::kCP_Utf8);
@@ -587,8 +588,7 @@ namespace csound {
                     csound->Message(csound, "               parameter:  index: %4d: id: %12d name: %-64s units: %-16s default: %9.4f value: %9.4f\n", 
                         i, parameterInfo.id, title.text8(), units.text8(), parameterInfo.defaultNormalizedValue, value);
                 }
-            }
-            // Units, program lists, and programs, in a flat list.
+            }            // Units, program lists, and programs, in a flat list.
             Steinberg::FUnknownPtr<Steinberg::Vst::IUnitInfo> i_unit_info(controller);
             if (i_unit_info) {
                 auto unit_count = i_unit_info->getUnitCount();
