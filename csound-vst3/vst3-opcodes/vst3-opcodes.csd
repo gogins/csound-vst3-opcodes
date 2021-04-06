@@ -15,8 +15,8 @@ This Csound piece demonstrates how to use the following vst3 opcodes:
   4.  vst3audio
   5.  vst3paramset
   6.  vst3paramget
-  7.  vst3savepreset
-  8.  vst3loadpreset
+  7.  vst3presetsave
+  8.  vst3presetload
   
 These are all the opcodes actually needed to fully use VST3 instruments and 
 effects in Csound. This piece also serves as basic unit tests for the VST3 

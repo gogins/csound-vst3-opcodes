@@ -165,10 +165,10 @@ i "Score_Generator" 2 1 4 .989 .5 78 6
 i "Save_Preset" 1 1 4 "jx10.preset"
 ; Changes filter state...
 i "Param_Change" 10 1 4 6 .1
-i "Print_Info" 10.5, 1, 4
+i "Print_Info" 10.5 1 4
 ; Restores original filter state.
 i "Load_Preset" 12 1 4 "jx10.preset"
 i "Program_Change" 15 1 4 0 .5
-i "Print_Info" 12.5, 1, 4
+i "Print_Info" 12.5 1 4
 </CsScore>
 </CsoundSynthesizer>

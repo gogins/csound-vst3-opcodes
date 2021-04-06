@@ -28,13 +28,13 @@ The opcodes consist of:
   1. [vst3audio](#vst3audio)
   2. [vst3info](#vst3info)
   3. [vst3init](#vst3init)
-  4. [vst3channelmessage](#vst3channelmessage)
+  4. [vst3midi](#vst3midi)
   5. [vst3note](#vst3note)
   6. [vst3paramget](#vst3paramget)
   7. [vst3paramset](#vst3paramset)
   8. [vst3presetsave](#vst3presetsave)
   9. [vst3presetset](#vst3presetset)
-  10. [vts3tempo](#vts3tempo)
+  10. [vst3tempo](#vts3tempo)
   
 The typical lifecycle of a VST3 plugin in Csound is:
 
@@ -43,7 +43,7 @@ The typical lifecycle of a VST3 plugin in Csound is:
      or select a loaded program with [vst3paramset](#vst3paramset).
   3. Send notes to the plugin with [vst3note](#vst3note).
   4. Send parameter changes to the plugin with [vst3paramset](#vst3paramset).
-  5. Send MIDI channel messages to the plugin with [vst3channelmessage](#vst3channelmessage).
+  5. Send MIDI channel messages to the plugin with [vst3midi](#vst3midi).
   6. In a global, always-on instrument, send audio to 
      and receive audio from the plugin with [vst3audio](#vst3audio).
      
@@ -311,6 +311,9 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 *a_audio_output_n* -- one of zero or more, up to 32, auto output channels.
 
+This opcode is used for both VST instruments and VST effects. Inputs are 
+optional for instruments.
+
 Note that the mininum of the plugin inputs and the opcode inputs, and the 
 minimum of the plugin outputs and the opcode outputs, are used. It is assumed 
 that the "Main" audio and event busses in the plugin are the first input 
@@ -330,7 +333,7 @@ See [vst3-opcodes.csd](#example).
 [vst3audio](#vst3audio), 
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
-[vst3channelmessage](#vst3channelmessage), 
+[vst3midi](#vst3midi), 
 [vst3note](#vst3note),
 [vst3paramget](#vst3paramget), 
 [vst3paramset](#vst3paramset),
@@ -371,7 +374,7 @@ See [vst3-opcodes.csd](#example).
 [vst3audio](#vst3audio), 
 [vst3info](#vst3info), 
 [vst3init](#vst3init), 
-[vst3channelmessage](#vst3channelmessage), 
+[vst3midi](#vst3midi), 
 [vst3note](#vst3note), 
 [vst3paramget](#vst3paramget), 
 [vst3paramset](#vst3paramset), 
@@ -425,7 +428,7 @@ See [vst3-opcodes.csd](#example).
 [vst3audio](#vst3audio), 
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
-[vst3channelmessage](#vst3channelmessage), 
+[vst3midi](#vst3midi), 
 [vst3note](#vst3note),
 [vst3paramget](#vst3paramget), 
 [vst3paramset](#vst3paramset),
@@ -441,17 +444,17 @@ Michael Gogins<br>
 http://michaelgogins.tumblr.com<br>
 michael dot gogins at gmail dot com<br>
 
-## vst3channelmessage
+## vst3midi
 
 vst3-opcodes -- VST plugin hosting in Csound.
 
 ### Description
 
-**vst3channelmessage** sends MIDI channel messages to a VST3 plugin.
+**vst3midi** sends MIDI channel messages to a VST3 plugin.
 
 ### Syntax
 
-**vst3channelmessage** i_handle, k_status, k_channel, k_data_1, k_data_2
+**vst3midi** i_handle, k_status, k_channel, k_data_1, k_data_2
 
 ### Initialization
 
@@ -482,7 +485,7 @@ See [vst3-opcodes.csd](#example).
 [vst3audio](#vst3audio), 
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
-[vst3channelmessage](#vst3channelmessage), 
+[vst3midi](#vst3midi), 
 [vst3note](#vst3note),
 [vst3paramget](#vst3paramget), 
 [vst3paramset](#vst3paramset),
@@ -543,7 +546,7 @@ duration of the note, otherwise you'll have a 'hung' note.
 [vst3audio](#vst3audio), 
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
-[vst3channelmessage](#vst3channelmessage), 
+[vst3midi](#vst3midi), 
 [vst3note](#vst3note),
 [vst3paramget](#vst3paramget), 
 [vst3paramset](#vst3paramset),
@@ -597,7 +600,7 @@ See [vst3-opcodes.csd](#example).
 [vst3audio](#vst3audio), 
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
-[vst3channelmessage](#vst3channelmessage), 
+[vst3midi](#vst3midi), 
 [vst3note](#vst3note),
 [vst3paramget](#vst3paramget), 
 [vst3paramset](#vst3paramset),
@@ -655,7 +658,7 @@ See [vst3-opcodes.csd](#example).
 [vst3audio](#vst3audio), 
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
-[vst3channelmessage](#vst3channelmessage), 
+[vst3midi](#vst3midi), 
 [vst3note](#vst3note),
 [vst3paramget](#vst3paramget), 
 [vst3paramset](#vst3paramset),
@@ -701,7 +704,7 @@ See [vst3-opcodes.csd](#example).
 [vst3audio](#vst3audio), 
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
-[vst3channelmessage](#vst3channelmessage), 
+[vst3midi](#vst3midi), 
 [vst3note](#vst3note),
 [vst3paramget](#vst3paramget), 
 [vst3paramset](#vst3paramset),
@@ -748,7 +751,7 @@ See [vst3-opcodes.csd](#example).
 [vst3audio](#vst3audio), 
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
-[vst3channelmessage](#vst3channelmessage), 
+[vst3midi](#vst3midi), 
 [vst3note](#vst3note),
 [vst3paramget](#vst3paramget), 
 [vst3paramset](#vst3paramset),
@@ -795,7 +798,7 @@ match. Tempo changes can occur at k-rate.
 [vst3audio](#vst3audio), 
 [vst3info](#vst3info), 
 [vst3init](#vst3init),
-[vst3channelmessage](#vst3channelmessage), 
+[vst3midi](#vst3midi), 
 [vst3note](#vst3note),
 [vst3paramget](#vst3paramget), 
 [vst3paramset](#vst3paramset),

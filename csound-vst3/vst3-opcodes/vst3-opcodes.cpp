@@ -493,18 +493,21 @@ namespace csound {
         void print_information() {
             Steinberg::TUID controllerClassTUID;
             if (component->getControllerClassId(controllerClassTUID) != Steinberg::kResultOk) {
-                csound->Message(csound, "vst3_plugin_t: This component does not export an edit controller class ID!");
+                csound->Message(csound, "vst3_plugin_t: This component does not export an edit controller class ID!\n");
             }
             Steinberg::FUID controllerClassUID;
             controllerClassUID = Steinberg::FUID::fromTUID(controllerClassTUID);
             if (controllerClassUID.isValid() == false) {
-                csound->Message(csound, "vst3_plugin_t: The edit controller class has no valid UID!");
+                csound->Message(csound, "vst3_plugin_t: The edit controller class has no valid UID!\n");
             }
             char cidString[50];
-            controllerClassUID.toRegistryString(cidString);
+            controllerClassUID.toString(cidString);
+            char iidString[50];
+            component->iid.toString(iidString);
             // Class information.
-            csound->Message(csound, "vst3_plugin_t: class:      controller class id: %s\n", cidString);
-            csound->Message(csound, "               class:      UID:                 %s\n", classInfo.ID().toString().c_str());
+            csound->Message(csound, "vst3_plugin_t: class:      module classinfo id: %s\n", classInfo.ID().toString().c_str());
+            csound->Message(csound, "               class:      component class id:  %s\n", iidString);
+            csound->Message(csound, "               class:      controller class id: %s\n", cidString);
             csound->Message(csound, "               class:      cardinality:         %i\n", classInfo.cardinality());
             csound->Message(csound, "               class:      category:            %s\n", classInfo.category().c_str());
             csound->Message(csound, "               class:      name:                %s\n", classInfo.name().c_str());
@@ -713,8 +716,8 @@ namespace csound {
             for (auto& classInfo : factory.classInfos()) {
                 count = count + 1;
                 if (verbose == true) {
-                    csound->Message(csound, "vst3_host_t::load_module: found classInfo number: %d\n", count);
-                    csound->Message(csound, "                          UID:                    %s\n", classInfo.ID().toString().c_str());
+                    csound->Message(csound, "vst3_host_t::load_module: found module classinfo: %d\n", count);
+                    csound->Message(csound, "                          module classinfo id:    %s\n", classInfo.ID().toString().c_str());
                     csound->Message(csound, "                          cardinality:            %i\n", classInfo.cardinality());
                     csound->Message(csound, "                          category:               %s\n", classInfo.category().c_str());
                     csound->Message(csound, "                          name:                   %s\n", classInfo.name().c_str());
@@ -739,15 +742,15 @@ namespace csound {
             vst3_plugin->initialize(csound, classInfo_, plugProvider);
             Steinberg::TUID controllerClassTUID;
             if (vst3_plugin->component->getControllerClassId(controllerClassTUID) != Steinberg::kResultOk) {
-                csound->Message(csound, "vst3_host_t::load_module: This component does not export an edit controller class ID!");
+                csound->Message(csound, "vst3_host_t::load_module: This component does not export an edit controller class ID!\n");
             }
             Steinberg::FUID controllerClassUID;
             controllerClassUID = Steinberg::FUID::fromTUID(controllerClassTUID);
             if (controllerClassUID.isValid() == false) {
-                csound->Message(csound, "vst3_host_t::load_module: The edit controller class has no valid UID!");
+                csound->Message(csound, "vst3_host_t::load_module: The edit controller class has no valid UID!\n");
             }
             char cidString[50];
-            controllerClassUID.toRegistryString(cidString);
+            controllerClassUID.toString(cidString);
             handle = vst3_plugins_for_handles.size();
             vst3_plugins_for_handles.push_back(vst3_plugin);
             return handle;
@@ -1199,28 +1202,29 @@ namespace csound {
         // State.
         vst3_plugin_t *vst3_plugin;
         int init(CSOUND *csound) {
-            int result = OK;
             vst3_plugin = get_plugin(i_vst3_handle);
             std::string preset_filepath = ((STRINGDAT *)S_preset_filepath)->data;
+            log(csound, "vst3presetload: preset_filepath: %s\n", preset_filepath.c_str());
             std::fstream input_stream(preset_filepath.c_str(), std::fstream::in | std::fstream::binary);
             Steinberg::MemoryStream memory_stream;
             char c;
             int32_t bytes_to_write = 1;
             int32_t bytes_written = 0;
             while (input_stream.get(c)) {
-                memory_stream.write(static_cast<void *>(&c), bytes_to_write, &bytes_written);
+                memory_stream.write(&c, sizeof(c), &bytes_written);
             }
+            auto stream_size = memory_stream.getSize();
             input_stream.close();
-            auto class_id = Steinberg::FUID::fromTUID(vst3_plugin->classInfo.ID().data());
-            auto loaded = Steinberg::Vst::PresetFile::loadPreset(&memory_stream, class_id, vst3_plugin->component,
-                             vst3_plugin->controller);
-            if (loaded == false) {
-                warn(csound, "vst3presetload: failed to load: %s\n", preset_filepath.c_str());
-                result = NOTOK;
-            } else {
-                log(csound, "vst3presetload::init: loaded: %s\n", preset_filepath.c_str());
+            Steinberg::int64 position = 0;
+            memory_stream.seek (0, Steinberg::IBStream::kIBSeekSet, &position);
+            log(csound, "vst3presetload: stream_size: %d\n", stream_size);
+            auto result = Steinberg::Vst::PresetFile::loadPreset(&memory_stream, vst3_plugin->component->iid, vst3_plugin->component);
+            if (result == false) {
+                log(csound, "vst3presetload: failed to load: %s\n", preset_filepath.c_str());
+                return NOTOK;
             }
-            return result;
+            log(csound, "vst3presetload::init: loaded: %s\n", preset_filepath.c_str());
+            return OK;
         };
     };
     
@@ -1231,22 +1235,21 @@ namespace csound {
         // State.
         vst3_plugin_t *vst3_plugin;
         int init(CSOUND *csound) {
-            int result = OK;
             vst3_plugin = get_plugin(i_vst3_handle);
+            std::string preset_filepath = ((STRINGDAT *)S_preset_filepath)->data;
+            log(csound, "vst3presetsave: preset_filepath: %s\n", preset_filepath.c_str());
             Steinberg::MemoryStream memory_stream;
-            auto class_id = Steinberg::FUID::fromTUID(vst3_plugin->classInfo.ID().data());
-            auto saved = Steinberg::Vst::PresetFile::savePreset(&memory_stream, class_id, vst3_plugin->component,
+            auto result = Steinberg::Vst::PresetFile::savePreset(&memory_stream, vst3_plugin->component->iid, vst3_plugin->component,
                              vst3_plugin->controller);
-            std::string preset_filepath =((STRINGDAT *)S_preset_filepath)->data;
-            if (saved == false) {
-                warn(csound, "vst3presetsave::init: failed to save preset: %s\n", preset_filepath.c_str());
+            if (result == false) {
+                log(csound, "vst3presetsave::init: failed to save preset: %s\n", preset_filepath.c_str());
                 return NOTOK;
             }
             std::fstream output_stream(preset_filepath.c_str(), std::fstream::out | std::fstream::trunc);
             output_stream.write(memory_stream.getData(), memory_stream.getSize());
             output_stream.close();
-                log(csound, "vst3presetsave::init: saved: %s\n", preset_filepath.c_str());
-            return result;
+            log(csound, "vst3presetsave::init: saved: %s\n", preset_filepath.c_str());
+            return OK;
         };
     };
 
