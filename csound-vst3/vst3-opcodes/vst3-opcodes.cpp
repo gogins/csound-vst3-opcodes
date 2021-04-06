@@ -1216,9 +1216,11 @@ namespace csound {
             auto stream_size = memory_stream.getSize();
             input_stream.close();
             Steinberg::int64 position = 0;
+            auto tuid = vst3_plugin->classInfo.ID().data();
+            auto classid = Steinberg::FUID::fromTUID(tuid);            
             memory_stream.seek (0, Steinberg::IBStream::kIBSeekSet, &position);
             log(csound, "vst3presetload: stream_size: %d\n", stream_size);
-            auto result = Steinberg::Vst::PresetFile::loadPreset(&memory_stream, vst3_plugin->component->iid, vst3_plugin->component);
+            auto result = Steinberg::Vst::PresetFile::loadPreset(&memory_stream, classid, vst3_plugin->component);
             if (result == false) {
                 log(csound, "vst3presetload: failed to load: %s\n", preset_filepath.c_str());
                 return NOTOK;
@@ -1238,8 +1240,10 @@ namespace csound {
             vst3_plugin = get_plugin(i_vst3_handle);
             std::string preset_filepath = ((STRINGDAT *)S_preset_filepath)->data;
             log(csound, "vst3presetsave: preset_filepath: %s\n", preset_filepath.c_str());
+            auto tuid = vst3_plugin->classInfo.ID().data();
+            auto classid = Steinberg::FUID::fromTUID(tuid);            
             Steinberg::MemoryStream memory_stream;
-            auto result = Steinberg::Vst::PresetFile::savePreset(&memory_stream, vst3_plugin->component->iid, vst3_plugin->component,
+            auto result = Steinberg::Vst::PresetFile::savePreset(&memory_stream, classid, vst3_plugin->component,
                              vst3_plugin->controller);
             if (result == false) {
                 log(csound, "vst3presetsave::init: failed to save preset: %s\n", preset_filepath.c_str());
