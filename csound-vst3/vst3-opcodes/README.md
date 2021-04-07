@@ -304,7 +304,8 @@ i "Program_Change" 30.1 1 3 4
 i "Print_Info" 30.2 1 3
 
 </CsScore>
-</CsoundSynthesizer>```
+</CsoundSynthesizer>
+```
 
 ## vst3audio
 
