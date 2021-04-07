@@ -158,7 +158,7 @@ endin
 f 0 72
 i "Score_Generator" 1 1 3 .989 .5 36 60
 i "Score_Generator" 2 1 4 .989 .5 78 6
-i "Load_Preset" 12 1 3 "/home/mkg/reaper_linux_x86_64/REAPER/Odin2-1.vstpreset"
-i "Load_Preset" 24 1 3 "/home/mkg/reaper_linux_x86_64/REAPER/Odin2-2.vstpreset"
+i "Load_Preset" 12 1 3 "Odin2-1.vstpreset"
+i "Load_Preset" 24 1 3 "Odin2-2.vstpreset"
 </CsScore>
 </CsoundSynthesizer>

@@ -158,7 +158,7 @@ endin
 f 0 72
 i "Score_Generator" 1 1 3 .989 .5 36 60
 i "Score_Generator" 2 1 4 .989 .5 78 6
-i "Load_Preset" 12 1 3 "/home/mkg/reaper_linux_x86_64/REAPER/Dexed-Chroma.vstpreset"
+i "Load_Preset" 12 1 3 "Dexed-Chroma.vstpreset"
 i "Print_Info" 12 2 3
 </CsScore>
 </CsoundSynthesizer>
