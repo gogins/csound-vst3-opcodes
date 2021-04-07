@@ -1,3 +1,7 @@
+if(APPLE)
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z")
+endif()
 set(vst3_plugins_sources
 #    ${SDK_ROOT}/public.sdk/samples/vst-hosting/editorhost/source/editorhost.cpp
 #    ${SDK_ROOT}/public.sdk/samples/vst-hosting/editorhost/source/editorhost.h
