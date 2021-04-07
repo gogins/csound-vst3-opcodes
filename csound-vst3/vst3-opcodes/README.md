@@ -5,7 +5,7 @@
 ## https://github.com/gogins/csound-vst3-opcodes
 
 These are a set of Csound opcodes that enable Csound to host VST3 
-plugins, both effect plugins and instrument plugins. The vst3-opcodes should 
+plugins: both effect plugins and instrument plugins. The vst3-opcodes should 
 work on Linux, Windows, and OS X, and on both 64-bit and 32-bit CPU 
 architectures. VST2 plugins are not supported (but the vst4cs opcodes do 
 support VST2 plugins).
@@ -33,28 +33,29 @@ The opcodes consist of:
   6. [vst3paramget](#vst3paramget)
   7. [vst3paramset](#vst3paramset)
   8. [vst3presetsave](#vst3presetsave)
-  9. [vst3presetset](#vst3presetset)
+  9. [vstpresetload](#vstpresetload)
   10. [vst3tempo](#vts3tempo)
   
 The typical lifecycle of a VST3 plugin in Csound is:
 
   1. Load the plugin with [vst3init](#vst3init).
   2. Load a preset with [vst3presetload](#vst3presetload), 
-     or select a loaded program with [vst3paramset](#vst3paramset).
+     or (supposedly, but doesn't seem to work) select a loaded program with 
+     [vst3paramset](#vst3paramset).
   3. Send notes to the plugin with [vst3note](#vst3note).
   4. Send parameter changes to the plugin with [vst3paramset](#vst3paramset).
-  5. Send MIDI channel messages to the plugin with [vst3midi](#vst3midi).
+  5. Send raw MIDI messages to the plugin with [vst3midi](#vst3midi).
   6. In a global, always-on instrument, send audio to 
      and receive audio from the plugin with [vst3audio](#vst3audio).
      
 Any number of VST3 plugins may be loaded. Any number of audio channels, VST3 
 parameters, or notes may be used. 
 
-To change to a different program (i.e., factory-defined preset), examine the 
-`vst3info` printout for a plugin and change the program using `vstparamset`, 
-with the parameter ID equal to the program list ID. The parameter value is 
-normalized, but will be mapped to the appropriate program number in the 
-program list as follows.
+Supposedly, to change to a different program (i.e., factory-defined preset), 
+examine the `vst3info` printout for a plugin and change the program using 
+`vstparamset`, with the parameter ID equal to the program list ID. The 
+parameter value is normalized, but will be mapped to the appropriate program 
+number in the program list as follows.
 
 _Normalize_
 
@@ -73,8 +74,8 @@ Csound is as follows:
   1. Open the plugin in its standalone mode (if it has one) or in a VST3 host 
      such as Reaper.
   2. Edit the parameters interactively until you achieve a sound you want to 
-     use. Save the current state of the parameters as a user-defined preset.
-  3. In Csound, use vst3presetload to load your custom preset.
+     use. Export the current state of the parameters as a preset file.
+  3. In Csound, use vst3presetload to load your custom preset file.
   4. Alternatively, simply uset vst3paramset to send all the parameter changes 
      that you need to define your preset before you play any notes, or define 
      a Csound instrument that will send such parameters for you from your 
@@ -102,8 +103,8 @@ This Csound piece demonstrates how to use the following vst3 opcodes:
   4.  vst3audio
   5.  vst3paramset
   6.  vst3paramget
-  7.  vst3savepreset
-  8.  vst3loadpreset
+  7.  vst3presetsave
+  8.  vst3presetload
   
 These are all the opcodes actually needed to fully use VST3 instruments and 
 effects in Csound. This piece also serves as basic unit tests for the VST3 
@@ -234,6 +235,16 @@ vst3presetsave i_vst3_plugin, S_preset_name
 prints "%-24.24s i %9.4f t %9.4f d %9.4f target: %3d  preset: %s #%3d\n", nstrstr(p1), p1, p2, p3, i_target_plugin, S_preset_name, active(p1)
 endin
 
+instr Program_Change
+i_target_plugin = p4
+i_vst3_plugin init gi_plugins[p4]
+; May only be relevant to the MDA example plugins.
+k_parameter_id init 1886548852 
+k_parameter_value init p5
+vst3paramset i_vst3_plugin, k_parameter_id, k_parameter_value
+prints "%-24.24s i %9.4f t %9.4f d %9.4f target: %3d  id: %3d  value: %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, i_target_plugin, k_parameter_id, k_parameter_value, active(p1)
+endin
+
 instr Load_Preset
 i_target_plugin = p4
 S_preset_name init p5
@@ -275,18 +286,25 @@ endin
 <CsScore>
 f 0 72
 i "Score_Generator" 1 1 3 .989 .5 36 60
-i "Score_Generator" 2 1 4 .989 .5 78 12
-; Stores original filter state...
-i "Save_Preset" 1 1 4 "jx10.preset"
+i "Score_Generator" 1 1 4 .989 .5 78 6
+; Stores original parameter state...
+i "Print_Info" 1.1 1 4
+i "Save_Preset" 1.2 1 4 "jx10.vstpreset"
+i "Print_Info" 1.3 1 4
 ; Changes filter state...
-i "Param_Change" 10 1 4 6 .1
-i "Print_Info" 10.5, 1, 4
-; Restores original filter state.
-i "Load_Preset" 12 1 4 "jx10.preset"
-i "Print_Info" 12.5, 1, 4
+i "Param_Change" 10 1 4 0 .7
+i "Param_Change" 10 1 4 4 1
+i "Print_Info" 10.5 1 4
+; Restores original parameter state.
+i "Load_Preset" 15 1 4 "jx10.vstpreset"
+i "Print_Info" 15.5 1 4
+i "Program_Change" 25 1 4 12
+i "Print_Info" 30.0 1 3
+i "Program_Change" 30.1 1 3 4
+i "Print_Info" 30.2 1 3
+
 </CsScore>
-</CsoundSynthesizer>
-```
+</CsoundSynthesizer>```
 
 ## vst3audio
 
@@ -311,8 +329,9 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 *a_audio_output_n* -- one of zero or more, up to 32, auto output channels.
 
-This opcode is used for both VST instruments and VST effects. Inputs are 
-optional for instruments.
+This opcode is used for both VST instruments and VST effects. For instruments, 
+inputs are allowed but not required, and may or may not actually be handled by 
+the plugin.
 
 Note that the mininum of the plugin inputs and the opcode inputs, and the 
 minimum of the plugin outputs and the opcode outputs, are used. It is assumed 
@@ -354,7 +373,8 @@ vst3-opcodes -- VST plugin hosting in Csound.
 ### Description
 
 **vst3info** prints information about the plugin module, input and output 
-busses, parameters, presets, and presets.
+busses, parameters, presets, and program lists. Not all plugins provide 
+all types of information.
 
 ### Syntax
 
@@ -398,8 +418,10 @@ vst3-opcodes -- VST3 plugin hosting in Csound.
 
 **vst3init** loads a VST3 plugin into memory for use with the 
 other vst3-opcodes. Both VST3 effects and instruments (synthesizers) can be 
-used. Note that for VST3, there may be multiple plugins defined in one 
-loadable module.
+used. 
+
+Note that for VST3, there may be multiple plugins defined in one loadable 
+module.
 
 ### Syntax
 
@@ -417,7 +439,8 @@ path separator.
 *S_plugin_name* -- the name of a plugin within the module. If you do not know 
 the name of the plugin, run with *i_verbose" set to true to find the name.
 
-*i_verbose* -- print a list of all the plugins defined in the module.
+*i_verbose* -- print a list of all the plugins defined in the module, as well 
+as other information.
 
 ### Examples
 
@@ -450,7 +473,9 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 ### Description
 
-**vst3midi** sends MIDI channel messages to a VST3 plugin.
+**vst3midi** sends raw MIDI messages to a VST3 plugin. Essentially, 
+there are all MIDI messages that can be sent as 2 or 3 bytes. System 
+exclusive messages are not handled.
 
 ### Syntax
 
@@ -474,7 +499,9 @@ vst3-opcodes -- VST plugin hosting in Csound.
 Please note, the ranges and semantics of these numbers are defined by the 
 MIDI 1.0 Standard. The messages are scheduled immediately. If any of these 
 parameters changes during performance, a new MIDI channel message is 
-immediately sent.
+immediately sent. The channel parameter is simply added to the status 
+parameter; thus, if the status code already specifies the channel number, 
+then the *k_channel* parameter should be set to zero.
 
 ### Examples
 
@@ -527,13 +554,15 @@ note, possibly useful for per-note control.
 *i_handle* -- the handle that identifies the plugin, obtained from 
 [vst3init](#vst3init).
 
-*i_midi_channel* -- The zero-based MIDI channel in the interval [0, 15] of the message.
+*i_midi_channel* -- The zero-based MIDI channel in the interval [0, 15] of the 
+message.
 
-*i_midi_key* -- The real-valued MIDI key number in the interval [0, 127] of the note. It may have a 
-fractional value that will be translated to a VST3 detuning parameter. Middle 
-"C" is key number 60.
+*i_midi_key* -- The real-valued MIDI key number in the interval [0, 127] of 
+the note. It may have a fractional value that will be translated to a VST3 
+detuning parameter. Middle "C" is key number 60.
 
-*i_midi_velocity* -- The MIDI velocity of the note in the interval [0, 127]. Mezzo-forte is 80.
+*i_midi_velocity* -- The MIDI velocity of the note in the interval [0, 127]. 
+Mezzo-forte is velocity number 80.
 
 *i_duration* -- The real-valued duration of the note in beats (by default, 1 beat in 
 Csound is 1 second).
@@ -681,7 +710,8 @@ vst3-opcodes -- VST plugin hosting in Csound.
 ### Description
 
 **vst3presetload** loads a preset from a file. A preset consists 
-of a program identifier plus the value of each parameter in the preset.
+of a component (instrument or effect) identifier, the value of each parameter in the preset, and 
+possibly other data such as a program list.
 
 ### Syntax
 
@@ -726,9 +756,10 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 ### Description
 
-**vst3presetsave** saves a plugin preset to a file. The preset consists of the 
-identifier of the current program plus the names and values of all the 
-parameters in the program.
+**vst3presetsave** saves a plugin preset to a file. The preset file stores the 
+identifier of the instrument or effect, the identifiers, names, and values of 
+all the parameters in the program, and possibly other information such as a 
+program list.
 
 ### Syntax
 
