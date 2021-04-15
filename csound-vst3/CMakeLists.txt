@@ -1,6 +1,10 @@
 # This assumes that the user has built and installed Csound on Linux.
 list(APPEND CMAKE_MODULE_PATH /usr/local/share/cmake/Csound)
 find_package(Csound REQUIRED)
+if(APPLE)
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z")
+endif()
 if(ANDROID)
     return()
 endif()
