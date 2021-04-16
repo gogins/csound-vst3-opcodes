@@ -1286,8 +1286,8 @@ namespace csound {
 #if EDITOR_IMPLEMENTED
         {"vst3edit",            sizeof(VST3EDIT),       0, 1, "", "i", &VST3EDIT::init_, 0, 0},
 #endif
-        {"vst3midiout",         sizeof(VST3MIDIOUT),    0, 3, "", "ikkkk", &VST3MIDIOUT::init_, &VST3MIDIOUT::kontrol_, 0},
-        {"vst3channelmessage",  sizeof(VST3MIDIOUT),    0, 3, "", "ikkkk", &VST3MIDIOUT::init_, &VST3MIDIOUT::kontrol_, 0},
+        {"vst3midi",            sizeof(VST3MIDIOUT),    0, 3, "", "ikkkk", &VST3MIDIOUT::init_, &VST3MIDIOUT::kontrol_, 0},
+//      {"vst3channelmessage",  sizeof(VST3MIDIOUT),    0, 3, "", "ikkkk", &VST3MIDIOUT::init_, &VST3MIDIOUT::kontrol_, 0},
         {"vst3note",            sizeof(VST3NOTE),       0, 3, "i", "iiiii", &VST3NOTE::init_, &VST3NOTE::kontrol_, 0},
         {"vst3paramget",        sizeof(VST3PARAMGET),   0, 3, "k", "ik", &VST3PARAMGET::init_, &VST3PARAMGET::kontrol_, 0},
         {"vst3paramset",        sizeof(VST3PARAMSET),   0, 3, "", "ikk", &VST3PARAMSET::init_, &VST3PARAMSET::kontrol_, 0},
