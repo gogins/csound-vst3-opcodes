@@ -35,6 +35,13 @@ jobs:
       # Runs a single command using the runners shell
       - name: Run a one-line script
         run: echo Hello, world from csound-vst3-opcodes!
+      
+      # Building the VST3 opcodes requires only the Csound header files.
+      - name: Install Csound source code
+        run: git clone --branch master https://github.com/csound/csound.git
+        
+      - name: List Csound headers
+        run: find . -name "OpcodeBase.hpp" -ls        
 
       - name: Install VST3 SDK
         run: bash update-submodules.bash
