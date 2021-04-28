@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout csound-vst3-opcodes
-      - uses: actions/checkout@v2
+        uses: actions/checkout@v2
 
       - name: Checkout csound
         uses: actions/checkout@v2
