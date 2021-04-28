@@ -1,5 +1,3 @@
-# This is a basic workflow to help you get started with Actions
-
 name: Continuous Integration
 
 # Controls when the action will run. 
@@ -20,28 +18,24 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ${{ matrix.config.os }} # we run many different builds
     strategy:
-      # just an example matrix
       matrix:
         config:
           - os: ubuntu-latest
           - os: macos-latest
           - os: windows-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout csound-vst3-opcodes
       - uses: actions/checkout@v2
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world from csound-vst3-opcodes!
-      
-      # Building the VST3 opcodes requires only the Csound header files.
-      - name: Install Csound source code
-        run: git clone --branch master https://github.com/csound/csound.git
-        
-      - name: List Csound headers
-        run: find . -name "OpcodeBase.hpp" -ls        
-
+      - name: Checkout csound
+        uses: actions/checkout@v2
+        with:
+          repository: csound/csound 
+          path: csound
+          
       - name: Install VST3 SDK
         run: bash update-submodules.bash
+        
+      #- name: Build csound-vst3-opcodes
+      # run: bash clean-build.sh
