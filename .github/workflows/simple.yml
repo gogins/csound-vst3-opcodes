@@ -30,14 +30,14 @@ jobs:
         run: bash update-submodules.bash
         
       - name: Build on Mac OS.
-        if: runner.os == "macOS"
+        if: runner.os == 'macOS'
         run: bash clean-build-macos.bash
         
       - name: Build on Linux.
-        if: runner.os == "Linux"
+        if: runner.os == 'Linux'
         run: bash clean-build-linux.bash
         
       - name: Build on Windows.
-        if: runner.os == "Windows"
+        if: runner.os == 'Windows'
         run: bash clean-build-windows.bash
         
