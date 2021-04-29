@@ -89,10 +89,10 @@ set(vst3_plugins_sources
     endif()
 
 set(target vst3_plugins)
-message("CSOUND_LIBRARIES: ${CSOUND_LIBRARIES}")
 add_library(${target} MODULE ${vst3_plugins_sources})
-target_link_libraries(${target} PRIVATE base sdk ${CSOUND_LIBRARIES} ${vst3_plugins_PLATFORM_LIBS})
-target_include_directories(${target} PRIVATE ${CSOUND_INCLUDE_DIRS})
+target_link_libraries(${target} PRIVATE base sdk ${vst3_plugins_PLATFORM_LIBS})
+target_include_directories(${target} PRIVATE ${CMAKE_SOURCE_DIR}/../csound/include ${CMAKE_SOURCE_DIR}/../csound/H)
+target_compile_definitions(${target} PRIVATE USE_DOUBLE)
 if (APP_PROPERTIES)
     set_target_properties(${target} PROPERTIES ${APP_PROPERTIES})
 endif()
