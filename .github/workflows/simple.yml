@@ -13,8 +13,8 @@ on:
 
 jobs:
   build:
-    # The type of runner that the job will run on.
-    runs-on: ${{ matrix.config.os }} 
+    # The type of runner that the job will run on
+    runs-on: ${{ matrix.config.os }} # we run many different builds
     strategy:
       matrix:
         config:
@@ -30,16 +30,16 @@ jobs:
         run: bash update-submodules.bash
         
       - name: Build on Mac OS.
-        if: runner.os == 'macOS'
+        if: runner.os == "macOS"
         run: bash clean-build-macos.bash
         
       - name: Build on Linux.
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get install cmake gcc "libstdc++6" libx11-xcb-dev libxcb-util-dev libxcb-cursor-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev libfontconfig1-dev libcairo2-dev libgtkmm-3.0-dev libsqlite3-dev libxcb-keysyms1-dev
-          bash clean-build-linux.bash
+        if: runner.os == "Linux"
+        run: bash clean-build-linux.bash
         
       - name: Build on Windows.
-        if: runner.os == 'Windows'
+        if: runner.os == "Windows"
+        # Add msbuild to PATH.
+        uses: microsoft/setup-msbuild@v1.0.2        
         run: bash clean-build-windows.bash
         
