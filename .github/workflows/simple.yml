@@ -56,8 +56,10 @@ jobs:
         run: bash clean-build-windows.bash
         
       - name: Release
-        # You may pin to the exact commit or the version.
         uses: softprops/action-gh-release@v0.1.5
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
         with:
           # Note-worthy description of changes in release
           #body: # optional
