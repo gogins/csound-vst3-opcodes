@@ -1208,8 +1208,8 @@ namespace csound {
             std::fstream input_stream(preset_filepath.c_str(), std::fstream::in | std::fstream::binary);
             Steinberg::MemoryStream memory_stream;
             char c;
-            int32_t bytes_to_write = 1;
-            int32_t bytes_written = 0;
+            Steinberg::int32 bytes_to_write = 1;
+            Steinberg::int32 bytes_written = 0;
             while (input_stream.get(c)) {
                 memory_stream.write(&c, sizeof(c), &bytes_written);
             }
