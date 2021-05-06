@@ -8,6 +8,6 @@ dir
 cmake --build .
 dir
 dir x64
-dir x64/Debug
-dir x64/Release
+dir lib
+find . -name "*vst3_plugins*" -ls
 
