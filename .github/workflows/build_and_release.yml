@@ -62,21 +62,21 @@ jobs:
         with:
           name: MacOS-libvst3_plugins.so
           path: |
-            build-macos/lib/
+            build-macos/lib/libvst3_plugins.so
             
       - uses: actions/upload-artifact@v2
         if: runner.os == 'Windows'
         with:
-          name: Windows-vst3_plugins.dll
+          name: Windows-vst3_plugins
           path: |
-            build-windows/lib/
+            build-windows/lib/vst3_plugins.dll
 
       - uses: actions/upload-artifact@v2
         if: runner.os == 'Linux'
         with:
-          name: Linux-libvst3_plugins.so
+          name: Linux-libvst3_plugins
           path: |
-            build-linux/lib/
+            build-linux/lib/libvst3_plugins.so
         
       - name: Release
         uses: softprops/action-gh-release@v0.1.5
