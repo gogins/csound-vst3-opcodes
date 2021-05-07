@@ -60,6 +60,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         if: runner.os == 'macOS'
         with:
+          needs: Build on Mac OS
           name: MacOS-libvst3_plugins.so
           path: |
             ./lib/Debug/libvst3_plugins.so
@@ -67,6 +68,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         if: runner.os == 'Windows'
         with:
+          needs: Build on Windows
           name: Windows-vst3_plugins.dll
           path: |
             ./lib/Debug/vst3_plugins.dll
@@ -74,6 +76,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         if: runner.os == 'Linux'
         with:
+          needs: Build on Linux
           name: Linux-libvst3_plugins.so
           path: |
             ./lib/Debug/libvst3_plugins.so
