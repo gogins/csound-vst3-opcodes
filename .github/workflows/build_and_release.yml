@@ -18,27 +18,24 @@ jobs:
       matrix:
         config:
         - name: "Windows Latest MSVC"
-          artifact: "Windows-MSVC.7z"
           os: windows-latest
           cc: "cl"
           cxx: "cl"
           environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
         - name: "Ubuntu Latest GCC"
-          artifact: "Linux.7z"
           os: ubuntu-latest
           cc: "gcc"
           cxx: "g++"
         - name: "macOS Latest Clang"
-          artifact: "macOS.7z"
           os: macos-latest
           cc: "clang"
           cxx: "clang++"
 
     steps:
-      - name: Check out csound-vst3-opcodes.
+      - name: Check out csound-vst3-opcodes
         uses: actions/checkout@v2
 
-      - name: Fetch the current VST3 SDK and Csound sources.
+      - name: Fetch the current VST3 SDK and Csound sources
         run: bash update-submodules.bash
         
       - name: Build on Mac OS
@@ -60,7 +57,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         if: runner.os == 'macOS'
         with:
-          name: MacOS-libvst3_plugins.so
+          name: MacOS-libvst3_plugins
           path: |
             build-macos/lib/*/libvst3_plugins.so
             
