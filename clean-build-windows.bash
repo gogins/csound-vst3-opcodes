@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "Making a clean build of csound-vst3 for debugging with optimization..."
+echo "Making a clean build of csound-vst3..."
 rm -rf ./build-windows
 mkdir -p build-windows
 cd build-windows
@@ -10,4 +10,5 @@ dir
 dir x64
 dir lib
 find . -name "*vst3_plugins*" -ls
+echo "Completed a clean build of csound-vst3..."
 
