@@ -43,7 +43,7 @@ jobs:
         
       - name: Build on Mac OS.
         if: runner.os == 'macOS'
-        run: !
+        run: |
           bash clean-build-macos.bash
         
       - name: Build on Linux.
