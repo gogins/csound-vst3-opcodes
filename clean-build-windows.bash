@@ -6,9 +6,7 @@ cd build-windows
 cmake ../vst3sdk -DCMAKE_BUILD_TYPE=RelWithDebug -DSMTG_MYPLUGINS_SRC_PATH=../csound-vst3
 dir
 cmake --build .
-dir
-dir x64
-dir lib
+echo "Finding vst3_plugins:"
 find . -name "*vst3_plugins*" -ls
 echo "Completed a clean build of csound-vst3..."
 
