@@ -60,6 +60,10 @@ jobs:
           name: MacOS-libvst3_plugins
           path: |
             build-macos/lib/*/libvst3_plugins.so
+            LICENSE
+            README.md
+            csound-vst3/vst3-opcodes/README.md
+            csound-vst3/vst3-opcodes/vst3-opcodes.csd
             
       - uses: actions/upload-artifact@v2
         if: runner.os == 'Windows'
@@ -67,6 +71,10 @@ jobs:
           name: Windows-vst3_plugins
           path: |
             build-windows/lib/*/vst3_plugins.dll
+            LICENSE
+            README.md
+            csound-vst3/vst3-opcodes/README.md
+            csound-vst3/vst3-opcodes/vst3-opcodes.csd
 
       - uses: actions/upload-artifact@v2
         if: runner.os == 'Linux'
@@ -74,6 +82,10 @@ jobs:
           name: Linux-libvst3_plugins
           path: |
             build-linux/lib/*/libvst3_plugins.so
+            LICENSE
+            README.md
+            csound-vst3/vst3-opcodes/README.md
+            csound-vst3/vst3-opcodes/vst3-opcodes.csd
         
       - name: Release
         uses: softprops/action-gh-release@v0.1.5
