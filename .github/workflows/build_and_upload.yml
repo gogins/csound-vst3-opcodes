@@ -92,5 +92,19 @@ jobs:
             csound-vst3/vst3-opcodes/README.md
             csound-vst3/vst3-opcodes/VST_Compatible_Logo_Steinberg_with_TM_negative.png
             csound-vst3/vst3-opcodes/vst3-opcodes.csd
-        
-           
+            
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/') and runner.os == 'Linux'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: |
+            build-linux/lib/*/libvst3_plugins.so
+            LICENSE
+            README.md
+            VST_Compatible_Logo_Steinberg_with_TM_negative.png
+            csound-vst3/vst3-opcodes/README.md
+            csound-vst3/vst3-opcodes/VST_Compatible_Logo_Steinberg_with_TM_negative.png
+            csound-vst3/vst3-opcodes/vst3-opcodes.csd
+            
