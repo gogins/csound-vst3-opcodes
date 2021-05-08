@@ -97,9 +97,9 @@ jobs:
         if: runner.os == 'Linux'
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "latest"
+          automatic_release_tag: "linux-latest"
           prerelease: true
-          title: "Development Release"
+          title: "Linux Development Release"
           files: |
             build-linux/lib/*/libvst3_plugins.so
             LICENSE
@@ -113,9 +113,9 @@ jobs:
         if: runner.os == 'Windows'
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "latest"
+          automatic_release_tag: "windows-latest"
           prerelease: true
-          title: "Development Release"
+          title: "Windows Development Release"
           files: |
             build-windows/lib/*/vst3_plugins.dll
             LICENSE
@@ -129,9 +129,9 @@ jobs:
         if: runner.os == 'macOS'
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "latest"
+          automatic_release_tag: "macos-latest"
           prerelease: true
-          title: "Development Release"
+          title: "Mac OS Development Release"
           files: |
             build-macos/lib/*/libvst3_plugins.dylib
             LICENSE
