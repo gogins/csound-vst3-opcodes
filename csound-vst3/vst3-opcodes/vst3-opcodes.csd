@@ -28,7 +28,7 @@ several other plugins in the VST3 SDK. Parameters and presets also are used.
 
 </CsLicense>
 <CsOptions>
--m195 --opcode-lib="/home/mkg/csound-vst3-opcodes/build/lib/Debug/libvst3_plugins.so" -z1
+-m195 --opcode-lib="/home/mkg/csound-vst3-opcodes/build-linux/lib/Debug/libvst3_plugins.so" -z1
 </CsOptions>
 <CsInstruments>
 
@@ -52,16 +52,16 @@ alwayson "Delay"
 alwayson "Reverb"
 alwayson "Master_Output"
 
-gi_vst3_handle_jx10 vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/mda-vst3.vst3", "mda JX10", 1
+gi_vst3_handle_jx10 vst3init "/home/mkg/csound-vst3-opcodes/build-linux/VST3/Debug/mda-vst3.vst3", "mda JX10", 1
 vst3info gi_vst3_handle_jx10
 
-gi_vst3_handle_piano vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/mda-vst3.vst3", "mda Piano", 1
+gi_vst3_handle_piano vst3init "/home/mkg/csound-vst3-opcodes/build-linux/VST3/Debug/mda-vst3.vst3", "mda Piano", 1
 vst3info gi_vst3_handle_piano
 
-gi_vst3_handle_delay vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/mda-vst3.vst3", "mda Delay", 1
+gi_vst3_handle_delay vst3init "/home/mkg/csound-vst3-opcodes/build-linux/VST3/Debug/mda-vst3.vst3", "mda Delay", 1
 vst3info gi_vst3_handle_delay
 
-gi_vst3_handle_ambience vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/mda-vst3.vst3", "mda Ambience", 1
+gi_vst3_handle_ambience vst3init "/home/mkg/csound-vst3-opcodes/build-linux/VST3/Debug/mda-vst3.vst3", "mda Ambience", 1
 vst3info gi_vst3_handle_ambience
 
 // Array of instrument plugins indexed by instrument number, for sending 
