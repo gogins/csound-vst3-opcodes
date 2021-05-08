@@ -1,4 +1,4 @@
-name: Continuous Integration
+name: Build on push or pull request and upload artifacts
 
 # Controls when the action will run. 
 on:
@@ -62,7 +62,9 @@ jobs:
             build-macos/lib/*/libvst3_plugins.so
             LICENSE
             README.md
+            VST_Compatible_Logo_Steinberg_with_TM_negative.png
             csound-vst3/vst3-opcodes/README.md
+            csound-vst3/vst3-opcodes/VST_Compatible_Logo_Steinberg_with_TM_negative.png
             csound-vst3/vst3-opcodes/vst3-opcodes.csd
             
       - uses: actions/upload-artifact@v2
@@ -73,7 +75,9 @@ jobs:
             build-windows/lib/*/vst3_plugins.dll
             LICENSE
             README.md
+            VST_Compatible_Logo_Steinberg_with_TM_negative.png
             csound-vst3/vst3-opcodes/README.md
+            csound-vst3/vst3-opcodes/VST_Compatible_Logo_Steinberg_with_TM_negative.png
             csound-vst3/vst3-opcodes/vst3-opcodes.csd
 
       - uses: actions/upload-artifact@v2
@@ -84,25 +88,9 @@ jobs:
             build-linux/lib/*/libvst3_plugins.so
             LICENSE
             README.md
+            VST_Compatible_Logo_Steinberg_with_TM_negative.png
             csound-vst3/vst3-opcodes/README.md
+            csound-vst3/vst3-opcodes/VST_Compatible_Logo_Steinberg_with_TM_negative.png
             csound-vst3/vst3-opcodes/vst3-opcodes.csd
         
-      - name: Release
-        uses: softprops/action-gh-release@v0.1.5
-        if: startsWith(github.ref, 'refs/tags/')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
-        with:
-          # Note-worthy description of changes in release
-          #body: # optional
-          # Path to load note-worthy description of changes in release from
-          #body_path: # optional
-          # Gives the release a custom name. Defaults to tag name
-          name: Test
-          # Creates a draft release. Defaults to false
-          draft: true
-          # Identify the release as a prerelease. Defaults to false
-          prerelease: true
-          # Newline-delimited list of path globs for asset files to upload
-          files: ./build-linux/lib/Debug/libvst3_plugins.so    
-          
+           
