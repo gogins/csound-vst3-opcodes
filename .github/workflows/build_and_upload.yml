@@ -93,12 +93,13 @@ jobs:
             csound-vst3/vst3-opcodes/VST_Compatible_Logo_Steinberg_with_TM_negative.png
             csound-vst3/vst3-opcodes/vst3-opcodes.csd
             
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/') && runner.os == 'Linux'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        if: runner.os == 'Linux'
         with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: true
+          title: "Development Build"
           files: |
             build-linux/lib/*/libvst3_plugins.so
             LICENSE
@@ -107,4 +108,5 @@ jobs:
             csound-vst3/vst3-opcodes/README.md
             csound-vst3/vst3-opcodes/VST_Compatible_Logo_Steinberg_with_TM_negative.png
             csound-vst3/vst3-opcodes/vst3-opcodes.csd
-            
+           
+
