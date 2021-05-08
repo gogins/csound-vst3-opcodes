@@ -1,4 +1,4 @@
-name: Build on push or pull request and upload artifacts
+name: Build on push or pull request, upload artifacts, and create pre-release
 
 # Controls when the action will run. 
 on:
@@ -59,7 +59,7 @@ jobs:
         with:
           name: MacOS-libvst3_plugins
           path: |
-            build-macos/lib/*/libvst3_plugins.so
+            build-macos/lib/*/libvst3_plugins.dylib
             LICENSE
             README.md
             VST_Compatible_Logo_Steinberg_with_TM_negative.png
@@ -93,12 +93,13 @@ jobs:
             csound-vst3/vst3-opcodes/VST_Compatible_Logo_Steinberg_with_TM_negative.png
             csound-vst3/vst3-opcodes/vst3-opcodes.csd
             
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/') and runner.os == 'Linux'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        if: runner.os == 'Linux'
         with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "linux-latest"
+          prerelease: true
+          title: "Linux Development Release"
           files: |
             build-linux/lib/*/libvst3_plugins.so
             LICENSE
@@ -107,4 +108,38 @@ jobs:
             csound-vst3/vst3-opcodes/README.md
             csound-vst3/vst3-opcodes/VST_Compatible_Logo_Steinberg_with_TM_negative.png
             csound-vst3/vst3-opcodes/vst3-opcodes.csd
+           
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        if: runner.os == 'Windows'
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "windows-latest"
+          prerelease: true
+          title: "Windows Development Release"
+          files: |
+            build-windows/lib/*/vst3_plugins.dll
+            LICENSE
+            README.md
+            VST_Compatible_Logo_Steinberg_with_TM_negative.png
+            csound-vst3/vst3-opcodes/README.md
+            csound-vst3/vst3-opcodes/VST_Compatible_Logo_Steinberg_with_TM_negative.png
+            csound-vst3/vst3-opcodes/vst3-opcodes.csd
             
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        if: runner.os == 'macOS'
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "macos-latest"
+          prerelease: true
+          title: "Mac OS Development Release"
+          files: |
+            build-macos/lib/*/libvst3_plugins.dylib
+            LICENSE
+            README.md
+            VST_Compatible_Logo_Steinberg_with_TM_negative.png
+            csound-vst3/vst3-opcodes/README.md
+            csound-vst3/vst3-opcodes/VST_Compatible_Logo_Steinberg_with_TM_negative.png
+            csound-vst3/vst3-opcodes/vst3-opcodes.csd
+
+            
+
