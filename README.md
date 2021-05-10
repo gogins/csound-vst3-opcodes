@@ -31,6 +31,8 @@ user projects co-opt Steinberg's CMake build system for the VST SDK. In other
 words, one builds one's VST projects as if they were parts of the VST SDK 
 itself.
 
+This repository also builds the example VST3 plugins from the VST3 SDK.
+
 ### Linux
 
 The build does not work from the release archive. You must clone the Git 
