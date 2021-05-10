@@ -6,8 +6,9 @@ cd build-macos
 cmake ../vst3sdk  -DCMAKE_CXX_FLAGS=-I/usr/local/include -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS=-O2 -DSMTG_MYPLUGINS_SRC_PATH=../csound-vst3 -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 -GXcode
 xcodebuild
 mv lib/Debug/libvst3_plugins.so lib/Debug/libvst3_plugins.dylib
-find .. -type f -name "*.so" -exec cp {} . \;
-find .. -type f -name "*.dylib" -exec cp {} . \;
+find . -type f -name "*.so" -exec cp {} . \;
+find . -type f -name "*.dylib" -exec cp {} . \;
+find . -name "*.vst3" -exec cp -rf {} . \;
 echo "Built plugins:"
 pwd
 ls -ll 
