@@ -8,5 +8,6 @@ make clean
 make VERBOSE=1 j=4
 find . -type f -name "*.so" -exec cp {} . \;
 echo "Built plugins:"
-find ../build-linux/ \( -name "*.dylib" -o -name "*.so" \) -ls
+pwd
+ls -ll *.so
 echo "Completed a clean build of csound-vst3."

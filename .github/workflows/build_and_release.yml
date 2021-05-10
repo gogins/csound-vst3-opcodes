@@ -59,7 +59,8 @@ jobs:
         with:
           name: MacOS-libvst3_plugins
           path: |
-            build-macos/lib/*/libvst3_plugins.dylib
+            build-macos/*.dylib
+            build-macos/*.so
             LICENSE
             README.md
             VST_Compatible_Logo_Steinberg_with_TM_negative.png
@@ -72,7 +73,8 @@ jobs:
         with:
           name: Windows-vst3_plugins
           path: |
-            build-windows/lib/*/vst3_plugins.dll
+            build-windows/*.dll
+            build-windows/*.pdb
             LICENSE
             README.md
             VST_Compatible_Logo_Steinberg_with_TM_negative.png
@@ -85,7 +87,7 @@ jobs:
         with:
           name: Linux-libvst3_plugins
           path: |
-            build-linux/lib/*/libvst3_plugins.so
+            build-linux/*.so
             LICENSE
             README.md
             VST_Compatible_Logo_Steinberg_with_TM_negative.png
@@ -101,7 +103,7 @@ jobs:
           prerelease: true
           title: "Linux Development Release"
           files: |
-            build-linux/lib/*/*.so
+            build-linux/*.so
             LICENSE
             README.md
             VST_Compatible_Logo_Steinberg_with_TM_negative.png
@@ -117,8 +119,8 @@ jobs:
           prerelease: true
           title: "Windows Development Release"
           files: |
-            build-windows/lib/*/*.dll
-            build-windows/lib/*/*.pdb
+            build-windows/*.dll
+            build-windows/*.pdb
             LICENSE
             README.md
             VST_Compatible_Logo_Steinberg_with_TM_negative.png
@@ -134,8 +136,8 @@ jobs:
           prerelease: true
           title: "Mac OS Development Release"
           files: |
-            build-macos/lib/*/*.dylib
-            build-macos/lib/*/*.so
+            build-macos/*.dylib
+            build-macos/*.so
             LICENSE
             README.md
             VST_Compatible_Logo_Steinberg_with_TM_negative.png
