@@ -101,7 +101,7 @@ jobs:
           prerelease: true
           title: "Linux Development Release"
           files: |
-            build-linux/lib/*/libvst3_plugins.so
+            build-linux/lib/*/*.so
             LICENSE
             README.md
             VST_Compatible_Logo_Steinberg_with_TM_negative.png
@@ -117,7 +117,8 @@ jobs:
           prerelease: true
           title: "Windows Development Release"
           files: |
-            build-windows/lib/*/vst3_plugins.dll
+            build-windows/lib/*/*.dll
+            build-windows/lib/*/*.pdb
             LICENSE
             README.md
             VST_Compatible_Logo_Steinberg_with_TM_negative.png
@@ -133,7 +134,8 @@ jobs:
           prerelease: true
           title: "Mac OS Development Release"
           files: |
-            build-macos/lib/*/libvst3_plugins.dylib
+            build-macos/lib/*/*.dylib
+            build-macos/lib/*/*.so
             LICENSE
             README.md
             VST_Compatible_Logo_Steinberg_with_TM_negative.png
