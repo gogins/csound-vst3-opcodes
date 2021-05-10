@@ -9,5 +9,5 @@ make VERBOSE=1 j=4
 find . -type f -name "*.so" -exec cp {} . \;
 echo "Built plugins:"
 pwd
-ls -ll *.so
+ls -ll
 echo "Completed a clean build of csound-vst3."
