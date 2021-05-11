@@ -104,6 +104,7 @@ jobs:
           title: "Linux Development Release"
           files: |
             build-linux/*.so
+            build-linux/*.vst3/
             LICENSE
             README.md
             VST_Compatible_Logo_Steinberg_with_TM_negative.png
@@ -121,6 +122,7 @@ jobs:
           files: |
             build-windows/*.dll
             build-windows/*.pdb
+            build-windows/*.vst3/
             LICENSE
             README.md
             VST_Compatible_Logo_Steinberg_with_TM_negative.png
@@ -138,6 +140,7 @@ jobs:
           files: |
             build-macos/*.dylib
             build-macos/*.so
+            build-macos/*.vst3/
             LICENSE
             README.md
             VST_Compatible_Logo_Steinberg_with_TM_negative.png
