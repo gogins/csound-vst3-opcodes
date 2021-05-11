@@ -58,9 +58,9 @@ jobs:
         run: |
           bash clean-build-windows.bash
           bash zip-windows.bash
-          ls -ll
+          dir
                       
-      - uses: "marvinpinto/action-automatic-releases@latest"
+     - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'macOS'
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
