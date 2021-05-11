@@ -9,7 +9,8 @@ rm -f $ARCHIVE
 7za a $ARCHIVE csound-vst3/vst3-opcodes/README.md
 7za a $ARCHIVE csound-vst3/vst3-opcodes/*.png
 7za a $ARCHIVE csound-vst3/vst3-opcodes/*.csd
-7za a $ARCHIVE $TARGETS/*.so
-7za a $ARCHIVE $TARGETS/*.dylib
+7za a $ARCHIVE -r $TARGETS/*vst3_plugins*
 7za a $ARCHIVE -r $TARGETS/*.vst3
+echo "Archived:"
+7za l $ARCHIVE
 echo "Completed the release archive for Linux."

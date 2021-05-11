@@ -9,6 +9,8 @@ rm -f $ARCHIVE
 7z a $ARCHIVE csound-vst3/vst3-opcodes/README.md
 7z a $ARCHIVE csound-vst3/vst3-opcodes/*.png
 7z a $ARCHIVE csound-vst3/vst3-opcodes/*.csd
-7z a $ARCHIVE -r $TARGETS/vst3_plugins.*
+7z a $ARCHIVE -r $TARGETS/*vst3_plugins*
 7z a $ARCHIVE -r $TARGETS/*.vst3
+echo "Archived:"
+7z l $ARCHIVE
 echo "Completed the release archive for Windows."
