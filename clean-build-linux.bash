@@ -2,10 +2,14 @@
 echo "Making a clean build of csound-vst3..."
 rm -rf build-linux
 mkdir -p build-linux
+# Locally it is:
+# ~/csound-vst3-opcodes/csound-vst3/
+# On the runner it is constructed as:
+# /home/runner/work/csound-vst3-opcodes/csound-vst3-opcodes/csound-vst3
 export MYPLUGINS_PATH=$(pwd)/csound-vst3
-echo "MYPLUGINS_PATH: ${MYPLUGINS_PATH}"
+echo "MYPLUGINS_PATH: $MYPLUGINS_PATH"
 cd build-linux
-cmake ../vst3sdk -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS=-O2 -DCMAKE_CXX_FLAGS=-O2 -DSMTG_MYPLUGINS_SRC_PATH:PATH=${MYPLUGINS_PATH}
+cmake ../vst3sdk -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS=-O2 -DCMAKE_CXX_FLAGS=-O2 -DSMTG_MYPLUGINS_SRC_PATH=../csound-vst3
 make clean
 make VERBOSE=1 j=4
 cd ..
