@@ -16,5 +16,6 @@ ls -ll
 echo "Built plugins:"
 pwd
 ls -ll 
+cd ..
 echo "Completed a clean build of csound-vst3."
 

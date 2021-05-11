@@ -11,4 +11,5 @@ find . -name "*.vst3" -exec cp -rf {} . \;
 echo "Built plugins:"
 pwd
 ls -ll
+cd ..
 echo "Completed a clean build of csound-vst3."

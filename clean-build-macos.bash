@@ -12,6 +12,7 @@ find . -name "*.vst3" -exec cp -rf {} . \;
 echo "Built plugins:"
 pwd
 ls -ll 
+cd ..
 echo "Completed a clean build of csound-vst3."
 echo "Install to: Frameworks/CsoundLib64.framework/Versions/6.0/Resources/Opcodes64/libvst3_plugins.dylib."
 echo "This location may differ on your system."

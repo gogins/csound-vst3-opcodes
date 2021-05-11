@@ -17,19 +17,19 @@ jobs:
     strategy:
       matrix:
         config:
+        - name: "macOS Latest Clang"
+          os: macos-latest
+          cc: "clang"
+          cxx: "clang++"
+        - name: "Ubuntu Latest GCC"
+          os: ubuntu-latest
+          cc: "gcc"
+          cxx: "g++"
         - name: "Windows Latest MSVC"
           os: windows-latest
           cc: "cl"
           cxx: "cl"
           environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
-        - name: "Ubuntu Latest GCC"
-          os: ubuntu-latest
-          cc: "gcc"
-          cxx: "g++"
-        - name: "macOS Latest Clang"
-          os: macos-latest
-          cc: "clang"
-          cxx: "clang++"
 
     steps:
       - name: Check out csound-vst3-opcodes
@@ -42,59 +42,37 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           bash clean-build-macos.bash
+          bash zip-macos.bash
+          ls -ll
           
       - name: Build on Linux
         if: runner.os == 'Linux'
         run: |
           sudo apt install cmake gcc "libstdc++6" libx11-xcb-dev libxcb-util-dev libxcb-cursor-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev libfontconfig1-dev libcairo2-dev libgtkmm-3.0-dev libsqlite3-dev libxcb-keysyms1-dev
           bash clean-build-linux.bash
+          bash zip-linux.bash
+          ls -ll
         
       - name: Build on Windows
         if: runner.os == 'Windows'
         run: |
           bash clean-build-windows.bash
-          
-      - uses: actions/upload-artifact@v2
+          bash zip-windows.bash
+          ls -ll
+                      
+     - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'macOS'
         with:
-          name: MacOS-libvst3_plugins
-          path: |
-            build-macos/*.dylib
-            build-macos/*.so
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "macos-latest"
+          prerelease: true
+          title: "Mac OS Development Release"
+          files: |
             LICENSE
             README.md
             VST_Compatible_Logo_Steinberg_with_TM_negative.png
-            csound-vst3/vst3-opcodes/README.md
-            csound-vst3/vst3-opcodes/VST_Compatible_Logo_Steinberg_with_TM_negative.png
-            csound-vst3/vst3-opcodes/vst3-opcodes.csd
-            
-      - uses: actions/upload-artifact@v2
-        if: runner.os == 'Windows'
-        with:
-          name: Windows-vst3_plugins
-          path: |
-            build-windows/*.dll
-            build-windows/*.pdb
-            LICENSE
-            README.md
-            VST_Compatible_Logo_Steinberg_with_TM_negative.png
-            csound-vst3/vst3-opcodes/README.md
-            csound-vst3/vst3-opcodes/VST_Compatible_Logo_Steinberg_with_TM_negative.png
-            csound-vst3/vst3-opcodes/vst3-opcodes.csd
+            csound-vst3-macos.zip
 
-      - uses: actions/upload-artifact@v2
-        if: runner.os == 'Linux'
-        with:
-          name: Linux-libvst3_plugins
-          path: |
-            build-linux/*.so
-            LICENSE
-            README.md
-            VST_Compatible_Logo_Steinberg_with_TM_negative.png
-            csound-vst3/vst3-opcodes/README.md
-            csound-vst3/vst3-opcodes/VST_Compatible_Logo_Steinberg_with_TM_negative.png
-            csound-vst3/vst3-opcodes/vst3-opcodes.csd
-            
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'Linux'
         with:
@@ -103,14 +81,10 @@ jobs:
           prerelease: true
           title: "Linux Development Release"
           files: |
-            build-linux/*.so
-            build-linux/*.vst3/
             LICENSE
             README.md
             VST_Compatible_Logo_Steinberg_with_TM_negative.png
-            csound-vst3/vst3-opcodes/README.md
-            csound-vst3/vst3-opcodes/VST_Compatible_Logo_Steinberg_with_TM_negative.png
-            csound-vst3/vst3-opcodes/vst3-opcodes.csd
+            csound-vst3-linux.zip
            
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'Windows'
@@ -120,33 +94,11 @@ jobs:
           prerelease: true
           title: "Windows Development Release"
           files: |
-            build-windows/*.dll
-            build-windows/*.pdb
-            build-windows/*.vst3/
             LICENSE
             README.md
             VST_Compatible_Logo_Steinberg_with_TM_negative.png
-            csound-vst3/vst3-opcodes/README.md
-            csound-vst3/vst3-opcodes/VST_Compatible_Logo_Steinberg_with_TM_negative.png
-            csound-vst3/vst3-opcodes/vst3-opcodes.csd
+            csound-vst3-windows.zip
             
-      - uses: "marvinpinto/action-automatic-releases@latest"
-        if: runner.os == 'macOS'
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "macos-latest"
-          prerelease: true
-          title: "Mac OS Development Release"
-          files: |
-            build-macos/*.dylib
-            build-macos/*.so
-            build-macos/*.vst3/
-            LICENSE
-            README.md
-            VST_Compatible_Logo_Steinberg_with_TM_negative.png
-            csound-vst3/vst3-opcodes/README.md
-            csound-vst3/vst3-opcodes/VST_Compatible_Logo_Steinberg_with_TM_negative.png
-            csound-vst3/vst3-opcodes/vst3-opcodes.csd
-
+ 
             
 
