@@ -61,6 +61,20 @@ jobs:
           path: |
             build-macos/*.dylib
             build-macos/*.so
+            build-macos/adelay.vst3
+            build-macos/againsimple.vst3
+            build-macos/again.vst3
+            build-macos/channelcontext.vst3
+            build-macos/hostchecker.vst3
+            build-macos/legacymidiccout.vst3
+            build-macos/mda-vst3.vst3
+            build-macos/noteexpressionsynth.vst3
+            build-macos/noteexpressiontext.vst3
+            build-macos/panner.vst3
+            build-macos/pitchnames.vst3
+            build-macos/prefetchablesupport.vst3
+            build-macos/programchange.vst3
+            build-macos/syncdelay.vst3
             LICENSE
             README.md
             VST_Compatible_Logo_Steinberg_with_TM_negative.png
@@ -75,6 +89,20 @@ jobs:
           path: |
             build-windows/*.dll
             build-windows/*.pdb
+            build-windows/adelay.vst3
+            build-windows/againsimple.vst3
+            build-windows/again.vst3
+            build-windows/channelcontext.vst3
+            build-windows/hostchecker.vst3
+            build-windows/legacymidiccout.vst3
+            build-windows/mda-vst3.vst3
+            build-windows/noteexpressionsynth.vst3
+            build-windows/noteexpressiontext.vst3
+            build-windows/panner.vst3
+            build-windows/pitchnames.vst3
+            build-windows/prefetchablesupport.vst3
+            build-windows/programchange.vst3
+            build-windows/syncdelay.vst3
             LICENSE
             README.md
             VST_Compatible_Logo_Steinberg_with_TM_negative.png
@@ -88,6 +116,20 @@ jobs:
           name: Linux-libvst3_plugins
           path: |
             build-linux/*.so
+            build-linux/adelay.vst3
+            build-linux/againsimple.vst3
+            build-linux/again.vst3
+            build-linux/channelcontext.vst3
+            build-linux/hostchecker.vst3
+            build-linux/legacymidiccout.vst3
+            build-linux/mda-vst3.vst3
+            build-linux/noteexpressionsynth.vst3
+            build-linux/noteexpressiontext.vst3
+            build-linux/panner.vst3
+            build-linux/pitchnames.vst3
+            build-linux/prefetchablesupport.vst3
+            build-linux/programchange.vst3
+            build-linux/syncdelay.vst3
             LICENSE
             README.md
             VST_Compatible_Logo_Steinberg_with_TM_negative.png
