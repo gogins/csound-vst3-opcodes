@@ -6,7 +6,7 @@
 
 These are a set of Csound opcodes that enable Csound to host VST3 
 plugins: both effect plugins and instrument plugins. The vst3-opcodes should 
-work on Linux, Windows, and OS X, and on both 64-bit and 32-bit CPU 
+work on Linux, Windows, and the Mac OS, and on both 64-bit and 32-bit CPU 
 architectures. VST2 plugins are not supported (but the vst4cs opcodes do 
 support VST2 plugins).
 
@@ -81,9 +81,16 @@ Csound is as follows:
      a Csound instrument that will send such parameters for you from your 
      score.
 
-## Example
+## Examples
 
-### vst3-opcodes.csd
+### vst3-opcodes-test-linux.csd
+### vst3-opcodes-test-macos.csd
+### vst3-opcodes-test-windows.csd
+
+These pieces serve as both tests and examples. They assume that you have 
+unzipped the csound-vst3 ZIP archive for your system into a new empty directory 
+on your computer, and that you will run the example for your system from the 
+`csound-vst3/vst3-opcodes` subdirectory.
 
 ```
 <CsoundSynthesizer>
@@ -114,9 +121,13 @@ The piece consists of an algorithmically generated score, which is rendered
 with several of the instruments in the VST3 SDK; effects are added using 
 several other plugins in the VST3 SDK. Parameters and presets also are used.
 
+Assuming you are on Linux, have installed Csound, ahd have unzipped the 
+csound-vst3-linux.zip file into a new empty directory, then things are set up
+to run this piece from the `csound-vst3/vst3-opcodes` subdirectory.
+
 </CsLicense>
 <CsOptions>
--m195 --opcode-lib="/home/mkg/csound-vst3-opcodes/build/lib/Debug/libvst3_plugins.so" -z1
+-m195 --opcode-lib="../../build-linux/lib/Debug/libvst3_plugins.so" -z1
 </CsOptions>
 <CsInstruments>
 
@@ -140,16 +151,16 @@ alwayson "Delay"
 alwayson "Reverb"
 alwayson "Master_Output"
 
-gi_vst3_handle_jx10 vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/mda-vst3.vst3", "mda JX10", 1
+gi_vst3_handle_jx10 vst3init "../../build-linux/VST3/Debug/mda-vst3.vst3", "mda JX10", 1
 vst3info gi_vst3_handle_jx10
 
-gi_vst3_handle_piano vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/mda-vst3.vst3", "mda Piano", 1
+gi_vst3_handle_piano vst3init "../../build-linux/VST3/Debug/mda-vst3.vst3", "mda Piano", 1
 vst3info gi_vst3_handle_piano
 
-gi_vst3_handle_delay vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/mda-vst3.vst3", "mda Delay", 1
+gi_vst3_handle_delay vst3init "../../build-linux/VST3/Debug/mda-vst3.vst3", "mda Delay", 1
 vst3info gi_vst3_handle_delay
 
-gi_vst3_handle_ambience vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/mda-vst3.vst3", "mda Ambience", 1
+gi_vst3_handle_ambience vst3init "../../build-linux/VST3/Debug/mda-vst3.vst3", "mda Ambience", 1
 vst3info gi_vst3_handle_ambience
 
 // Array of instrument plugins indexed by instrument number, for sending 
@@ -161,9 +172,9 @@ gi_plugins[4] init gi_vst3_handle_jx10
 
 // Score generating instrument.
 
-gi_iterations init 500
-gi_duration init 2
-gi_time_step init .125
+gi_iterations init 50
+gi_duration init 1.8
+gi_time_step init .6666667
 gi_loudness init 70
 instr Score_Generator
 i_time = p2
@@ -242,6 +253,7 @@ i_vst3_plugin init gi_plugins[p4]
 k_parameter_id init 1886548852 
 k_parameter_value init p5
 vst3paramset i_vst3_plugin, k_parameter_id, k_parameter_value
+prints "Don't expect this one to work yet!\n"
 prints "%-24.24s i %9.4f t %9.4f d %9.4f target: %3d  id: %3d  value: %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, i_target_plugin, k_parameter_id, k_parameter_value, active(p1)
 endin
 
@@ -284,7 +296,7 @@ endin
 
 </CsInstruments>
 <CsScore>
-f 0 72
+f 0 40
 i "Score_Generator" 1 1 3 .989 .5 36 60
 i "Score_Generator" 1 1 4 .989 .5 78 6
 ; Stores original parameter state...
@@ -292,20 +304,20 @@ i "Print_Info" 1.1 1 4
 i "Save_Preset" 1.2 1 4 "jx10.vstpreset"
 i "Print_Info" 1.3 1 4
 ; Changes filter state...
-i "Param_Change" 10 1 4 0 .7
-i "Param_Change" 10 1 4 4 1
+i "Param_Change" 10 1 4 1 .15
+i "Param_Change" 10 1 4 7 .15
+i "Param_Change" 10 1 4 12 .1
 i "Print_Info" 10.5 1 4
 ; Restores original parameter state.
-i "Load_Preset" 15 1 4 "jx10.vstpreset"
-i "Print_Info" 15.5 1 4
-i "Program_Change" 25 1 4 12
-i "Print_Info" 30.0 1 3
-i "Program_Change" 30.1 1 3 4
-i "Print_Info" 30.2 1 3
+i "Load_Preset" 25 1 4 "jx10.vstpreset"
+i "Print_Info" 25.5 1 4
+;i "Program_Change" 25 1 4 12
+;i "Print_Info" 30.0 1 3
+;i "Program_Change" 30.1 1 3 4
+;i "Print_Info" 30.2 1 3
 
 </CsScore>
-</CsoundSynthesizer>
-```
+</CsoundSynthesizer>```
 
 ## vst3audio
 
