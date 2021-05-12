@@ -1,0 +1,5 @@
+if(ANDROID)
+    return()
+endif()
+include(SMTG_AddSubDirectories)
+smtg_add_subdirectories()
