@@ -31,56 +31,27 @@ user projects co-opt Steinberg's CMake build system for the VST SDK. In other
 words, one builds one's VST projects as if they were parts of the VST SDK 
 itself.
 
-This repository also builds the example VST3 plugins from the VST3 SDK.
-
-### Linux
-
 The build does not work from the release archive. You must clone the Git 
 repository:
 ```
 git clone https://github.com/gogins/csound-vst3-opcodes.git
 ```
 
+### Linux
+
 In the root directory of your local repository, execute 
 `bash update-submodules.bash` to initialize the Steinberg VST SDK submodules. 
 
-To ensure that you have installed all build dependencies, execute: 
-```
-sudo apt update
-sudo apt upgrade
-sudo apt install build-essentials
-sudo apt install cmake "libstdc++6" libx11-xcb-dev libxcb-util-dev libxcb-cursor-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev libfontconfig1-dev libcairo2-dev libgtkmm-3.0-dev libsqlite3-dev libxcb-keysyms1-dev
+Then execute `bash clean-build-linux` to build a release version of the 
+plugins.
 
-```
-Execute the following commands to build the VST SDK itself and to verify 
-that you have done so; `make` will run a test suite if the build completes.
-```
-mkdir build
-cd build
-cmake ../vst3sdk -DCMAKE_BUILD_TYPE=Release
-make -j4
-```
-Possibly your build will at first fail because you are missing some package 
-dependency. Use the Ubuntu package search to identify the missing packages and 
-install them.
+You can execute `bash zip-lijux` to prepare a release archive from the build.
 
-When the VST3 SDK builds 100% including the tests passing, then return to the 
-main directory and execute:
-```
-bash clean-build-linux.bash
-```
+If you need a debug version of the build, edit the build script and replace 
 
-This performs the following commands that can be executed independently:
-```
-#!/bin/bash
-echo "Making a clean build of csound-vst3 for debugging with optimization..."
-mkdir -p build
-rm -rf ./build/*
-cd build
-cmake ../vst3sdk -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS=-O2 -DCMAKE_CXX_FLAGS=-O2 -DSMTG_MYPLUGINS_SRC_PATH=../csound-vst3
-make clean
-make VERBOSE=1
-```
+
+
+
 
 There are similar scripts for other platforms.
 

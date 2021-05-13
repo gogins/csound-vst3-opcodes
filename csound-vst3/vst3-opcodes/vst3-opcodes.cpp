@@ -809,8 +809,8 @@ namespace csound {
             vst3_plugin = get_plugin(i_vst3_handle);
             auto sr = csound->GetSr(csound);
             vst3_plugin->setSamplerate(sr);
-            // This also creates the host buffers.
             frame_count = ksmps();
+            // This also creates the host buffers.
             vst3_plugin->setBlockSize(frame_count);
             // Because Csound and the plugin may not use the same sample word 
             // size, allowance must be made for different buffer shapes and 
@@ -838,12 +838,16 @@ namespace csound {
                 plugin_output_channel_count = 0;
             }
             output_channel_count = std::min(opcode_output_channel_count, plugin_output_channel_count);
-            log(csound, "vst3audio: input channels: %3d  output channels: %3d processing: %d\n", input_channel_count, output_channel_count, vst3_plugin->isProcessing);
+            log(csound, "vst3audio::init: input channels: %3d  output channels: %3d isProcessing: %d\n", input_channel_count, output_channel_count, vst3_plugin->isProcessing);
             return result;
         };
         int audio(CSOUND *csound) {
             int result = OK;
-            size_t current_time_in_frames = csound->GetCurrentTimeSamples(csound);
+            int64_t current_time_in_frames = csound->GetCurrentTimeSamples(csound);
+            if (current_time_in_frames < 0) {
+                log(csound, "vst3audio::audio: warning! current_time_in_frames is less than 0: %d\n", current_time_in_frames);
+                return NOTOK;
+            }
             // Because this opcode should always be on, and because the plugins 
             // _themselves_ are actually responsible for scheduling by sample 
             // frame, ksmps_offset and ksmps_no_end have no effect and are not 
