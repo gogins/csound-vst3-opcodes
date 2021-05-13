@@ -12,7 +12,7 @@ cd build-linux
 ls ..
 pwd
 ls ../csound-vst3
-cmake ../vst3sdk -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-O2 -DCMAKE_CXX_FLAGS=-O2 -DSMTG_MYPLUGINS_SRC_PATH=../csound-vst3
+cmake ../vst3sdk -DCMAKE_CONFIGURATION_TYPES="Release;" -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-O2 -DCMAKE_CXX_FLAGS=-O2 -DSMTG_MYPLUGINS_SRC_PATH=../csound-vst3
 make clean
 make VERBOSE=1 j=4
 cd ..
