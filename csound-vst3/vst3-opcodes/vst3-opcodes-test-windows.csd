@@ -32,7 +32,7 @@ to run this piece from the `csound-vst3/vst3-opcodes` subdirectory.
 
 </CsLicense>
 <CsOptions>
--m195 --opcode-lib="../../build-windows/lib/Debug/vst3_plugins.dll" -z1
+-m195 --opcode-lib="../../build-windows/lib/Release/vst3_plugins.dll" -z1
 </CsOptions>
 <CsInstruments>
 
@@ -56,16 +56,16 @@ alwayson "Delay"
 alwayson "Reverb"
 alwayson "Master_Output"
 
-gi_vst3_handle_jx10 vst3init "../../build-windows/VST3/Debug/mda-vst3.vst3", "mda JX10", 1
+gi_vst3_handle_jx10 vst3init "../../build-windows/VST3/Release/mda-vst3.vst3", "mda JX10", 1
 vst3info gi_vst3_handle_jx10
 
-gi_vst3_handle_piano vst3init "../../build-wiindows/VST3/Debug/mda-vst3.vst3", "mda Piano", 1
+gi_vst3_handle_piano vst3init "../../build-windows/VST3/Release/mda-vst3.vst3", "mda Piano", 1
 vst3info gi_vst3_handle_piano
 
-gi_vst3_handle_delay vst3init "../../build-windows/VST3/Debug/mda-vst3.vst3", "mda Delay", 1
+gi_vst3_handle_delay vst3init "../../build-windows/VST3/Release/mda-vst3.vst3", "mda Delay", 1
 vst3info gi_vst3_handle_delay
 
-gi_vst3_handle_ambience vst3init "../../build-windows/VST3/Debug/mda-vst3.vst3", "mda Ambience", 1
+gi_vst3_handle_ambience vst3init "../../build-windows/VST3/Release/mda-vst3.vst3", "mda Ambience", 1
 vst3info gi_vst3_handle_ambience
 
 // Array of instrument plugins indexed by instrument number, for sending 
