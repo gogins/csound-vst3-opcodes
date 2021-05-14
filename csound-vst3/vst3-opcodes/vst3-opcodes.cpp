@@ -791,7 +791,7 @@ namespace csound {
         MYFLT *a_input_channels[32];
         // State.
         MYFLT zerodbfs;
-        int opcode_input_channel_count;
+        Steinberg::int32 opcode_input_channel_count;
         Steinberg::int32 plugin_input_channel_count;
         Steinberg::int32 input_channel_count;
         Steinberg::int32 opcode_output_channel_count;
