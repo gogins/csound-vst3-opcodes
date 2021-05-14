@@ -792,18 +792,18 @@ namespace csound {
         // State.
         MYFLT zerodbfs;
         int opcode_input_channel_count;
-        int plugin_input_channel_count;
-        int input_channel_count;
-        int opcode_output_channel_count;
-        int plugin_output_channel_count;
-        int output_channel_count;
+        Steinberg::int32 plugin_input_channel_count;
+        Steinberg::int32 input_channel_count;
+        Steinberg::int32 opcode_output_channel_count;
+        Steinberg::int32 plugin_output_channel_count;
+        Steinberg::int32 output_channel_count;
         vst3_plugin_t *vst3_plugin;
-        float **plugin_input_channels_32;
-        double **plugin_input_channels_64;
-        float **plugin_output_channels_32;
-        double **plugin_output_channels_64;
+        Steinberg::Vst::Sample32 **plugin_input_channels_32;
+        Steinberg::Vst::Sample64 **plugin_input_channels_64;
+        Steinberg::Vst::Sample32 **plugin_output_channels_32;
+        Steinberg::Vst::Sample64 **plugin_output_channels_64;
         Steinberg::Vst::SymbolicSampleSizes plugin_sample_size;
-        int frame_count;
+        Steinberg::int32 frame_count;
         int init(CSOUND *csound) {
             int result = OK;
             vst3_plugin = get_plugin(i_vst3_handle);
@@ -853,14 +853,14 @@ namespace csound {
             // frame, ksmps_offset and ksmps_no_end have no effect and are not 
             // used.
             if (plugin_sample_size == Steinberg::Vst::kSample32) {
-                for (int channel_index = 0; channel_index < input_channel_count; ++channel_index) {
-                    for (int frame_index = 0; frame_index < frame_count; ++frame_index) {
+                for (Steinberg::int32 channel_index = 0; channel_index < input_channel_count; ++channel_index) {
+                    for (Steinberg::int32 frame_index = 0; frame_index < frame_count; ++frame_index) {
                         plugin_input_channels_32[channel_index][frame_index] = a_input_channels[channel_index][frame_index];
                     }
                 }
                 vst3_plugin->process(current_time_in_frames);
-                for (int channel_index = 0; channel_index < output_channel_count; ++channel_index) {
-                    for (int frame_index = 0; frame_index < frame_count; ++frame_index) {
+                for (Steinberg::int32 channel_index = 0; channel_index < output_channel_count; ++channel_index) {
+                    for (Steinberg::int32 frame_index = 0; frame_index < frame_count; ++frame_index) {
 #if PROCESS_DEBUGGING
                         log(csound, "vst3audio::audio for 32 bits: sample[%4d][%4d]: opcode: %f plugin: %f\n", 
                             channel_index, frame_index, a_output_channels[channel_index][frame_index], plugin_output_channels_32[channel_index][frame_index]);
@@ -869,14 +869,14 @@ namespace csound {
                     }
                 }
             } else {
-                for (int channel_index = 0; channel_index < input_channel_count; ++channel_index) {
-                    for (int frame_index = 0; frame_index < frame_count; ++frame_index) {
+                for (Steinberg::int32 channel_index = 0; channel_index < input_channel_count; ++channel_index) {
+                    for (Steinberg::int32 frame_index = 0; frame_index < frame_count; ++frame_index) {
                         plugin_input_channels_64[channel_index][frame_index] = a_input_channels[channel_index][frame_index];
                     }
                 }
                 vst3_plugin->process(current_time_in_frames);
-                for (int channel_index = 0; channel_index < output_channel_count; ++channel_index) {
-                    for (int frame_index = 0; frame_index < frame_count; ++frame_index) {
+                for (Steinberg::int32 channel_index = 0; channel_index < output_channel_count; ++channel_index) {
+                    for (Steinberg::int32 frame_index = 0; frame_index < frame_count; ++frame_index) {
                         a_output_channels[channel_index][frame_index] = plugin_output_channels_64[channel_index][frame_index];
 #if PROCESS_DEBUGGING
                         log(csound, "vst3audio::audio for 64 bits: sample[%4d][%4d]: opcode: %f plugin: %f\n", 
