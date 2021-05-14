@@ -30,7 +30,7 @@ jobs:
           cc: "cl"
           cxx: "cl"
           environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
-
+ 
     steps:
       - name: Check out csound-vst3-opcodes
         uses: actions/checkout@v2
@@ -58,6 +58,8 @@ jobs:
         run: |
           bash clean-build-windows.bash
           bash zip-windows.bash
+          bash clean-build-windows-debug.bash
+          bash zip-windows-debug.bash
           dir
                       
       - uses: "marvinpinto/action-automatic-releases@latest"
@@ -98,6 +100,7 @@ jobs:
             README.md
             VST_Compatible_Logo_Steinberg_with_TM_negative.png
             csound-vst3-windows.zip
+            csound-vst3-windows-debug.zip
             
  
             
