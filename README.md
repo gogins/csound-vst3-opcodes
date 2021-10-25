@@ -50,7 +50,7 @@ You can execute `bash zip-linux` to prepare a release archive from the build.
 If you need a debug version of the build, edit the build script and change 
 `CMAKE_BUILD_TYPE=Release` to `MAKE_BUILD_TYPE=Debug`, 
 `CMAKE_CONFIGURATION_TYPES="Release;"` to `-DCMAKE_CONFIGURATION_TYPES="Debug;"`, 
-and `--config Release` to `--config Release`.
+and `--config Release` to `--config Debug`.
 
 There are similar scripts for other platforms.
 
