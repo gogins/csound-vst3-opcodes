@@ -45,7 +45,7 @@ In the root directory of your local repository, execute
 Then execute `bash clean-build-linux` to build a release version of the 
 plugins.
 
-You can execute `bash zip-lijux` to prepare a release archive from the build.
+You can execute `bash zip-linux` to prepare a release archive from the build.
 
 If you need a debug version of the build, edit the build script and replace 
 
