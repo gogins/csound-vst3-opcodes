@@ -24,7 +24,7 @@ several other plugins in the VST3 SDK. Parameters and presets also are used.
 
 </CsLicense>
 <CsOptions>
--m195 --opcode-lib="/home/mkg/csound-vst3-opcodes/build/lib/Debug/libvst3_plugins.so" -z1
+-m195 --opcode-lib="/home/mkg/csound-vst3-opcodes/build/lib/Release/libvst3_plugins.so" -z1
 </CsOptions>
 <CsInstruments>
 
@@ -42,10 +42,10 @@ alwayson "JX10_Output"
 alwayson "Piano_Output"
 alwayson "Master_Output"
 
-gi_vst3_handle_jx10 vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/mda-vst3.vst3", "mda JX10", 1
+gi_vst3_handle_jx10 vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Release/mda-vst3.vst3", "mda JX10", 1
 vst3info gi_vst3_handle_jx10
 
-gi_vst3_handle_piano vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/mda-vst3.vst3", "mda Piano", 1
+gi_vst3_handle_piano vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Release/mda-vst3.vst3", "mda Piano", 1
 vst3info gi_vst3_handle_piano
 
 // Array of instrument plugins indexed by instrument number, for sending 
