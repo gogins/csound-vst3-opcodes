@@ -51,6 +51,7 @@ set(vst3_plugins_sources
             MACOSX_BUNDLE TRUE
             MACOSX_BUNDLE_INFO_PLIST ${InfoPlistFile}
         )
+        target_compile_options(vst3_plugins PRIVATE "-fobjc-arc")
     elseif(SMTG_LINUX)
         #find_package(X11 REQUIRED)
         find_package(PkgConfig REQUIRED)
