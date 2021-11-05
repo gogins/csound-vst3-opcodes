@@ -51,7 +51,6 @@ set(vst3_plugins_sources
             MACOSX_BUNDLE TRUE
             MACOSX_BUNDLE_INFO_PLIST ${InfoPlistFile}
         )
-        target_compile_options(vst3_plugins PRIVATE "-fobjc-arc")
     elseif(SMTG_LINUX)
         #find_package(X11 REQUIRED)
         find_package(PkgConfig REQUIRED)
@@ -94,6 +93,9 @@ add_library(${target} MODULE ${vst3_plugins_sources})
 target_link_libraries(${target} PRIVATE base sdk ${vst3_plugins_PLATFORM_LIBS})
 target_include_directories(${target} PRIVATE ${CMAKE_SOURCE_DIR}/../csound/include ${CMAKE_SOURCE_DIR}/../csound/H)
 target_compile_definitions(${target} PRIVATE USE_DOUBLE)
+if (SMTG_MAC)
+    target_compile_options(vst3_plugins PRIVATE "-fobjc-arc")
+endif()
 if (APP_PROPERTIES)
     set_target_properties(${target} PROPERTIES ${APP_PROPERTIES})
 endif()
