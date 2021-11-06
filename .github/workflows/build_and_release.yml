@@ -35,8 +35,8 @@ jobs:
       - name: Check out csound-vst3-opcodes
         uses: actions/checkout@v2
 
-      #- name: Fetch the current VST3 SDK and Csound sources
-      #  run: bash update-submodules.bash
+      - name: Fetch the current VST3 SDK and Csound sources
+        run: bash update-submodules.bash
         
       - name: Build on Mac OS
         if: runner.os == 'macOS'
