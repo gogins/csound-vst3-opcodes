@@ -5,11 +5,10 @@ mkdir -p build-macos
 export MYPLUGINS_PATH=$(pwd)/csound-vst3
 echo "MYPLUGINS_PATH: ${MYPLUGINS_PATH}"
 cd build-macos
-cmake ../vst3sdk -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-O2 -DCMAKE_CXX_FLAGS="-O2 -std=c++1z" -DSMTG_MYPLUGINS_SRC_PATH:PATH=${MYPLUGINS_PATH} -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 -GXcode
+cmake ../vst3sdk -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-O2 -DCMAKE_CXX_FLAGS="-O2" -DSMTG_MYPLUGINS_SRC_PATH:PATH=${MYPLUGINS_PATH} -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 -GXcode
 
 xcodebuild
 
-mv lib/Debug/libvst3_plugins.so lib/Debug/libvst3_plugins.dylib
 mv lib/Release/libvst3_plugins.so lib/Release/libvst3_plugins.dylib
 cd ..
 echo "Completed a clean build of csound-vst3."
