@@ -683,8 +683,10 @@ namespace csound {
      *     is called.
      */
     class vst3_host_t : public Steinberg::Vst::HostApplication {
+        int host_handle;
     public:
-        vst3_host_t(){};
+        vst3_host_t(){
+        };
         vst3_host_t(vst3_host_t const&) = delete;
         void operator=(vst3_host_t const&) = delete;
         ~vst3_host_t() noexcept override {
@@ -696,7 +698,7 @@ namespace csound {
         int load_module(CSOUND *csound, const std::string& module_pathname, const std::string &plugin_name, bool verbose) {
             int handle = -1;
             if (verbose == true) {
-                csound->Message(csound, "vst3_host_t::load_module: loading: %s\n", module_pathname.c_str());
+                csound->Message(csound, "vst3_host_t::load_module: loading: \"%s\"\n", module_pathname.c_str());
             }
             std::string error;
             auto module = VST3::Hosting::Module::create(module_pathname, error);
@@ -771,12 +773,16 @@ namespace csound {
     };
     
     static inline vst3_host_t *vst3_host_for_csound(CSOUND *csound) {
-        auto &hosts = vst3_hosts_for_csounds();
-        if (hosts.find(csound) == hosts.end()) {
-            vst3_host_t *host = new vst3_host_t;
-            hosts[csound] = host;
+        int handle = 0;
+        auto host = vst3hosts::instance().object_for_handle(csound, handle);
+        std::fprintf(stderr, "vst3_host_t::host_for_csound: csound: %p handle: %d host: %p...\n", csound, handle, host);
+        if (host == nullptr) {
+            host = new vst3_host_t;
+            handle = vst3hosts::instance().handle_for_object(csound, host);
         }
-        return hosts[csound];
+        host = vst3hosts::instance().object_for_handle(csound, handle);
+        std::fprintf(stderr, "vst3_host_t::host_for_csound: csound: %p handle: %d host: %p\n", csound, handle, host);
+        return host;
     }
     
     static inline vst3_plugin_t *get_plugin(CSOUND *csound, size_t handle) {
