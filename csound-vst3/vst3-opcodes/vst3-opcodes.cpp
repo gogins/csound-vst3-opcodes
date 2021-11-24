@@ -80,12 +80,13 @@
  *     terminates all plugins and deallocates all state.
  */
  
-namespace Steinberg {
-    FUnknown* gStandardPluginContext;
-};
-
 namespace csound {
-            
+    
+    class vst3_host_t;
+    class vst3_plugin_t;
+    
+    typedef csound::heap_object_manager_t<vst3_host_t> vst3hosts;
+
     enum
     {
         kMaxMidiMappingBusses = 4,
@@ -684,7 +685,6 @@ namespace csound {
     class vst3_host_t : public Steinberg::Vst::HostApplication {
     public:
         vst3_host_t(){};
-        static vst3_host_t &get_singleton();
         vst3_host_t(vst3_host_t const&) = delete;
         void operator=(vst3_host_t const&) = delete;
         ~vst3_host_t() noexcept override {
@@ -762,7 +762,6 @@ namespace csound {
             return vst3_plugins_for_handles[index].get();
         }
         std::map<std::string, VST3::Hosting::Module::Ptr> modules_for_pathnames;
-        std::multimap<CSOUND *, std::shared_ptr<vst3_plugin_t>> vst3_plugins_for_csounds;
         // Handles for vst3_plugin_t instances are indexes into a list of 
         // plugins. It's not possible to simply store the address of a 
         // vst3_plugin_t instance in a Csound opcode parameter, because the 
@@ -771,19 +770,21 @@ namespace csound {
         std::vector<std::shared_ptr<vst3_plugin_t>> vst3_plugins_for_handles;
     };
     
-    inline vst3_host_t &vst3_host_t::get_singleton() {
-        static vst3_host_t vst3_host;
-        if (Steinberg::gStandardPluginContext == nullptr) {
-            Steinberg::gStandardPluginContext = &vst3_host;
+    static inline vst3_host_t *vst3_host_for_csound(CSOUND *csound) {
+        auto &hosts = vst3_hosts_for_csounds();
+        if (hosts.find(csound) == hosts.end()) {
+            vst3_host_t *host = new vst3_host_t;
+            hosts[csound] = host;
         }
-        return vst3_host;
-    };
-    
-    inline static vst3_plugin_t *get_plugin(MYFLT *handle) {
-        auto plugin = vst3_host_t::get_singleton().plugin_for_handle(handle);
-        return plugin;
+        return hosts[csound];
     }
     
+    static inline vst3_plugin_t *get_plugin(CSOUND *csound, size_t handle) {
+        auto host = vst3_host_for_csound(csound);
+        auto plugin = host->vst3_plugins_for_handles[handle];
+        return plugin.get();        
+    }
+
     struct VST3AUDIO : public csound::OpcodeBase<VST3AUDIO> {
         // Outputs.
         MYFLT *a_output_channels[32];
@@ -807,7 +808,7 @@ namespace csound {
         Steinberg::int32 frame_count;
         int init(CSOUND *csound) {
             int result = OK;
-            vst3_plugin = get_plugin(i_vst3_handle);
+            vst3_plugin = get_plugin(csound, static_cast<size_t>(*i_vst3_handle));
             auto sr = csound->GetSr(csound);
             vst3_plugin->setSamplerate(sr);
             frame_count = ksmps();
@@ -897,7 +898,7 @@ namespace csound {
         vst3_plugin_t *vst3_plugin;
         int init(CSOUND *csound) {
             int result = OK;
-            vst3_plugin = get_plugin(i_vst3_handle);
+            vst3_plugin = get_plugin(csound, static_cast<size_t>(*i_vst3_handle));
             log(csound, "vst3info::init: printing plugin information...\n");
             vst3_plugin->print_information();
             return result;
@@ -913,12 +914,16 @@ namespace csound {
         MYFLT *i_verbose;
         int init(CSOUND *csound) {
             int result = OK;
-            auto &host = csound::vst3_host_t::get_singleton();
+            log(csound, "\nvst3init::init...\n");
+            auto host = vst3_host_for_csound(csound);
+            log(csound, "vst3init::init: host: %p\n", host);
             std::string module_pathname =((STRINGDAT *)i_module_pathname)->data;
             std::string plugin_name =((STRINGDAT *)i_plugin_name)->data;
-            *i_vst3_handle = host.load_module(csound, module_pathname, plugin_name,(bool)*i_verbose);
-            auto vst3_plugin = get_plugin(i_vst3_handle);
-            log(csound, "\nvst3init::init: created plugin: \"%s\": address: %p handle: %d\n", plugin_name.c_str(), vst3_plugin,(int) *i_vst3_handle);
+            log(csound, "vst3init::init: loading module: \"%s\",  \"%s\"...\n", module_pathname.c_str(), plugin_name.c_str());
+            *i_vst3_handle = host->load_module(csound, module_pathname, plugin_name,(bool)*i_verbose); 
+            log(csound, "vst3init::init: loaded module: \"%s\",  \"%s\" i_vst3_handle: %ld...\n", module_pathname.c_str(), plugin_name.c_str(), (size_t)*i_vst3_handle);
+            auto vst3_plugin = get_plugin(csound, static_cast<size_t>(*i_vst3_handle));
+            log(csound, "vst3init::init: created plugin: \"%s\": address: %p handle: %ld\n", plugin_name.c_str(), vst3_plugin,(size_t) *i_vst3_handle);
             return result;
         };
     };
@@ -937,7 +942,7 @@ namespace csound {
          */
         int init(CSOUND *csound) {
             int result = OK;
-            vst3_plugin = get_plugin(i_vst3_handle);
+            vst3_plugin = get_plugin(csound, static_cast<size_t>(*i_vst3_handle));
 #if defined(LINUX)
 #ifdef EDITORHOST_GTK
         app = Gtk::Application::create ("net.steinberg.vstsdk.editorhost");
@@ -982,7 +987,7 @@ namespace csound {
         int init(CSOUND *csound) {
             int result = OK;
             prior_midi_channel_message = midi_channel_message;
-            vst3_plugin = get_plugin(i_vst3_handle);
+            vst3_plugin = get_plugin(csound, static_cast<size_t>(*i_vst3_handle));
             return result;
         };
         int kontrol(CSOUND *csound) {
@@ -1035,7 +1040,7 @@ namespace csound {
         bool on = false;
         int init(CSOUND *csound) {
             int result = OK;
-            vst3_plugin = get_plugin(i_vst3_handle);
+            vst3_plugin = get_plugin(csound, static_cast<size_t>(*i_vst3_handle));
             auto current_time = csound->GetCurrentTimeSamples(csound) / csound->GetSr(csound);
             // If scheduled after the beginning of the kperiod, will be slightly later.
             note_on_time = opds.insdshead->p2.value;
@@ -1143,7 +1148,7 @@ namespace csound {
         MYFLT old_parameter_value;
         int init(CSOUND *csound) {
             int result = OK;
-            vst3_plugin = get_plugin(i_vst3_handle);
+            vst3_plugin = get_plugin(csound, static_cast<size_t>(*i_vst3_handle));
             log(csound, "vst3paramget::kontrol: id: %4d  value: %9.4f\n", parameter_id, *k_parameter_value);
             return result;
         };
@@ -1175,7 +1180,7 @@ namespace csound {
         int64_t frames_per_kperiod;
         int init(CSOUND *csound) {
             int result = OK;
-            vst3_plugin = get_plugin(i_vst3_handle);
+            vst3_plugin = get_plugin(csound, static_cast<size_t>(*i_vst3_handle));
             frames_per_kperiod = csound->GetKsmps(csound);
             return result;
         };
@@ -1207,7 +1212,7 @@ namespace csound {
         // State.
         vst3_plugin_t *vst3_plugin;
         int init(CSOUND *csound) {
-            vst3_plugin = get_plugin(i_vst3_handle);
+            vst3_plugin = get_plugin(csound, static_cast<size_t>(*i_vst3_handle));
             std::string preset_filepath = ((STRINGDAT *)S_preset_filepath)->data;
             log(csound, "vst3presetload: preset_filepath: %s\n", preset_filepath.c_str());
             std::fstream input_stream(preset_filepath.c_str(), std::fstream::in | std::fstream::binary);
@@ -1242,7 +1247,7 @@ namespace csound {
         // State.
         vst3_plugin_t *vst3_plugin;
         int init(CSOUND *csound) {
-            vst3_plugin = get_plugin(i_vst3_handle);
+            vst3_plugin = get_plugin(csound, static_cast<size_t>(*i_vst3_handle));
             std::string preset_filepath = ((STRINGDAT *)S_preset_filepath)->data;
             log(csound, "vst3presetsave: preset_filepath: %s\n", preset_filepath.c_str());
             auto tuid = vst3_plugin->classInfo.ID().data();
@@ -1270,7 +1275,7 @@ namespace csound {
         vst3_plugin_t *vst3_plugin;
         int init(CSOUND *csound) {
             int result = OK;
-            vst3_plugin = get_plugin(i_vst3_handle);
+            vst3_plugin = get_plugin(csound, static_cast<size_t>(*i_vst3_handle));
             return result;
         };
         int kontrol(CSOUND *csound) {
@@ -1340,17 +1345,13 @@ extern "C" {
     }
 
     PUBLIC int csoundModuleDestroy(CSOUND *csound) {
-#if DEBUGGING
-        csound->Message(csound, "csoundModuleDestroy: csound: %p thread: %ld\n",
+//#if DEBUGGING
+        csound->Message(csound, "csoundModuleDestroy (vst3_opcodes): csound: %p thread: %ld...\n",
                         csound,
-                        thread_hasher(std::this_thread::get_id()));
-#endif
-        auto &vst3_host = csound::vst3_host_t::get_singleton();
-        auto range = vst3_host.vst3_plugins_for_csounds.equal_range(csound);
-        for (auto it = range.first; it != range.second; ++it) {
-            it->second = nullptr;
-        }
-        vst3_host.vst3_plugins_for_csounds.erase(csound);
+                        std::this_thread::get_id());
+//#endif
+        csound::vst3hosts::instance().module_destroy(csound);
+        csound->Message(csound, "csoundModuleDestroy (vst3_opcodes): csound: %p.\n", csound);
         return 0;
     }
 } // extern "C"
