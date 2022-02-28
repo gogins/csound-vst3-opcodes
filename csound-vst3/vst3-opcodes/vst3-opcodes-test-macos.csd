@@ -32,7 +32,7 @@ to run this piece from the `csound-vst3/vst3-opcodes` subdirectory.
 
 </CsLicense>
 <CsOptions>
--m195 --opcode-lib="../../build-macos/lib/Release/libvst3_plugins.dylib" -z1
+-m195 ; --opcode-lib="../../build-macos/lib/Debug/libvst3_plugins.dylib" -z1
 </CsOptions>
 <CsInstruments>
 
@@ -56,16 +56,16 @@ alwayson "Delay"
 alwayson "Reverb"
 alwayson "Master_Output"
 
-gi_vst3_handle_jx10 vst3init "../../build-macos/VST3/Release/mda-vst3.vst3", "mda JX10", 1
+gi_vst3_handle_jx10 vst3init "../../build-macos/VST3/Debug/mda-vst3.vst3", "mda JX10", 1
 vst3info gi_vst3_handle_jx10
 
-gi_vst3_handle_piano vst3init "../../build-macos/VST3/Release/mda-vst3.vst3", "mda Piano", 1
+gi_vst3_handle_piano vst3init "../../build-macos/VST3/Debug/mda-vst3.vst3", "mda Piano", 1
 vst3info gi_vst3_handle_piano
 
-gi_vst3_handle_delay vst3init "../../build-macos/VST3/Release/mda-vst3.vst3", "mda Delay", 1
+gi_vst3_handle_delay vst3init "../../build-macos/VST3/Debug/mda-vst3.vst3", "mda Delay", 1
 vst3info gi_vst3_handle_delay
 
-gi_vst3_handle_ambience vst3init "../../build-macos/VST3/Release/mda-vst3.vst3", "mda Ambience", 1
+gi_vst3_handle_ambience vst3init "../../build-macos/VST3/Debug/mda-vst3.vst3", "mda Ambience", 1
 vst3info gi_vst3_handle_ambience
 
 // Array of instrument plugins indexed by instrument number, for sending 
@@ -100,7 +100,7 @@ while i_iteration < gi_iterations do
     event_i "i", i_instrument, i_time, gi_duration, i_pitch, gi_loudness
     prints "   %f => i %f %f %f %f %f\n", i_y, i_instrument, i_time, gi_duration, i_pitch, gi_loudness
 od
-prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 instr Param_Change
@@ -109,38 +109,38 @@ i_vst3_plugin init gi_plugins[p4]
 k_parameter_id init p5
 k_parameter_value init p6
 vst3paramset i_vst3_plugin, k_parameter_id, k_parameter_value
-prints "%-24.24s i %9.4f t %9.4f d %9.4f target: %3d  id: %3d  value: %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p6, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f target: %3d  id: %3d  value: %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p6, active(p1)
 endin
 
 instr Piano
 i_note_id vst3note gi_vst3_handle_piano, 0, p4, p5, p3
-prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 instr JX10
 i_note_id vst3note gi_vst3_handle_jx10, 0, p4, p5, p3
-prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 instr Piano_Output
 a_out_left, a_out_right vst3audio gi_vst3_handle_piano 
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
-prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 instr JX10_Output
 a_out_left, a_out_right vst3audio gi_vst3_handle_jx10 
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
-prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 instr Print_Info
 i_target_plugin = p4
 i_vst3_plugin init gi_plugins[p4]
 vst3info i_vst3_plugin
-prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 instr Save_Preset
@@ -148,7 +148,7 @@ i_target_plugin = p4
 S_preset_name init p5
 i_vst3_plugin init gi_plugins[p4]
 vst3presetsave i_vst3_plugin, S_preset_name
-prints "%-24.24s i %9.4f t %9.4f d %9.4f target: %3d  preset: %s #%3d\n", nstrstr(p1), p1, p2, p3, i_target_plugin, S_preset_name, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f target: %3d  preset: %s #%3d\n", nstrstr(p1), p1, p2, p3, i_target_plugin, S_preset_name, active(p1)
 endin
 
 instr Program_Change
@@ -159,7 +159,7 @@ k_parameter_id init 1886548852
 k_parameter_value init p5
 vst3paramset i_vst3_plugin, k_parameter_id, k_parameter_value
 prints "Don't expect this one to work yet!\n"
-prints "%-24.24s i %9.4f t %9.4f d %9.4f target: %3d  id: %3d  value: %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, i_target_plugin, k_parameter_id, k_parameter_value, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f target: %3d  id: %3d  value: %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, i_target_plugin, k_parameter_id, k_parameter_value, active(p1)
 endin
 
 instr Load_Preset
@@ -167,7 +167,7 @@ i_target_plugin = p4
 S_preset_name init p5
 i_vst3_plugin init gi_plugins[p4]
 vst3presetload i_vst3_plugin, S_preset_name
-prints "%-24.24s i %9.4f t %9.4f d %9.4f target: %3d  preset: %s #%3d\n", nstrstr(p1), p1, p2, p3, i_target_plugin, S_preset_name, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f target: %3d  preset: %s #%3d\n", nstrstr(p1), p1, p2, p3, i_target_plugin, S_preset_name, active(p1)
 endin
 
 instr Delay
@@ -176,7 +176,7 @@ a_in_right inleta "inright"
 a_out_left, a_out_right vst3audio gi_vst3_handle_delay, a_in_left, a_in_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
-prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 instr Reverb
@@ -189,14 +189,14 @@ vst3presetsave gi_vst3_handle_ambience, "ambience.preset"
 a_out_left, a_out_right vst3audio gi_vst3_handle_ambience, a_in_left, a_in_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
-prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 instr Master_Output
 a_in_left inleta "inleft"
 a_in_right inleta "inright"
 outs a_in_left, a_in_right
-prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 </CsInstruments>

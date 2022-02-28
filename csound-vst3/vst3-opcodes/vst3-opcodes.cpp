@@ -834,6 +834,8 @@ namespace csound {
             if (process_data.numInputs > 0) {
                 plugin_input_channel_count = process_data.inputs[0].numChannels;
                 plugin_input_channels_32 = process_data.inputs[0].channelBuffers32;
+                plugin_input_channels_64 = process_data.inputs[0].channelBuffers64;
+                log(csound, "vst3audio::init: plugin_input_channel_count: %3d plugin_input_channels_32: %p plugin_input_channels_64: %p\n", plugin_input_channel_count, plugin_input_channels_32, plugin_input_channels_64);
             } else {
                 plugin_input_channel_count = 0;
             }
@@ -842,11 +844,13 @@ namespace csound {
             if (process_data.numOutputs > 0) {
                 plugin_output_channel_count = process_data.outputs[0].numChannels;
                 plugin_output_channels_32 = process_data.outputs[0].channelBuffers32;
-            } else {
+                plugin_output_channels_64 = process_data.outputs[0].channelBuffers64;
+                log(csound, "vst3audio::init: plugin_output_channel_count: %3d plugin_output_channels_32: %p plugin_output_channels_64: %p\n", plugin_output_channel_count, plugin_output_channels_32, plugin_output_channels_64);
+           } else {
                 plugin_output_channel_count = 0;
             }
             output_channel_count = std::min(opcode_output_channel_count, plugin_output_channel_count);
-            log(csound, "vst3audio::init: input channels: %3d  output channels: %3d isProcessing: %d\n", input_channel_count, output_channel_count, vst3_plugin->isProcessing);
+            log(csound, "vst3audio::init: vst3_plugin: %p input channels: %3d  output channels: %3d isProcessing: %d\n", vst3_plugin, input_channel_count, output_channel_count, vst3_plugin->isProcessing);
             return result;
         };
         int audio(CSOUND *csound) {
