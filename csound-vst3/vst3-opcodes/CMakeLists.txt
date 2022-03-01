@@ -1,3 +1,7 @@
+list(APPEND CMAKE_MODULE_PATH "${SMTG_MYPLUGINS_SRC_PATH}/cmake/Modules;")
+message(STATUS "CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH})
+find_package(CSOUND REQUIRED)
+
 if(APPLE)
   set(CMAKE_CXX_STANDARD 17)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
@@ -91,7 +95,7 @@ set(vst3_plugins_sources
 set(target vst3_plugins)
 add_library(${target} MODULE ${vst3_plugins_sources})
 target_link_libraries(${target} PRIVATE base sdk ${vst3_plugins_PLATFORM_LIBS})
-target_include_directories(${target} PRIVATE ${CMAKE_SOURCE_DIR}/../csound/include ${CMAKE_SOURCE_DIR}/../csound/H)
+target_include_directories(${target} PRIVATE ${CSOUND_INCLUDE_DIR})
 target_compile_definitions(${target} PRIVATE USE_DOUBLE)
 if (SMTG_MAC)
     target_compile_options(vst3_plugins PRIVATE "-fobjc-arc")

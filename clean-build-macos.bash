@@ -12,6 +12,4 @@ xcodebuild
 mv lib/Debug/libvst3_plugins.so lib/Debug/libvst3_plugins.dylib
 cd ..
 echo "Completed a clean build of csound-vst3."
-echo "Install to: Frameworks/CsoundLib64.framework/Versions/6.0/Resources/Opcodes64/libvst3_plugins.dylib."
-echo "This location may differ on your system."
 
