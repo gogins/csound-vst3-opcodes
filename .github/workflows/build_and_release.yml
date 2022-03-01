@@ -42,8 +42,8 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew update
-          brew install csound
-          brew install sevenzip
+          brew install csound --verbose
+          brew install sevenzip --verbose
           bash clean-build-macos.bash
           bash zip-macos.bash
           ls -ll
