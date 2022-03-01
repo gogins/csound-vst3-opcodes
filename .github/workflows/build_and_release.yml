@@ -35,12 +35,14 @@ jobs:
       - name: Check out csound-vst3-opcodes
         uses: actions/checkout@v2
 
-      - name: Fetch the current VST3 SDK and Csound sources
+      - name: Fetch the current VST3 SDK 
         run: bash update-submodules.bash
         
       - name: Build on Mac OS
         if: runner.os == 'macOS'
         run: |
+          brew install csound
+          brew install sevenzip
           bash clean-build-macos.bash
           bash zip-macos.bash
           ls -ll
