@@ -41,6 +41,7 @@ jobs:
       - name: Build on Mac OS
         if: runner.os == 'macOS'
         run: |
+          brew update
           brew install csound
           brew install sevenzip
           bash clean-build-macos.bash
