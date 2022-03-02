@@ -1,11 +1,11 @@
-set(CMAKE_MODULE_PATH "${SMTG_MYPLUGINS_SRC_PATH}/cmake/Modules")
+if(APPLE)
+    set(CMAKE_CXX_STANDARD 17)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+    set(CMAKE_MODULE_PATH "/usr/local/share/cmake/Csound")
+else()
+endif()
 message(STATUS "CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH})
 find_package(CSOUND REQUIRED)
-
-if(APPLE)
-  set(CMAKE_CXX_STANDARD 17)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
-endif()
 set(vst3_plugins_sources
 #    ${SDK_ROOT}/public.sdk/samples/vst-hosting/editorhost/source/editorhost.cpp
 #    ${SDK_ROOT}/public.sdk/samples/vst-hosting/editorhost/source/editorhost.h
