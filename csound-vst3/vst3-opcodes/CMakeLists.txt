@@ -1,8 +1,9 @@
-message(STATUS "CMAKE_FRAMEWORK_PATH: ${CMAKE_FRAMEWORK_PATH}")
-message(STATUS "CMAKE_SYSTEM_FRAMEWORK_PATH: ${CMAKE_SYSTEM_FRAMEWORK_PATH}")
 if(APPLE)
     set(CMAKE_CXX_STANDARD 17)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+    message(STATUS "CMAKE_FRAMEWORK_PATH: ${CMAKE_FRAMEWORK_PATH}")
+    message(STATUS "CMAKE_SYSTEM_FRAMEWORK_PATH: ${CMAKE_SYSTEM_FRAMEWORK_PATH}")
+    message(STATUS "HOMEBREW_PREFIX: $ENV{HOMEBREW_PREFIX}")
 else()
     find_package(CSOUND REQUIRED)
 endif()
@@ -40,7 +41,7 @@ set(vst3_plugins_sources
     vst3-opcodes.cpp
     )
     
-    if(SMTG_MAC)
+    if(APPLE)
         set(vst3_plugins_sources
             ${vst3_plugins_sources}
             #${SDK_ROOT}/public.sdk/samples/vst-hosting/editorhost/source/platform/mac/platform.mm
@@ -97,7 +98,7 @@ set(target vst3_plugins)
 add_library(${target} MODULE ${vst3_plugins_sources})
 target_link_libraries(${target} PRIVATE base sdk ${vst3_plugins_PLATFORM_LIBS})
 target_compile_definitions(${target} PRIVATE USE_DOUBLE)
-if (SMTG_MAC)
+if (APPLE)
     target_compile_options(${target} PRIVATE "-fobjc-arc")
     target_include_directories(${target} PRIVATE "$ENV{HOMEBREW_PREFIX}/include/csound")
     target_link_libraries(${target} PRIVATE "-F$ENV{HOMEBREW_PREFIX}/Frameworks -framework CsoundLib64")
