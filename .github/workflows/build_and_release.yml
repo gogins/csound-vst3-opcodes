@@ -47,6 +47,7 @@ jobs:
           bash clean-build-macos.bash
           bash zip-macos.bash
           ls -ll
+          find / -name "csdl.h" -ls 2>/dev/null
           
       - name: Build on Linux
         if: runner.os == 'Linux'
