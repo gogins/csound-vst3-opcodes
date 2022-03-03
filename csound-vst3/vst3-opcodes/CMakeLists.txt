@@ -8,10 +8,8 @@ if(APPLE)
     message(STATUS "HOMEBREW_PREFIX: $ENV{HOMEBREW_PREFIX}")
 endif()
 if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Linux")
-    set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
-    find_package(CSOUND REQUIRED)
+    find_package(CSOUND REQUIRED PATHS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
 endif()
-message(STATUS "CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH})
 set(vst3_plugins_sources
 #    ${SDK_ROOT}/public.sdk/samples/vst-hosting/editorhost/source/editorhost.cpp
 #    ${SDK_ROOT}/public.sdk/samples/vst-hosting/editorhost/source/editorhost.h
