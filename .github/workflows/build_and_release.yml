@@ -12,8 +12,8 @@ on:
   workflow_dispatch:
   
 env:
-    # This will change for later macOS versions.
-    BREW_PREFIX: /usr/local
+    # This will change for later macOS versions, to /opt/homebrew.
+    HOMEBREW_PREFIX: /usr/local
 jobs:
   build:
     runs-on: ${{ matrix.config.os }} 
