@@ -101,7 +101,7 @@ target_compile_definitions(${target} PRIVATE USE_DOUBLE)
 if (APPLE)
     target_compile_options(${target} PRIVATE "-fobjc-arc")
     target_include_directories(${target} PRIVATE 
-        $ENV{HOMEBREW_PREFIX}/Cellar/csound/6.17.0_2/Frameworks/CsoundLib64.framework/Versions/6.0/Headers)
+ß        $ENV{HOMEBREW_PREFIX}/Cellar/csound/6.17.0_2/Frameworks/CsoundLib64.framework/Versions/6.0/Headers)
     target_link_libraries(${target} PRIVATE 
         $ENV{HOMEBREW_PREFIX}/Cellar/csound/6.17.0_2/Frameworks/CsoundLib64.framework/Versions/6.0/CsoundLib64)
 else()

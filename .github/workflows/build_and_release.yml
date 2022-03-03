@@ -10,7 +10,10 @@ on:
 
   # Allows this workflow to be run manually from the Actions tab.
   workflow_dispatch:
-
+  
+env:
+    # This will change for later macOS versions.
+    BREW_PREFIX: /usr/local
 jobs:
   build:
     runs-on: ${{ matrix.config.os }} 
@@ -31,8 +34,6 @@ jobs:
           cc: "cl"
           cxx: "cl"
           environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
-
- 
     steps:
       - name: Check out csound-vst3-opcodes
         uses: actions/checkout@v3
