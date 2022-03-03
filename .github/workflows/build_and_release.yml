@@ -15,6 +15,7 @@ jobs:
   build:
     runs-on: ${{ matrix.config.os }} 
     strategy:
+      fail-fast: false
       matrix:
         config:
         - name: "macOS Latest Clang"
@@ -30,7 +31,6 @@ jobs:
           cc: "cl"
           cxx: "cl"
           environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
-    fail-fast: false
 
  
     steps:
