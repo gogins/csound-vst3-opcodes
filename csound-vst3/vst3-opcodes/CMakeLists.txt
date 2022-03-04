@@ -9,7 +9,7 @@ if(APPLE)
 endif()
 if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Linux")
     message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")    
-    find_package(CSOUND REQUIRED MODULE PATHS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
+    find_package(CSOUND REQUIRED PATHS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
 endif()
 set(vst3_plugins_sources
 #    ${SDK_ROOT}/public.sdk/samples/vst-hosting/editorhost/source/editorhost.cpp
