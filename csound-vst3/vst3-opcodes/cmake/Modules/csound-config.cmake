@@ -7,7 +7,6 @@ message(STATUS "Tring to find Csound...")
 if(APPLE)
 find_path(CSOUND_INCLUDE_DIR csound.h HINTS /Library/Frameworks/CsoundLib64.framework/Headers
 "$ENV{HOME}/Library/Frameworks/CsoundLib64.framework/Headers")
-"$ENV{HOME}/Library/Frameworks/CsoundLib64.framework/Headers")
 endif()
 if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Linux")
 find_path(CSOUND_INCLUDE_DIR csound.h PATH_SUFFIXES csound HINTS
