@@ -61,6 +61,7 @@ jobs:
           bash clean-build-linux.bash
           bash zip-linux.bash
           ls -ll
+          find /usr -name "csdl.h" -ls 2>/dev/null
         
       - name: Build on Windows
         if: runner.os == 'Windows'
