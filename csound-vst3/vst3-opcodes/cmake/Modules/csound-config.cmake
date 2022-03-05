@@ -5,17 +5,19 @@
 #  CSOUND_LIBRARIES - The libraries needed to use the Csound library.
 message(STATUS "Tring to find Csound...")
 if(APPLE)
-find_path(CSOUND_INCLUDE_DIR csound.h HINTS /Library/Frameworks/CsoundLib64.framework/Headers
-"$ENV{HOME}/Library/Frameworks/CsoundLib64.framework/Headers")
+find_path(CSOUND_INCLUDE_DIR csound.h HINTS 
+    "/Library/Frameworks/CsoundLib64.framework/Headers"
+    "$ENV{HOME}/Library/Frameworks/CsoundLib64.framework/Headers")
 endif()
 if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Linux")
 find_path(CSOUND_INCLUDE_DIR csound.h PATH_SUFFIXES csound HINTS
     "/usr/include"
-    "/usr/local/include"))
+    "/usr/local/include")
 endif()
 
 if(APPLE)
-find_library(CSOUND_LIBRARY NAMES CsoundLib64 HINTS /Library/Frameworks/CsoundLib64.framework/
+find_library(CSOUND_LIBRARY NAMES CsoundLib64 HINTS 
+"/Library/Frameworks/CsoundLib64.framework/"
 "$ENV{HOME}/Library/Frameworks/CsoundLib64.framework")
 else()
 find_library(CSOUND_LIBRARY NAMES csound64 csound)
