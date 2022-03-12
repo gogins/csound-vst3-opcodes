@@ -1,10 +1,12 @@
+# NOTE: Csound is not installed and is not built. These actions use a csound 
+# submodule to obtain Csound's header files, which are all that is required. 
 name: Build on push or pull request, upload artifacts, and create pre-release
 
 # Controls when the action will run. 
 on:
   # Triggers the workflow on push or pull request events but only for the master branch.
   push:
-    branches: [ master ]
+    branches: [ master, csound_submodule ]
   pull_request:
     branches: [ master ]
 
@@ -44,9 +46,7 @@ jobs:
       - name: Build on Mac OS
         if: runner.os == 'macOS'
         run: |
-          brew update
-          brew install csound --verbose
-          brew install sevenzip --verbose
+          echo "Trying to find csdl.h..."
           find /Users/runner -name "csdl.h" -ls 2>/dev/null
           bash clean-build-macos.bash
           bash zip-macos.bash
@@ -55,9 +55,6 @@ jobs:
       - name: Build on Linux
         if: runner.os == 'Linux'
         run: |
-          sudo apt update
-          sudo apt install csound libcsound64-dev libcsnd-dev
-          sudo apt-get install cmake gcc "libstdc++6" libx11-xcb-dev libxcb-util-dev libxcb-cursor-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev libfontconfig1-dev libcairo2-dev libgtkmm-3.0-dev libsqlite3-dev libxcb-keysyms1-dev
           echo "Trying to find csdl.h..."
           find /usr -name "csdl.h" -ls 2>/dev/null
           find /home/runner -name "csdl.h" -ls 2>/dev/null
