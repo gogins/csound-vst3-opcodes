@@ -1,5 +1,7 @@
 # NOTE: Csound is not installed and is not built. These actions use a csound 
 # submodule to obtain Csound's header files, which are all that is required. 
+# Csound's float-version.h file must be created in place.
+
 name: Build on push or pull request, upload artifacts, and create pre-release
 
 # Controls when the action will run. 
