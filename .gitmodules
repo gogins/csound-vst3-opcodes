@@ -1,3 +1,7 @@
 [submodule "vst3sdk"]
 	path = vst3sdk
 	url = https://github.com/steinbergmedia/vst3sdk.git
+[submodule "csound"]
+	path = csound
+	url = https://github.com/csound/csound.git
+	branch = csound6
