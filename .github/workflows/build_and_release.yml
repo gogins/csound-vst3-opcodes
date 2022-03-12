@@ -57,6 +57,7 @@ jobs:
       - name: Build on Linux
         if: runner.os == 'Linux'
         run: |
+          sudo apt-get install cmake libx11-xcb-dev libxcb-util-dev libxcb-cursor-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev libfontconfig1-dev libcairo2-dev libgtkmm-3.0-dev libsqlite3-dev libxcb-keysyms1-dev
           echo "Trying to find csdl.h..."
           find /usr -name "csdl.h" -ls 2>/dev/null
           find /home/runner -name "csdl.h" -ls 2>/dev/null
