@@ -51,8 +51,8 @@ jobs:
           echo "Trying to find csdl.h..."
           find /Users/runner -name "csdl.h" -ls 2>/dev/null
           bash clean-build-macos.bash
-          bash zip-macos.bash
           ls -ll
+          bash zip-macos.bash
           
       - name: Build on Linux
         if: runner.os == 'Linux'
@@ -63,8 +63,8 @@ jobs:
           find /usr -name "csdl.h" -ls 2>/dev/null
           find /home/runner -name "csdl.h" -ls 2>/dev/null
           bash clean-build-linux.bash
-          bash zip-linux.bash
           ls -ll
+          bash zip-linux.bash
         
       - name: Build on Windows
         if: runner.os == 'Windows'
@@ -73,8 +73,8 @@ jobs:
           bash clean-build-windows.bash
           bash zip-windows.bash
           bash clean-build-windows-debug.bash
-          bash zip-windows-debug.bash
           dir
+          bash zip-windows-debug.bash
                       
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'macOS'
