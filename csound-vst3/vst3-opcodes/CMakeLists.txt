@@ -1,7 +1,7 @@
 message(STATUS "CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 message(STATUS "CMAKE_HOST_SYSTEM_NAME: ${CMAKE_HOST_SYSTEM_NAME}")
+set(CMAKE_CXX_STANDARD 17)
 if(APPLE)
-    set(CMAKE_CXX_STANDARD 17)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
     message(STATUS "CMAKE_FRAMEWORK_PATH: ${CMAKE_FRAMEWORK_PATH}")
     message(STATUS "CMAKE_SYSTEM_FRAMEWORK_PATH: ${CMAKE_SYSTEM_FRAMEWORK_PATH}")
@@ -106,8 +106,6 @@ if (APPLE)
         "$ENV{HOMEBREW_PREFIX}/Cellar/csound/6.17.0_2/Frameworks/CsoundLib64.framework/Versions/6.0/Headers"
         "/Users/runner/work/csound-vst3-opcodes/csound-vst3-opcodes/csound/include"
         ".")
-    #target_link_libraries(${target} PRIVATE 
-    #    $ENV{HOMEBREW_PREFIX}/Cellar/csound/6.17.0_2/Frameworks/CsoundLib64.framework/Versions/6.0/CsoundLib64)
 endif()
 target_include_directories(${target} PRIVATE ${CSOUND_INCLUDE_DIR})
 if (SMTG_LINUX)
