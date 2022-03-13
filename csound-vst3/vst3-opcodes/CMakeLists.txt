@@ -118,6 +118,9 @@ if (SMTG_LINUX)
 endif()
 if (SMTG_WIN)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
+    target_include_directories(${target} PRIVATE 
+    "${CMAKE_SOURCE_DIR}\..\csound\include"
+    ".")
 endif()
 if (APP_PROPERTIES)
     set_target_properties(${target} PROPERTIES ${APP_PROPERTIES})
