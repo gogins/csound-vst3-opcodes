@@ -80,7 +80,7 @@ jobs:
           dir
           bash zip-windows-debug.bash
           echo "Finding plugin opcodes..."
-          find . -name "*vst3_plugins.dll" -ls 2>/dev/null
+          dir /s "*vst3_plugins.dll"
                       
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'macOS'
