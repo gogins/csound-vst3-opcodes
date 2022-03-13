@@ -108,8 +108,12 @@ if (APPLE)
         ".")
     #target_link_libraries(${target} PRIVATE 
     #    $ENV{HOMEBREW_PREFIX}/Cellar/csound/6.17.0_2/Frameworks/CsoundLib64.framework/Versions/6.0/CsoundLib64)
-else()
-    target_include_directories(${target} PRIVATE ${CSOUND_INCLUDE_DIR})
+endif()
+target_include_directories(${target} PRIVATE ${CSOUND_INCLUDE_DIR})
+if (SMTG_LINUX)
+    target_include_directories(${target} PRIVATE 
+    "/home/runner/work/csound-vst3-opcodes/csound-vst3-opcodes/csound/include"
+    ".")
 endif()
 if (APP_PROPERTIES)
     set_target_properties(${target} PROPERTIES ${APP_PROPERTIES})
