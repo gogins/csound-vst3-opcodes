@@ -1,12 +1,13 @@
 # NOTE: Csound is not installed and is not built. These actions use a csound 
 # submodule to obtain Csound's header files, which are all that is required. 
-# Csound's float-version.h and version.h files must be created in place.
+# Csound's float-version.h and version.h files are edited and stored in this 
+# repository.
 
 name: Build on push or pull request, upload artifacts, and create pre-release
 
 # Controls when the action will run. 
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch.
+  # When the workflow is triggered.
   push:
     branches: [ master, csound_submodule ]
   pull_request:

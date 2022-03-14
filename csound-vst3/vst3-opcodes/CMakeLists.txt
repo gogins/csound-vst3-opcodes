@@ -1,10 +1,10 @@
 message(STATUS "CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 message(STATUS "CMAKE_HOST_SYSTEM_NAME: ${CMAKE_HOST_SYSTEM_NAME}")
 set(CMAKE_CXX_STANDARD 17)
-if (MSVC)
+if (SMTG_WIN)
     set(SMTG_USE_STDATOMIC_H OFF CACHE BOOL “” FORCE)
 endif()
-if(APPLE)
+if(SMTG_MAC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
     message(STATUS "CMAKE_FRAMEWORK_PATH: ${CMAKE_FRAMEWORK_PATH}")
     message(STATUS "CMAKE_SYSTEM_FRAMEWORK_PATH: ${CMAKE_SYSTEM_FRAMEWORK_PATH}")
@@ -46,7 +46,7 @@ set(vst3_plugins_sources
     vst3-opcodes.cpp
     )
     
-    if(APPLE)
+    if(SMTG_MAC)
         set(vst3_plugins_sources
             ${vst3_plugins_sources}
             #${SDK_ROOT}/public.sdk/samples/vst-hosting/editorhost/source/platform/mac/platform.mm
@@ -103,7 +103,7 @@ set(target vst3_plugins)
 add_library(${target} MODULE ${vst3_plugins_sources})
 target_link_libraries(${target} PRIVATE base sdk ${vst3_plugins_PLATFORM_LIBS})
 target_compile_definitions(${target} PRIVATE USE_DOUBLE)
-if (APPLE)
+if (SMTG_MAC)
     target_compile_options(${target} PRIVATE "-fobjc-arc")
     target_include_directories(${target} PRIVATE 
         "$ENV{HOMEBREW_PREFIX}/Cellar/csound/6.17.0_2/Frameworks/CsoundLib64.framework/Versions/6.0/Headers"
