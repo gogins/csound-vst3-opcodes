@@ -76,7 +76,7 @@ jobs:
       - name: Build on Windows
         if: runner.os == 'Windows'
         run: |
-          set
+          env 
           bash clean-build-windows.bash
           bash zip-windows.bash
           bash clean-build-windows-debug.bash
