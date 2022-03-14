@@ -1,18 +1,21 @@
+# Useful information.
 message(STATUS "CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
-message(STATUS "CMAKE_HOST_SYSTEM_NAME: ${CMAKE_HOST_SYSTEM_NAME}")
+message(STATUS "CMAKE_HOST_SYSTEM_NAME: ${CMAKE_HOST_SYSTEM_NAME}")    
+message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")    
+
+# Global CMake configuration.
 set(CMAKE_CXX_STANDARD 17)
 if (SMTG_WIN)
     set(SMTG_USE_STDATOMIC_H OFF CACHE BOOL “” FORCE)
 endif()
 if(SMTG_MAC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
     message(STATUS "CMAKE_FRAMEWORK_PATH: ${CMAKE_FRAMEWORK_PATH}")
     message(STATUS "CMAKE_SYSTEM_FRAMEWORK_PATH: ${CMAKE_SYSTEM_FRAMEWORK_PATH}")
     message(STATUS "HOMEBREW_PREFIX: $ENV{HOMEBREW_PREFIX}")
 endif()
-if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Linux")
-    message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")    
-endif()
+
+# Target-specific configuration.
 set(vst3_plugins_sources
 #    ${SDK_ROOT}/public.sdk/samples/vst-hosting/editorhost/source/editorhost.cpp
 #    ${SDK_ROOT}/public.sdk/samples/vst-hosting/editorhost/source/editorhost.h
