@@ -49,6 +49,7 @@ jobs:
       - name: Build on Mac OS
         if: runner.os == 'macOS'
         run: |
+          env
           echo "Trying to find csdl.h..."
           find /Users/runner -name "csdl.h" -ls 2>/dev/null
           bash clean-build-macos.bash
@@ -60,6 +61,7 @@ jobs:
       - name: Build on Linux
         if: runner.os == 'Linux'
         run: |
+          env
           sudo apt-get update
           sudo apt-get install --fix-missing cmake libx11-xcb-dev libxcb-util-dev libxcb-cursor-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev libfontconfig1-dev libcairo2-dev libgtkmm-3.0-dev libsqlite3-dev libxcb-keysyms1-dev
           echo "Trying to find csdl.h..."
@@ -74,6 +76,7 @@ jobs:
       - name: Build on Windows
         if: runner.os == 'Windows'
         run: |
+          set
           bash clean-build-windows.bash
           bash zip-windows.bash
           bash clean-build-windows-debug.bash
