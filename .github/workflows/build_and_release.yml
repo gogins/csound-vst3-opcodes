@@ -73,7 +73,6 @@ jobs:
       - name: Build on Windows
         if: runner.os == 'Windows'
         run: |
-          # https://github.com/csound/csound/releases/download/6.17.0/csound-6.17.0-windows-x64-installer.zip
           bash clean-build-windows.bash
           bash zip-windows.bash
           bash clean-build-windows-debug.bash
