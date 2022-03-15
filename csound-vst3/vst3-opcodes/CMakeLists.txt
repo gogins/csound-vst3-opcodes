@@ -1,16 +1,21 @@
+# Useful information.
 message(STATUS "CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
-message(STATUS "CMAKE_HOST_SYSTEM_NAME: ${CMAKE_HOST_SYSTEM_NAME}")
-if(APPLE)
-    set(CMAKE_CXX_STANDARD 17)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+message(STATUS "CMAKE_HOST_SYSTEM_NAME: ${CMAKE_HOST_SYSTEM_NAME}")    
+message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")    
+if(SMTG_MAC)
+    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
     message(STATUS "CMAKE_FRAMEWORK_PATH: ${CMAKE_FRAMEWORK_PATH}")
     message(STATUS "CMAKE_SYSTEM_FRAMEWORK_PATH: ${CMAKE_SYSTEM_FRAMEWORK_PATH}")
     message(STATUS "HOMEBREW_PREFIX: $ENV{HOMEBREW_PREFIX}")
 endif()
-if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Linux")
-    message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")    
-    find_package(CSOUND REQUIRED PATHS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
+
+# Global CMake configuration.
+set(CMAKE_CXX_STANDARD 17)
+if (SMTG_WIN)
+    set(SMTG_USE_STDATOMIC_H OFF CACHE BOOL “” FORCE)
 endif()
+
+# Target-specific configuration.
 set(vst3_plugins_sources
 #    ${SDK_ROOT}/public.sdk/samples/vst-hosting/editorhost/source/editorhost.cpp
 #    ${SDK_ROOT}/public.sdk/samples/vst-hosting/editorhost/source/editorhost.h
@@ -44,7 +49,7 @@ set(vst3_plugins_sources
     vst3-opcodes.cpp
     )
     
-    if(APPLE)
+    if(SMTG_MAC)
         set(vst3_plugins_sources
             ${vst3_plugins_sources}
             #${SDK_ROOT}/public.sdk/samples/vst-hosting/editorhost/source/platform/mac/platform.mm
@@ -101,14 +106,25 @@ set(target vst3_plugins)
 add_library(${target} MODULE ${vst3_plugins_sources})
 target_link_libraries(${target} PRIVATE base sdk ${vst3_plugins_PLATFORM_LIBS})
 target_compile_definitions(${target} PRIVATE USE_DOUBLE)
-if (APPLE)
+if (SMTG_MAC)
     target_compile_options(${target} PRIVATE "-fobjc-arc")
     target_include_directories(${target} PRIVATE 
-ß        $ENV{HOMEBREW_PREFIX}/Cellar/csound/6.17.0_2/Frameworks/CsoundLib64.framework/Versions/6.0/Headers)
-    target_link_libraries(${target} PRIVATE 
-        $ENV{HOMEBREW_PREFIX}/Cellar/csound/6.17.0_2/Frameworks/CsoundLib64.framework/Versions/6.0/CsoundLib64)
-else()
-    target_include_directories(${target} PRIVATE ${CSOUND_INCLUDE_DIR})
+        "$ENV{HOMEBREW_PREFIX}/Cellar/csound/6.17.0_2/Frameworks/CsoundLib64.framework/Versions/6.0/Headers"
+        "/Users/runner/work/csound-vst3-opcodes/csound-vst3-opcodes/csound/include"
+        ".")
+endif()
+target_include_directories(${target} PRIVATE ${CSOUND_INCLUDE_DIR})
+if (SMTG_LINUX)
+    target_include_directories(${target} PRIVATE 
+    "/home/runner/work/csound-vst3-opcodes/csound-vst3-opcodes/csound/include"
+    ".")
+endif()
+if (SMTG_WIN)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:__cplusplus /std:c++17")
+    target_include_directories(${target} PRIVATE 
+        "${CMAKE_SOURCE_DIR}/../csound/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../csound/include"
+        ".")
 endif()
 if (APP_PROPERTIES)
     set_target_properties(${target} PROPERTIES ${APP_PROPERTIES})

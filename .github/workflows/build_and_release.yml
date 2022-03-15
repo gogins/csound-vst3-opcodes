@@ -1,10 +1,15 @@
+# NOTE: Csound is not installed and is not built. These actions use a csound 
+# submodule to obtain Csound's header files, which are all that is required. 
+# Csound's float-version.h and version.h files are edited and stored in this 
+# repository.
+
 name: Build on push or pull request, upload artifacts, and create pre-release
 
 # Controls when the action will run. 
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch.
+  # When the workflow is triggered.
   push:
-    branches: [ master ]
+    branches: [ master, csound_submodule ]
   pull_request:
     branches: [ master ]
 
@@ -44,36 +49,42 @@ jobs:
       - name: Build on Mac OS
         if: runner.os == 'macOS'
         run: |
-          brew update
-          brew install csound --verbose
-          brew install sevenzip --verbose
+          echo "Environment on runner:"
+          env
+          echo "Trying to find csdl.h..."
           find /Users/runner -name "csdl.h" -ls 2>/dev/null
           bash clean-build-macos.bash
-          bash zip-macos.bash
           ls -ll
+          bash zip-macos.bash
+          echo "Finding plugin opcodes..."
+          find . -name "*vst3_plugins.dylib" -ls 2>/dev/null
           
       - name: Build on Linux
         if: runner.os == 'Linux'
         run: |
-          sudo apt update
-          sudo apt install csound libcsound64-dev libcsnd-dev
-          sudo apt-get install cmake gcc "libstdc++6" libx11-xcb-dev libxcb-util-dev libxcb-cursor-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev libfontconfig1-dev libcairo2-dev libgtkmm-3.0-dev libsqlite3-dev libxcb-keysyms1-dev
+          echo "Environment on runner:"
+          env
+          sudo apt-get update
+          sudo apt-get install --fix-missing cmake libx11-xcb-dev libxcb-util-dev libxcb-cursor-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev libfontconfig1-dev libcairo2-dev libgtkmm-3.0-dev libsqlite3-dev libxcb-keysyms1-dev
           echo "Trying to find csdl.h..."
           find /usr -name "csdl.h" -ls 2>/dev/null
           find /home/runner -name "csdl.h" -ls 2>/dev/null
           bash clean-build-linux.bash
-          bash zip-linux.bash
           ls -ll
+          bash zip-linux.bash
+          echo "Finding plugin opcodes..."
+          find . -name "*vst3_plugins.so" -ls 2>/dev/null
         
       - name: Build on Windows
         if: runner.os == 'Windows'
         run: |
-          # https://github.com/csound/csound/releases/download/6.17.0/csound-6.17.0-windows-x64-installer.zip
+          echo "Environment on runner:"
+          env 
           bash clean-build-windows.bash
           bash zip-windows.bash
           bash clean-build-windows-debug.bash
-          bash zip-windows-debug.bash
           dir
+          bash zip-windows-debug.bash
                       
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'macOS'
