@@ -128,6 +128,7 @@ a_out_left, a_out_right vst3audio gi_vst3_handle_piano
 outleta "outleft", a_out_left * 5
 outleta "outright", a_out_right * 5
 prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+vst3info gi_vst3_handle_piano
 endin
 
 instr JX10_Output
