@@ -32,7 +32,7 @@ to run this piece from the `csound-vst3/vst3-opcodes` subdirectory.
 
 </CsLicense>
 <CsOptions>
--m195 ; --opcode-lib="../../build-macos/lib/Debug/libvst3_plugins.dylib" -z1
+-m195 -odac
 </CsOptions>
 <CsInstruments>
 
