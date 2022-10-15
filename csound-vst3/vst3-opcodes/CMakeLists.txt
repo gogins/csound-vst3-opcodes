@@ -109,7 +109,7 @@ target_compile_definitions(${target} PRIVATE USE_DOUBLE)
 if (SMTG_MAC)
     target_compile_options(${target} PRIVATE "-fobjc-arc")
     target_include_directories(${target} PRIVATE 
-        "$ENV{HOMEBREW_PREFIX}/Cellar/csound/6.17.0_2/Frameworks/CsoundLib64.framework/Versions/6.0/Headers"
+"$ENV{HOMEBREW_PREFIX}/Cellar/csound/6.17.0_7/Frameworks/CsoundLib64.framework/Versions/6.0/Headers"
         "/Users/runner/work/csound-vst3-opcodes/csound-vst3-opcodes/csound/include"
         ".")
 endif()
