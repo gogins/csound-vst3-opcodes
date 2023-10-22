@@ -14,10 +14,10 @@ effects in Csound.
 
 These opcodes are a port of the older vst4cs opcodes, which supports only the 
 VST2 protocol, to the newer and more capable VST3 protocol. The opcodes have 
-more or less the same behavior as the vst4cs opcodes,
+more or less the same behavior as the vst4cs opcodes.
 
 These opcodes are designed to be cross-platform and to run at least on Linux, 
-Windows, and OS X. Development is currently being done only on Linux.
+Windows, and OS X. 
 
 csound-vst3-opcodes is non-commercial software and is licensed under GPLv3, as 
 is the VST3 SDK; GPLv3, in turn, is compatible with Csound, which has a 
@@ -31,7 +31,7 @@ user projects co-opt Steinberg's CMake build system for the VST SDK. In other
 words, one builds one's VST projects as if they were parts of the VST SDK 
 itself.
 
-The build does not work from the release archive. You must clone the Git 
+The build does not work from the release archive. You must first clone the Git 
 repository:
 ```
 git clone https://github.com/gogins/csound-vst3-opcodes.git
