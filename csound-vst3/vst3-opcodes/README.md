@@ -18,6 +18,10 @@ and parameters is more flexible.
 Currently, opening a plugin's editor window from Csound, which is a feature of 
 the vst4cs opcodes, is not supported.
 
+Also, MIDI outputs or event outputs from VST3 plugins are not supported. Only 
+the default event inputs, and the default main audio inputs and outputs, are 
+supported.
+
 These opcodes are licensed under the terms of the GPLv3 license,
 which is compatible with both the Steinberg VST3 SDK GPLv3 license
 and Csound's LGPLv2 license (which allows re-licensing Csound as 

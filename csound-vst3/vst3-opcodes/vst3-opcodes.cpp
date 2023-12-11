@@ -377,10 +377,16 @@ namespace csound {
             if (sampleRate == 0) {
                 return true;
             }
-            hostProcessData.prepare(*component, blockSize, Steinberg::Vst::kSample32);
+            if (processor->canProcessSampleSize(Steinberg::Vst::kSample64)) {
+                plugin_sample_size = Steinberg::Vst::kSample64;
+            } else {
+                plugin_sample_size = Steinberg::Vst::kSample32;
+            }
+            hostProcessData.prepare(*component, blockSize, plugin_sample_size);
             auto result = updateProcessSetup();
-            csound->Message(csound, "vst3_plugin::setBlockSize: sampleRate: %9.4f\n", sampleRate);
-            csound->Message(csound, "vst3_plugin::setBlockSize: blockSize:  %9d\n", blockSize);
+            csound->Message(csound, "vst3_plugin::setBlockSize: plugin_sample_size: %9d\n", plugin_sample_size);
+            csound->Message(csound, "vst3_plugin::setBlockSize: sampleRate:         %9.3f\n", sampleRate);
+            csound->Message(csound, "vst3_plugin::setBlockSize: blockSize:          %9d\n", blockSize);
             return result;
         }
         void setParameter(uint32 id, double value, int32 sampleOffset) {
@@ -441,7 +447,21 @@ namespace csound {
                     return false;
                 }
             }
-            Steinberg::Vst::ProcessSetup setup {Steinberg::Vst::kRealtime, Steinberg::Vst::kSample32, blockSize, sampleRate};
+            if (processor->canProcessSampleSize(Steinberg::Vst::kSample64)) {
+                plugin_sample_size = Steinberg::Vst::kSample64;
+                csound->Message(csound, "vst3_plugin_t::updateProcessSetup: processing 64 bit samples: %d.\n", plugin_sample_size);
+            } else {
+                plugin_sample_size = Steinberg::Vst::kSample32;
+                csound->Message(csound, "vst3_plugin_t::updateProcessSetup: processing 32 bit samples: %d.\n", plugin_sample_size);
+            }          
+            component->activateBus(Steinberg::Vst::kEvent, Steinberg::Vst::kInput, 0, false);
+            component->activateBus(Steinberg::Vst::kAudio, Steinberg::Vst::kInput, 0, false);
+            component->activateBus(Steinberg::Vst::kAudio, Steinberg::Vst::kOutput, 0, false);
+            Steinberg::Vst::ProcessSetup setup;
+            setup.processMode = Steinberg::Vst::kRealtime;
+	        setup.symbolicSampleSize = Steinberg::Vst::kSample32;
+	        setup.maxSamplesPerBlock = blockSize;
+	        setup.sampleRate = sampleRate;
             if (processor->setupProcessing(setup) != Steinberg::kResultOk) {
                 csound->Message(csound, "vst3_plugin_t::updateProcessSetup: setupProcessing returned 'false'.\n");
                 return false;
@@ -450,6 +470,9 @@ namespace csound {
                 csound->Message(csound, "vst3_plugin_t::updateProcessSetup: setActive returned 'false'.\n");
                 return false;
             }
+            component->activateBus(Steinberg::Vst::kEvent, Steinberg::Vst::kInput, 0, true);
+            component->activateBus(Steinberg::Vst::kAudio, Steinberg::Vst::kInput, 0, true);
+            component->activateBus(Steinberg::Vst::kAudio, Steinberg::Vst::kOutput, 0, true);
             processor->setProcessing(true);
             isProcessing = true;
             return isProcessing;
@@ -528,7 +551,8 @@ namespace csound {
                 Steinberg::Vst::BusInfo busInfo = {};
                 auto result = component->getBusInfo(Steinberg::Vst::MediaTypes::kAudio, Steinberg::Vst::kInput, i, busInfo);
                 auto name = VST3::StringConvert::convert(busInfo.name);
-                csound->Message(csound, "               buss:       direction: %s  media: %s  channels: %3d  bus type: %s  flags: %d  name: %-32s \n", 
+                csound->Message(csound, "               Buss[%3d]:  direction: %s  media: %s  channels: %3d  bus type: %s  flags: %d  name: %-32s \n", 
+                    i,
                     busInfo.direction == 0 ? "Input " : "Output",
                     busInfo.mediaType == 0 ? "Audio" : "Event",
                     busInfo.channelCount,
@@ -541,7 +565,8 @@ namespace csound {
                 Steinberg::Vst::BusInfo busInfo = {};
                 auto result = component->getBusInfo(Steinberg::Vst::MediaTypes::kEvent, Steinberg::Vst::kInput, i, busInfo);
                 auto name = VST3::StringConvert::convert(busInfo.name);
-                csound->Message(csound, "               buss:       direction: %s  media: %s  channels: %3d  bus type: %s  flags: %d  name: %-32s \n", 
+                csound->Message(csound, "               Buss[%3d]:  direction: %s  media: %s  channels: %3d  bus type: %s  flags: %d  name: %-32s \n", 
+                    i,                   
                     busInfo.direction == 0 ? "Input " : "Output",
                     busInfo.mediaType == 0 ? "Audio" : "Event",
                     busInfo.channelCount,
@@ -554,7 +579,8 @@ namespace csound {
                 Steinberg::Vst::BusInfo busInfo = {};
                 auto result = component->getBusInfo(Steinberg::Vst::MediaTypes::kAudio, Steinberg::Vst::kOutput, i, busInfo);
                 auto name = VST3::StringConvert::convert(busInfo.name);
-                csound->Message(csound, "               buss:       direction: %s  media: %s  channels: %3d  bus type: %s  flags: %d  name: %-32s \n", 
+                csound->Message(csound, "               Buss[%3d]:  direction: %s  media: %s  channels: %3d  bus type: %s  flags: %d  name: %-32s \n", 
+                    i,
                     busInfo.direction == 0 ? "Input " : "Output",
                     busInfo.mediaType == 0 ? "Audio" : "Event",
                     busInfo.channelCount,
@@ -567,7 +593,8 @@ namespace csound {
                 Steinberg::Vst::BusInfo busInfo = {};
                 auto result = component->getBusInfo(Steinberg::Vst::MediaTypes::kEvent, Steinberg::Vst::kOutput, i, busInfo);
                 auto name = VST3::StringConvert::convert(busInfo.name);
-                 csound->Message(csound, "               buss:       direction: %s  media: %s  channels: %3d  bus type: %s  flags: %d  name: %-32s \n", 
+                csound->Message(csound, "               Buss[%3d]:  direction: %s  media: %s  channels: %3d  bus type: %s  flags: %d  name: %-32s \n", 
+                    i,
                     busInfo.direction == 0 ? "Input " : "Output",
                     busInfo.mediaType == 0 ? "Audio" : "Event",
                     busInfo.channelCount,
@@ -668,6 +695,9 @@ namespace csound {
         bool isProcessing = false;
         double sampleRate = 0;
         int32 blockSize = 0;
+        int32 inputs_index = 0;
+        int32 outputs_index = 0;
+        int32 plugin_sample_size;
         // Incremented for every MIDI Note On message created, 
         // and paired with the corresponding Note Off message, 
         // for the lifetime of this plugin instance.
@@ -835,7 +865,7 @@ namespace csound {
                 plugin_input_channel_count = process_data.inputs[0].numChannels;
                 plugin_input_channels_32 = process_data.inputs[0].channelBuffers32;
                 plugin_input_channels_64 = process_data.inputs[0].channelBuffers64;
-                log(csound, "vst3audio::init: plugin_input_channel_count: %3d plugin_input_channels_32: %p plugin_input_channels_64: %p\n", plugin_input_channel_count, plugin_input_channels_32, plugin_input_channels_64);
+                log(csound, "vst3audio::init: plugin_input_channel_count:  %3d plugin_input_channels_32:  %p plugin_input_channels_64:  %p\n", plugin_input_channel_count, plugin_input_channels_32, plugin_input_channels_64);
             } else {
                 plugin_input_channel_count = 0;
             }
@@ -846,7 +876,7 @@ namespace csound {
                 plugin_output_channels_32 = process_data.outputs[0].channelBuffers32;
                 plugin_output_channels_64 = process_data.outputs[0].channelBuffers64;
                 log(csound, "vst3audio::init: plugin_output_channel_count: %3d plugin_output_channels_32: %p plugin_output_channels_64: %p\n", plugin_output_channel_count, plugin_output_channels_32, plugin_output_channels_64);
-           } else {
+            } else {
                 plugin_output_channel_count = 0;
             }
             output_channel_count = std::min(opcode_output_channel_count, plugin_output_channel_count);

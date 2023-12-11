@@ -59,6 +59,8 @@ There are similar scripts for other platforms.
 Copy the vst3-opcodes shared library to your Csound plugin directory, which is 
 specified in the `OPCODE6DIR64` environment variable.
 
+On macOS, that is `/Library/Audio/Plug-Ins/VST3`.`
+
 ## User Guide
 
 The VST3 opcodes have exactly the same names as the vst4cs opcodes, except 
