@@ -2,12 +2,10 @@
 echo "Making a clean build of csound-vst3..."
 rm -rf build-linux
 mkdir -p build-linux
-# Locally it is:
-# ~/csound-vst3-opcodes/csound-vst3/
-# On the runner it is constructed as:
-# /home/runner/work/csound-vst3-opcodes/csound-vst3-opcodes/csound-vst3
-export MYPLUGINS_PATH=$(pwd)/csound-vst3
-echo "MYPLUGINS_PATH: $MYPLUGINS_PATH"
+cd vst3sdk
+echo "Patching the VST3 SDK to also build csound-vst-opcodes..."
+git apply ../patches/vst3sdk.patch
+cd ..
 cd build-linux
 ls ..
 pwd

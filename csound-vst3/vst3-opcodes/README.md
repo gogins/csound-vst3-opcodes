@@ -16,7 +16,9 @@ sample-frame accuracy. In addition, the organization of inputs, outputs,
 and parameters is more flexible.
 
 Currently, opening a plugin's editor window from Csound, which is a feature of 
-the vst4cs opcodes, is not supported.
+the vst4cs opcodes, is not supported. You can create presets in the 
+plugin's user interface by loading the plugin into a digital audio workstation 
+and saving the preset files to disk.
 
 Also, MIDI outputs or event outputs from VST3 plugins are not supported. Only 
 the default event inputs, and the default main audio inputs and outputs, are 

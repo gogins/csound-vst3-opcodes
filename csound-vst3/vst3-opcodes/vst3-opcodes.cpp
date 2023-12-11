@@ -805,13 +805,13 @@ namespace csound {
     static inline vst3_host_t *vst3_host_for_csound(CSOUND *csound) {
         int handle = 0;
         auto host = vst3hosts::instance().object_for_handle(csound, handle);
-        std::fprintf(stderr, "vst3_host_t::host_for_csound: csound: %p handle: %d host: %p...\n", csound, handle, host);
+        // std::fprintf(stderr, "vst3_host_t::host_for_csound: csound: %p handle: %d host: %p...\n", csound, handle, host);
         if (host == nullptr) {
             host = new vst3_host_t;
             handle = vst3hosts::instance().handle_for_object(csound, host);
         }
         host = vst3hosts::instance().object_for_handle(csound, handle);
-        std::fprintf(stderr, "vst3_host_t::host_for_csound: csound: %p handle: %d host: %p\n", csound, handle, host);
+        // std::fprintf(stderr, "vst3_host_t::host_for_csound: csound: %p handle: %d host: %p\n", csound, handle, host);
         return host;
     }
     
