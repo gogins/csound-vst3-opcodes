@@ -51,6 +51,9 @@ jobs:
         run: |
           echo "Environment on runner:"
           env
+          echo "Installing Csound..."
+          brew install csound
+          which csound
           echo "Trying to find csdl.h..."
           find /Users/runner -name "csdl.h" -ls 2>/dev/null
           bash clean-build-macos.bash
