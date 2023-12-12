@@ -6,14 +6,14 @@ message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
 
 project(vst3_opcodes
     VERSION 1.0.0
-    DESCRIPTION "VST3 plugin hosting for Csound."
+    DESCRIPTION "Csound opcodes that host VST3 plugins."
 )
 
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
 add_compile_definitions(RELEASE=1)
 set(SMTG_BUILD_UNIVERSAL_BINARY On)
 
-set(vst3sdk_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../vst3sdk)
+set(vst3sdk_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../vst3sdk)
 add_subdirectory(${vst3sdk_SOURCE_DIR} ${PROJECT_BINARY_DIR}/vst3sdk)
 smtg_enable_vst3_sdk()
 

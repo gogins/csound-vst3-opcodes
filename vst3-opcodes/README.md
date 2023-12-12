@@ -4,11 +4,10 @@
 
 ## https://github.com/gogins/csound-vst3-opcodes
 
-These are a set of Csound opcodes that enable Csound to host VST3 
-plugins: both effect plugins and instrument plugins. The vst3-opcodes should 
-work on Linux, Windows, and the Mac OS, and on both 64-bit and 32-bit CPU 
-architectures. VST2 plugins are not supported (but the vst4cs opcodes do 
-support VST2 plugins).
+These are a set of Csound opcodes that enable Csound to host VST3 plugins: 
+both effect plugins and instrument plugins. The vst3-opcodes should work on 
+Linux, Windows, and macOS. VST2 plugins are not supported (but the vst4cs 
+opcodes do support VST2 plugins).
 
 For users of Csound, the advantages of VST3 over VST2 are that not only 
 notes, but also MIDI messages and parameter changes are scheduled with 
@@ -18,16 +17,17 @@ and parameters is more flexible.
 Currently, opening a plugin's editor window from Csound, which is a feature of 
 the vst4cs opcodes, is not supported. You can create presets in the 
 plugin's user interface by loading the plugin into a digital audio workstation 
-and saving the preset files to disk.
+and saving the preset files to disk. Such presets can be loaded by Csound 
+using the VST3 opcodes.
 
 Also, MIDI outputs or event outputs from VST3 plugins are not supported. Only 
 the default event inputs, and the default main audio inputs and outputs, are 
 supported.
 
-These opcodes are licensed under the terms of the GPLv3 license,
-which is compatible with both the Steinberg VST3 SDK GPLv3 license
-and Csound's LGPLv2 license (which allows re-licensing Csound as 
-"any later version of the GPL license").
+These opcodes are licensed under the terms of the GPLv3 license, which is 
+compatible with both the Steinberg VST3 SDK GPLv3 license and Csound's LGPLv2 
+license (which allows re-licensing Csound as "any later version of the GPL 
+license").
 
 The opcodes consist of:
 
