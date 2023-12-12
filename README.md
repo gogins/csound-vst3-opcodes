@@ -9,15 +9,15 @@ http://michaelgogins.tumblr.com
 
 ## Introduction
 
-This project provides plugin opcodes for hosting VST3 plugin instruments and 
-effects in Csound.
+This project provides Csound plugin opcodes for hosting VST3 plugin 
+instruments and effects in Csound.
 
 These opcodes are a port of the older vst4cs opcodes, which supports only the 
 VST2 protocol, to the newer and more capable VST3 protocol. The opcodes have 
 more or less the same behavior as the vst4cs opcodes.
 
 These opcodes are designed to be cross-platform and to run at least on Linux, 
-Windows, and OS X. 
+Windows, and macOS.
 
 csound-vst3-opcodes is non-commercial software and is licensed under GPLv3, as 
 is the VST3 SDK; GPLv3, in turn, is compatible with Csound, which has a 
@@ -25,41 +25,29 @@ LGPLv2.1 license that permits relicensing to any later version of the GPL.
 
 ## Building
 
-Steinberg has provided an unusual variation on the standard CMake layout that 
-seems odd at first but does simplify building VST projects. The idea is that 
-user projects co-opt Steinberg's CMake build system for the VST SDK. In other 
-words, one builds one's VST projects as if they were parts of the VST SDK 
-itself.
+Do not directly build the VST3 SDK. It functions as a subdirectory of the 
+`vst3-plugins` project. There are platform-specific shell scripts for building 
+this project. The following instructions are for macOS. Just substitute 
+`windows` or `linux`  for `macos` in the script filenames, depending on your 
+platform.
 
-The build does not work from the release archive. You must first clone the Git 
-repository:
-```
-git clone https://github.com/gogins/csound-vst3-opcodes.git
-```
+ 1. Run `update-submodules.bash`, which ensures that the Git submodules 
+    used by this project have been initialized and updated.
 
-### Linux
+ 2. Run `clean-build-macos.bash`. It should finish with a list showing the 
+    new Csound plugin shared library.
 
-In the root directory of your local repository, execute 
-`bash update-submodules.bash` to initialize the Steinberg VST SDK submodules. 
+ 3. Run `zip-macos.bash` to create a Zip file containing the shared library,
+    
 
-Then execute `bash clean-build-linux` to build a release version of the 
-plugins.
 
-You can execute `bash zip-linux` to prepare a release archive from the build.
-
-If you need a debug version of the build, edit the build script and change 
-`CMAKE_BUILD_TYPE=Release` to `MAKE_BUILD_TYPE=Debug`, 
-`CMAKE_CONFIGURATION_TYPES="Release;"` to `-DCMAKE_CONFIGURATION_TYPES="Debug;"`, 
-and `--config Release` to `--config Debug`.
-
-There are similar scripts for other platforms.
 
 ## Installation
 
 Copy the vst3-opcodes shared library to your Csound plugin directory, which is 
-specified in the `OPCODE6DIR64` environment variable.
-
-On macOS, that is `/Library/Audio/Plug-Ins/VST3`.`
+specified in the `OPCODE6DIR64` environment variable. Or, preferably, create a 
+symbolic link in the `OPCODE6DIR64` directory to the vst3-plugins shared 
+library.
 
 ## User Guide
 
