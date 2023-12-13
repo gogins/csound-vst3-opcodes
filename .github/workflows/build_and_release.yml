@@ -89,8 +89,10 @@ jobs:
           dir
           bash zip-windows-debug.bash
       - name: Find plugins DLL
-          shell: pwsh
-          run: Get-ChildItem -Path "D:" -Recurse -File -Filter *vst3_plugins.dll
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path "D:" -Recurse -File -Filter *vst3_plugins.dll
 
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'macOS'
