@@ -138,7 +138,7 @@ endin
 instr Program_Change
 i_target_plugin = p4
 i_vst3_plugin init gi_plugins[p4]
-p6 = 1886548852
+p5 = 0
 k_parameter_id init p5
 k_parameter_value init p6
 vst3paramset i_vst3_plugin, k_parameter_id, k_parameter_value
@@ -172,7 +172,10 @@ i "Param_Change" 10 1 4 6 .1
 i "Print_Info" 10.5 1 4
 ; Restores original filter state.
 i "Load_Preset" 12 1 4 "jx10.preset"
-i "Program_Change" 15 1 4 0 .5
 i "Print_Info" 12.5 1 4
+i "Program_Change" 15 1 4 0 .50
+i "Program_Change" 20 1 4 0 .70
+i "Program_Change" 25 1 4 0 .90
+i "Print_Info" 25.5 1 4
 </CsScore>
 </CsoundSynthesizer>

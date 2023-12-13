@@ -12,7 +12,7 @@ http://michaelgogins.tumblr.com
 This project provides Csound plugin opcodes for hosting VST3 plugin 
 instruments and effects in Csound.
 
-These opcodes are a port of the older vst4cs opcodes, which supports only the 
+These opcodes are a port of the older vst4cs opcodes, which support only the 
 VST2 protocol, to the newer and more capable VST3 protocol. The opcodes have 
 more or less the same behavior as the vst4cs opcodes.
 
@@ -39,9 +39,6 @@ platform.
 
  3. Run `zip-macos.bash` to create a Zip file containing the shared library,
     
-
-
-
 ## Installation
 
 Copy the vst3-opcodes shared library to your Csound plugin directory, which is 
@@ -60,3 +57,17 @@ that the VST3 protocol applies parameter changes with sample frame accuracy
 and interpolation.
 
 For a reference to the opcodes, see their [README.md](csound-vst3/vst3-opcodes/README.md).
+
+## Release Notes
+
+### v1.1.0
+
+There was a bug in that the VST3 plugin busses were not being properly 
+activated, causing some VST3 plugins not to process audio. This has been fixed.
+
+On macOS, the vst3-opcodes shared library is now built as a universal binary 
+(x86-64 and arm64).
+
+The directory structure of this project has been simplified.
+
+The build system has been corrected and simplified.
