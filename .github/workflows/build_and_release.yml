@@ -88,7 +88,9 @@ jobs:
           bash clean-build-windows-debug.bash
           dir
           bash zip-windows-debug.bash
-                      
+          echo "Finding plugin opcodes..."
+          find . -name "*vst3_plugins.so" -ls 2>/dev/null
+                
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'macOS'
         with:
