@@ -1146,6 +1146,7 @@ namespace csound {
             key = *i_key;
             pitch = int16(key + 0.5);
             tuning = (double(*i_key) - double(key)) * double(100.0);
+            log(csound, "key: %9.4f pitch: %9.4f tuning: %9.4f", key, pitch, tuning);
             velocity = *i_velocity;
             velocity = velocity / 127.;
             // Ensure that the opcode instance is still active when we are scheduled

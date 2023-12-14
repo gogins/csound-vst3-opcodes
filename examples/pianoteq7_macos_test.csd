@@ -39,7 +39,8 @@ while i_iteration < gi_iterations do
     // Normalized logistic equation:
     i_y1 = i_c * i_y * (1 - i_y) * 4
     i_y = i_y1
-    i_pitch = floor(i_bass + (i_y * i_range)) 
+    ; i_pitch = floor(i_bass + (i_y * i_range)) 
+    i_pitch = i_bass + (i_y * i_range)
     event_i "i", i_instrument, i_time, gi_duration, i_pitch, gi_loudness
     prints "   %f => i %f %f %f %f %f\n", i_y, i_instrument, i_time, gi_duration, i_pitch, gi_loudness
 od

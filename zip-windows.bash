@@ -12,7 +12,7 @@ rm -f $ARCHIVE
 7z a $ARCHIVE vst3-opcodes/README.md
 7z a $ARCHIVE examples/*.csd
 7z a $ARCHIVE examples/*.*preset
-7z a $ARCHIVE -r $TARGETS/*vst3_plugins*
+7z a $ARCHIVE -r D:\a\csound-vst3-opcodes\csound-vst3-opcodes\build-windows\lib\Debug\*vst3_plugins*
 7z a $ARCHIVE -r $TARGETS/*.vst3
 echo "Archived:"
 7z l $ARCHIVE
