@@ -62,6 +62,7 @@
 #include "public.sdk/source/vst/hosting/processdata.h"
 #include "public.sdk/source/vst/utility/stringconvert.h"
 #include "public.sdk/source/vst/vstpresetfile.h"
+#include "public.sdk/source/vst/vstparameters.h"
 
 /**
  * (1) VST3 Modules may implement any number of VST3 plugins.
@@ -331,9 +332,22 @@ namespace csound {
             processContext.continousTimeSamples = continousFrames;
             paramTransferrer.transferChangesTo(inputParameterChanges);
 #if PARAMETER_DEBUGGING
-            if (inputParameterChanges.getParameterCount() > 0) {
-                csound->Message(csound, "vst3_plugin_t::preprocess: inputParameterChanges parameters: %d.\n", 
-                    inputParameterChanges.getParameterCount());
+            // Making sure the parameter changes made it down to the bottom of 
+            // the stack, and will get to the processor...
+            auto input_parameter_count = hostProcessData.inputParameterChanges->getParameterCount();
+            for (auto parameter_index = 0; parameter_index < input_parameter_count; ++parameter_index) {
+                auto queue_for_parameter = hostProcessData.inputParameterChanges->getParameterData(parameter_index);
+                auto parameter_id = queue_for_parameter->getParameterId();
+                auto parameter_point_count = queue_for_parameter->getPointCount();
+                for (auto point_index = 0; point_index < parameter_point_count; ++point_index) { 
+                    int sample_offset;
+                    double parameter_value;
+                    queue_for_parameter->getPoint(point_index, sample_offset, parameter_value);
+                    csound->Message(csound, "vst3_plugin_t::preprocess: parameter id: %-16d sample offset: %-16d parameter_value: %9.4f\n", 
+                        parameter_id, 
+                        sample_offset, 
+                        parameter_value);
+                }
             }
 #endif
         }
@@ -389,10 +403,26 @@ namespace csound {
             csound->Message(csound, "vst3_plugin::setBlockSize: blockSize:          %9d\n", blockSize);
             return result;
         }
+        // It is assumed that "values" may be in musical units and ranges, and 
+        // such must be normalized.  Note that `id` is `id` and not the index. 
+        // Note also that many parameters one might think are not normalized, 
+        // are normalized.
         void setParameter(uint32 id, double value, int32 sampleOffset) {
-            paramTransferrer.addChange(id, value, sampleOffset);
+            Steinberg::Vst::ParameterInfo parameter_info;
+            double normalized_value = value;
+            Steinberg::tresult result = controller->getParameterInfo(id, parameter_info);
+            double step_count = parameter_info.stepCount;
+            if (result == Steinberg::kResultOk && step_count > 0) {
+                normalized_value = value / step_count;
+            }
+            paramTransferrer.addChange(id, normalized_value, sampleOffset);
 #if PARAMETER_DEBUGGING
-            csound->Message(csound, "vst3_plugin_t::setParameter: id: %4d  value: %9.4f  offset: %d\n", id, value, sampleOffset);
+            csound->Message(csound, "vst3_plugin_t::setParameter: id: %4d  value: %9.4f  step count: %9.4f normalized: %9.4f offset: %d\n", 
+                id, 
+                value, 
+                step_count,
+                normalized_value, 
+                sampleOffset);
 #endif
         }
         bool initialize(CSOUND *csound_, const VST3::Hosting::ClassInfo &classInfo_, Steinberg::Vst::PlugProvider *provider_) {
@@ -614,10 +644,19 @@ namespace csound {
                     Steinberg::String units(parameterInfo.units);
                     units.toMultiByte(Steinberg::kCP_Utf8);
                     double value = controller->getParamNormalized(parameterInfo.id);
-                    csound->Message(csound, "               parameter:  index: %4d: id: %12d name: %-64s units: %-16s default: %9.4f value: %9.4f\n", 
-                        i, parameterInfo.id, title.text8(), units.text8(), parameterInfo.defaultNormalizedValue, value);
+                    int32 step_count = parameterInfo.stepCount;
+                    csound->Message(csound, "               parameter:  index: %4d: id: %12d name: %-64s units: %-16s step count: %-4d default: %9.4f value: %9.4f %s\n", 
+                        i, 
+                        parameterInfo.id, 
+                        title.text8(), 
+                        units.text8(), 
+                        step_count,
+                        parameterInfo.defaultNormalizedValue, 
+                        value, 
+                        ((parameterInfo.flags & Steinberg::Vst::ParameterInfo::kIsProgramChange) == Steinberg::Vst::ParameterInfo::kIsProgramChange) ? "program change" : "");            
                 }
-            }            // Units, program lists, and programs, in a flat list.
+            }            
+            // Units, program lists, and programs, in a flat list.
             Steinberg::FUnknownPtr<Steinberg::Vst::IUnitInfo> i_unit_info(controller);
             if (i_unit_info) {
                 auto unit_count = i_unit_info->getUnitCount();
@@ -1234,7 +1273,7 @@ namespace csound {
                 int64_t block_start_frames = opds.insdshead->kcounter * frames_per_kperiod;
                 int64_t current_time_frames = csound->GetCurrentTimeSamples(csound);
                 Steinberg::int32 delta_frames = current_time_frames - block_start_frames;
-                vst3_plugin->setParameter(parameter_id, parameter_value, delta_frames);;
+                vst3_plugin->setParameter(parameter_id, parameter_value, delta_frames);
 #if PARAMETER_DEBUGGING
                 log(csound, "vst3paramset::kontrol: id: %4d  value: %9.4f  delta_frames: %4d\n", parameter_id, parameter_value, delta_frames);
 #endif

@@ -57,19 +57,11 @@ The typical lifecycle of a VST3 plugin in Csound is:
 Any number of VST3 plugins may be loaded. Any number of audio channels, VST3 
 parameters, or notes may be used. 
 
-Supposedly, to change to a different program (i.e., factory-defined preset), 
+Supposedly, to change to a different program (e.g., a factory-defined preset), 
 examine the `vst3info` printout for a plugin and change the program using 
 `vstparamset`, with the parameter ID equal to the program list ID. The 
-parameter value is normalized, but will be mapped to the appropriate program 
-number in the program list as follows.
-
-_Normalize_
-
-double normalized = program / (double) programs;
-
-_Denormalize_
-
-int program = min (programs, normalized * (programs + 1));
+Csound program number is not normalized, but is mapped and normalized in the 
+host.
 
 This however does not seem to work with the VST3 SDK example programs, and 
 they also do not work properly in the Reaper host.
@@ -82,7 +74,7 @@ Csound is as follows:
   2. Edit the parameters interactively until you achieve a sound you want to 
      use. Export the current state of the parameters as a preset file.
   3. In Csound, use vst3presetload to load your custom preset file.
-  4. Alternatively, simply uset vst3paramset to send all the parameter changes 
+  4. Alternatively, simply use vst3paramset to send all the parameter changes 
      that you need to define your preset before you play any notes, or define 
      a Csound instrument that will send such parameters for you from your 
      score.
@@ -323,7 +315,8 @@ i "Print_Info" 25.5 1 4
 ;i "Print_Info" 30.2 1 3
 
 </CsScore>
-</CsoundSynthesizer>```
+</CsoundSynthesizer>
+```
 
 ## vst3audio
 
@@ -690,9 +683,8 @@ obtained from the plugin's documentation, or by using [vst3info](#vst3info).
 Note that this must be the id number of the parameter, not its index in the 
 list of parameters.
 
-*k_value* -- the value of the parameter, a real number in the interval [0, 1].
-Most parameters have default values that can be printed by using 
-[vst3info](#vst3info). 
+*k_value* -- the value of the parameter, _not_ normalized, but passed in 
+the musical units and ranges indicated by [vst3info](#vst3info).
 
 If either of these arguments changes during performance, the plugin is 
 immediately updated with a new parameter value.

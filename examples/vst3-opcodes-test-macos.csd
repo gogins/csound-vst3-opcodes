@@ -155,8 +155,8 @@ instr Program_Change
 i_target_plugin = p4
 i_vst3_plugin init gi_plugins[p4]
 ; May only be relevant to the MDA example plugins.
-k_parameter_id init 1886548852 
-k_parameter_value init p5
+k_parameter_id init p5
+k_parameter_value init p6
 vst3paramset i_vst3_plugin, k_parameter_id, k_parameter_value
 prints "Don't expect this one to work yet!\n"
 prints "%-24s i %9.4f t %9.4f d %9.4f target: %3d  id: %3d  value: %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, i_target_plugin, k_parameter_id, k_parameter_value, active(p1)
@@ -216,10 +216,10 @@ i "Print_Info" 10.5 1 4
 ; Restores original parameter state.
 i "Load_Preset" 25 1 4 "jx10.vstpreset"
 i "Print_Info" 25.5 1 4
-;i "Program_Change" 25 1 4 12
-;i "Print_Info" 30.0 1 3
-;i "Program_Change" 30.1 1 3 4
-;i "Print_Info" 30.2 1 3
+i "Program_Change" 25 1 4 0 12
+i "Print_Info" 30.0 1 4
+i "Program_Change" 30.1 4 0 5
+i "Print_Info" 30.2 1 3
 
 </CsScore>
 </CsoundSynthesizer>

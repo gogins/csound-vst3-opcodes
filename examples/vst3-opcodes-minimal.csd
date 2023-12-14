@@ -138,9 +138,8 @@ endin
 instr Program_Change
 i_target_plugin = p4
 i_vst3_plugin init gi_plugins[p4]
-p5 = 0
 k_parameter_id init p5
-k_parameter_value init p6
+k_parameter_value init (p6 / 51) * 100 ; Divide by step count to get %.
 vst3paramset i_vst3_plugin, k_parameter_id, k_parameter_value
 prints "%-24s i %9.4f t %9.4f d %9.4f target: %3d  id: %3d  value: %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p6, active(p1)
 endin
@@ -167,15 +166,15 @@ i "Score_Generator" 1 1 3 .989 .5 36 60
 i "Score_Generator" 2 1 4 .989 .5 78 6
 ; Stores original filter state...
 i "Save_Preset" 1 1 4 "jx10.preset"
-; Changes filter state...
-i "Param_Change" 10 1 4 6 .1
+; Changes envelope...
+i "Param_Change" 10 1 4 17 .1
 i "Print_Info" 10.5 1 4
-; Restores original filter state.
-i "Load_Preset" 12 1 4 "jx10.preset"
-i "Print_Info" 12.5 1 4
-i "Program_Change" 15 1 4 0 .50
-i "Program_Change" 20 1 4 0 .70
-i "Program_Change" 25 1 4 0 .90
-i "Print_Info" 25.5 1 4
+; Restores original envelope.
+i "Load_Preset" 20 1 4 "jx10.preset"
+i "Print_Info" 20.5 1 4
+i "Program_Change" 30 1 4 1886548852 26
+i "Program_Change" 40 1 4 1886548852 7
+i "Program_Change" 50 1 4 1886548852 6
+i "Print_Info" 50.5 1 4
 </CsScore>
 </CsoundSynthesizer>

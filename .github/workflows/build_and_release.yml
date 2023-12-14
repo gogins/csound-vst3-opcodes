@@ -88,10 +88,6 @@ jobs:
           bash clean-build-windows-debug.bash
           dir
           bash zip-windows-debug.bash
-      - name: Find plugins DLL
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
           Get-ChildItem -Path "D:" -Recurse -File -Filter *vst3_plugins.dll
 
       - uses: "marvinpinto/action-automatic-releases@latest"
