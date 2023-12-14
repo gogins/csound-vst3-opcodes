@@ -6,7 +6,7 @@ message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
 
 set(CMAKE_OSX_ARCHITECTURES=arm64;x86_64)
 project(vst3_opcodes
-    VERSION 1.0.0
+    VERSION 1.1.0
     DESCRIPTION "Csound opcodes that host VST3 plugins."
 )
 
@@ -102,7 +102,8 @@ elseif(SMTG_WIN)
     )
     set(APP_PROPERTIES
         LINK_FLAGS "/SUBSYSTEM:console"
-    )
+        LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib
+    ) 
 endif()
 
 set(target vst3_plugins)

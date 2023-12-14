@@ -68,6 +68,14 @@ activated, causing some VST3 plugins not to process audio. This has been fixed.
 On macOS, the vst3-opcodes shared library is now built as a universal binary 
 (x86-64 and arm64).
 
+The handling of fractional pitches (i.e. fractional MIDI key numbers) in this 
+project has been corrected and simplified.
+
+The handling of program changes has been corrected but, alas, still seems not 
+to work.
+
+The sample VST3 plugins build by the VST3 SDK are now included in releases.
+
 The directory structure of this project has been simplified.
 
 The build system has been corrected and simplified.
