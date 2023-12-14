@@ -85,9 +85,7 @@ jobs:
           env 
           bash clean-build-windows.bash
           bash zip-windows.bash
-          bash clean-build-windows-debug.bash
           dir
-          bash zip-windows-debug.bash
           Get-ChildItem -Path "D:" -Recurse -File -Filter *vst3_plugins.dll
 
       - uses: "marvinpinto/action-automatic-releases@latest"

@@ -14,6 +14,7 @@
  */
  
 #define DEBUGGING 0
+#define TUNING_DEBUGGING 0 
 #define PARAMETER_DEBUGGING 1
 #define PROCESS_DEBUGGING 0
 #define EDITOR_IMPLEMENTED 0 
@@ -1100,11 +1101,11 @@ namespace csound {
         MYFLT *i_duration;
         // State.
         int16 channel;		// channel index in event bus
-        MYFLT key;
-        int16 pitch;		// range [0, 127] = [C-2, G8] with A3=440Hz(12-TET)
-        float tuning;		// 1.f = +1 cent, -1.f = -1 cent
+        MYFLT pitch;
+        int16 midi_key;		// range [0, 127] = [C-2, G8] with A3=440Hz(12-TET)
+        float tuning_cents;	// 1.f = +1 cent, -1.f = -1 cent
         float velocity;		// range [0.0, 1.0]
-        int32 length;		// in sample frames(optional, Note Off has to follow in any case!)
+        int32 length;		// in sample frames (optional, Note Off has to follow in any case!)
         Steinberg::Vst::Event note_on_event;
         Steinberg::Vst::Event note_off_event;
         size_t framesRemaining;
@@ -1143,10 +1144,12 @@ namespace csound {
             // Split the real-valued MIDI key number
             // into an integer key number and an integer number of cents(plus or
             // minus 50 cents).
-            key = *i_key;
-            pitch = int16(key + 0.5);
-            tuning = (double(*i_key) - double(key)) * double(100.0);
-            log(csound, "key: %9.4f pitch: %9.4f tuning: %9.4f", key, pitch, tuning);
+            pitch = *i_key;
+            midi_key = std::round(pitch);
+            tuning_cents = (pitch - midi_key) * double(100.0);
+#if TUNING_DEBUGGING
+            log(csound, "pitch: %9.4f midi_key: %4d tuning_cents: %9.4f\n", pitch, midi_key, tuning_cents);
+#endif            
             velocity = *i_velocity;
             velocity = velocity / 127.;
             // Ensure that the opcode instance is still active when we are scheduled
@@ -1157,8 +1160,8 @@ namespace csound {
             note_on_event.type = Steinberg::Vst::Event::EventTypes::kNoteOnEvent;
             note_on_event.sampleOffset = delta_frames;
             note_on_event.noteOn.channel = Steinberg::int16(*i_channel);
-            note_on_event.noteOn.pitch = pitch;
-            note_on_event.noteOn.tuning = tuning;
+            note_on_event.noteOn.pitch = midi_key;
+            note_on_event.noteOn.tuning = tuning_cents;
             note_on_event.noteOn.velocity = velocity;
             note_on_event.noteOn.length = note_duration * csound->GetSr(csound);
             note_on_event.noteOn.noteId = vst3_plugin->note_id;
