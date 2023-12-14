@@ -2,7 +2,7 @@
 echo "Making a release archive for Windows..."
 export ARCHIVE=csound-vst3-windows.zip
 export TARGETS=build-windows
-cp "D:\a\csound-vst3-opcodes\csound-vst3-opcodes\build-windows\lib\Release\*" $TARGETS\lib\Release
+cp D:\a\csound-vst3-opcodes\csound-vst3-opcodes\build-windows\lib\Release\* .
 rm -f $ARCHIVE
 7z a $ARCHIVE README.md
 7z a $ARCHIVE LICENSE
