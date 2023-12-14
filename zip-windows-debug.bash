@@ -12,7 +12,7 @@ rrm -f $ARCHIVE
 7z a $ARCHIVE vst3-opcodes/README.md
 7z a $ARCHIVE examples/*.csd
 7z a $ARCHIVE examples/*.*preset
-7z a $ARCHIVE -r $TARGETS/lib/*vst3_plugins*
+7z a $ARCHIVE -r $TARGETS/lib/*vst3_plugins.*
 7z a $ARCHIVE -r $TARGETS/bin/*.vst3
 echo "Archived:"
 7z l $ARCHIVE
