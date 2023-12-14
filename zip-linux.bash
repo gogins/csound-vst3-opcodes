@@ -16,4 +16,4 @@ rm -f $ARCHIVE
 7z a $ARCHIVE -r $TARGETS/VST3/*
 echo "Archived:"
 7z l $ARCHIVE
-echo "Completed the release archive for Linux."
+echo "Completed the release archive for Linux." 
