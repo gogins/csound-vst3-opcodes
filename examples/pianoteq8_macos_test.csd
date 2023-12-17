@@ -60,6 +60,14 @@ outleta "outright", a_out_right
 prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
+instr Program_Change
+i_target_plugin = p4
+k_parameter_id init 1886548852
+k_parameter_value init p6
+vst3paramset gi_vst3_handle_piano, k_parameter_id, k_parameter_value
+prints "%-24s i %9.4f t %9.4f d %9.4f target: %3d  id: %3d  value: %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p6, active(p1)
+endin
+
 instr Master_Output
 a_in_left inleta "inleft"
 a_in_right inleta "inright"
@@ -73,5 +81,6 @@ f 0 35
 i "Score_Generator" 1 1 3 .989 .5 [36 +  0] 60
 i "Score_Generator" 2 1 4 .989 .5 [36 +  9] 60
 i "Score_Generator" 3 1 4 .989 .5 [36 + 16] 60
+i "Program_Change" 20 1 1 0 27
 </CsScore>
 </CsoundSynthesizer>

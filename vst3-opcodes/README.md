@@ -46,10 +46,11 @@ The typical lifecycle of a VST3 plugin in Csound is:
 
   1. Load the plugin with [vst3init](#vst3init).
   2. Load a preset with [vst3presetload](#vst3presetload), 
-     or (supposedly, but doesn't seem to work) select a loaded program with 
-     [vst3paramset](#vst3paramset).
+     or select a loaded program with [vst3paramset](#vst3paramset).
   3. Send notes to the plugin with [vst3note](#vst3note).
   4. Send parameter changes to the plugin with [vst3paramset](#vst3paramset).
+     Changing the value of the program change parameter should effect a 
+     program change in the plugin.
   5. Send raw MIDI messages to the plugin with [vst3midi](#vst3midi).
   6. In a global, always-on instrument, send audio to 
      and receive audio from the plugin with [vst3audio](#vst3audio).
@@ -57,17 +58,14 @@ The typical lifecycle of a VST3 plugin in Csound is:
 Any number of VST3 plugins may be loaded. Any number of audio channels, VST3 
 parameters, or notes may be used. 
 
-Supposedly, to change to a different program (e.g., a factory-defined preset), 
+To change to a different program (e.g., a factory-defined preset), 
 examine the `vst3info` printout for a plugin and change the program using 
-`vstparamset`, with the parameter ID equal to the program list ID. The 
-Csound program number is not normalized, but is mapped and normalized in the 
+`vstparamset`, with the parameter ID equal to the program list ID. The program 
+number need not be normalized, but is mapped and normalized in the 
 host.
 
-This however does not seem to work with the VST3 SDK example programs, and 
-they also do not work properly in the Reaper host.
-
-At this time the best practice for changing the preset of a VST3 plugin in 
-Csound is as follows:
+If the program change does not work, or if you wish to define and use your 
+own presets, the best practice is as follows:
 
   1. Open the plugin in its standalone mode (if it has one) or in a VST3 host 
      such as Reaper.
@@ -251,7 +249,6 @@ i_vst3_plugin init gi_plugins[p4]
 k_parameter_id init 1886548852 
 k_parameter_value init p5
 vst3paramset i_vst3_plugin, k_parameter_id, k_parameter_value
-prints "Don't expect this one to work yet!\n"
 prints "%-24s i %9.4f t %9.4f d %9.4f target: %3d  id: %3d  value: %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, i_target_plugin, k_parameter_id, k_parameter_value, active(p1)
 endin
 

@@ -39,10 +39,10 @@ connect "Piano_Output", "outleft", "Master_Output", "inleft"
 connect "Piano_Output", "outright", "Master_Output", "inright"
 
 gi_vst3_handle_jx10 vst3init "/Users/michaelgogins/csound-vst3-opcodes/build-macos/VST3/Debug/mda-vst3.vst3", "mda JX10", 1
-vst3info gi_vst3_handle_jx10
+;vst3info gi_vst3_handle_jx10
 
 gi_vst3_handle_piano vst3init "/Users/michaelgogins/csound-vst3-opcodes/build-macos/VST3/Debug/mda-vst3.vst3", "mda Piano", 1
-vst3info gi_vst3_handle_piano
+;vst3info gi_vst3_handle_piano
 
 // Array of instrument plugins indexed by instrument number, for sending 
 // parameter changes.
@@ -139,7 +139,7 @@ instr Program_Change
 i_target_plugin = p4
 i_vst3_plugin init gi_plugins[p4]
 k_parameter_id init p5
-k_parameter_value init (p6 / 51) * 100 ; Divide by step count to get %.
+k_parameter_value init p6
 vst3paramset i_vst3_plugin, k_parameter_id, k_parameter_value
 prints "%-24s i %9.4f t %9.4f d %9.4f target: %3d  id: %3d  value: %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p6, active(p1)
 endin
@@ -151,7 +151,7 @@ outs a_in_left, a_in_right
 prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
-instr dummy
+instr dummy 
 endin
 
 alwayson "JX10_Output"
@@ -172,9 +172,9 @@ i "Print_Info" 10.5 1 4
 ; Restores original envelope.
 i "Load_Preset" 20 1 4 "jx10.preset"
 i "Print_Info" 20.5 1 4
-i "Program_Change" 30 1 4 1886548852 26
-i "Program_Change" 40 1 4 1886548852 7
-i "Program_Change" 50 1 4 1886548852 6
+i "Program_Change" 30 1 4 1886548852 45
+i "Program_Change" 40 1 4 1886548852 34
+i "Program_Change" 50 1 4 1886548852 7
 i "Print_Info" 50.5 1 4
 </CsScore>
 </CsoundSynthesizer>

@@ -26,10 +26,10 @@ LGPLv2.1 license that permits relicensing to any later version of the GPL.
 ## Building
 
 Do not directly build the VST3 SDK. It functions as a subdirectory of the 
-`vst3-plugins` project. There are platform-specific shell scripts for building 
-this project. The following instructions are for macOS. Just substitute 
-`windows` or `linux`  for `macos` in the script filenames, depending on your 
-platform.
+`csound-vst3-plugins` project. There are platform-specific shell scripts for 
+building this project. The following instructions are for macOS. Just 
+substitute `windows` or `linux`  for `macos` in the script filenames, 
+depending on your platform.
 
  1. Run `update-submodules.bash`, which ensures that the Git submodules 
     used by this project have been initialized and updated.
@@ -62,17 +62,17 @@ For a reference to the opcodes, see their [README.md](csound-vst3/vst3-opcodes/R
 
 ### v1.1.0
 
-There was a bug in that the VST3 plugin busses were not being properly 
-activated, causing some VST3 plugins not to process audio. This has been fixed.
-
 On macOS, the vst3-opcodes shared library is now built as a universal binary 
-(x86-64 and arm64).
+(including both x86-64 CPU architecture and arm64 CPU architecture).
 
 The handling of fractional pitches (i.e. fractional MIDI key numbers) in this 
 project has been corrected and simplified.
 
-The handling of program changes has been corrected but, alas, still seems not 
-to work.
+Program changes are now working, at least for the sample plugins in the VST3 
+SDK.
+
+There was a bug in that the VST3 plugin busses were not being properly 
+activated, causing some VST3 plugins not to process audio. This has been fixed.
 
 The sample VST3 plugins build by the VST3 SDK are now included in releases.
 
