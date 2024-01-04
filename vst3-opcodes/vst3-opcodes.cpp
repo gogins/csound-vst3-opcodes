@@ -391,8 +391,10 @@ namespace csound {
 #endif
         }
         void postprocess() { 
-            eventList.clear();
+            inputEventList.clear();
+            outputEventList.clear();
             inputParameterChanges.clearQueue();
+            outputParameterChanges.clearQueue();
         }
         bool process(int64_t continuous_frames) {
 #if PROCESS_DEBUGGING
@@ -405,7 +407,7 @@ namespace csound {
             preprocess(continuous_frames);
             auto result = processor->process(hostProcessData);
             if (result != Steinberg::kResultOk) {
-                csound->Message(csound, "vst3_plugin_t::process: returned %d!\n", result);
+                csound->Message(csound, "vst3_plugin_t::process: returned not OK!\n");
                 return false;
             }
             postprocess();
@@ -430,7 +432,7 @@ namespace csound {
             if (sampleRate == 0) {
                 return true;
             }
-            if (processor->canProcessSampleSize(Steinberg::Vst::kSample64)) {
+            if (processor->canProcessSampleSize(Steinberg::Vst::kSample64) == Steinberg::kResultTrue) {
                 plugin_sample_size = Steinberg::Vst::kSample64;
             } else {
                 plugin_sample_size = Steinberg::Vst::kSample32;
@@ -531,8 +533,10 @@ namespace csound {
             component->setActive(false);
         }
         void initProcessData() {
-            hostProcessData.inputEvents = &eventList;
+            hostProcessData.inputEvents = &inputEventList;
+            hostProcessData.outputEvents = &outputEventList;
             hostProcessData.inputParameterChanges = &inputParameterChanges;
+            hostProcessData.outputParameterChanges = &outputParameterChanges;
             hostProcessData.processContext = &processContext;
             initProcessContext();
         }
@@ -556,23 +560,25 @@ namespace csound {
                     return false;
                 }
             }
-            if (processor->canProcessSampleSize(Steinberg::Vst::kSample64)) {
+            Steinberg::Vst::ProcessSetup setup;
+            if (processor->canProcessSampleSize(Steinberg::Vst::kSample64) == Steinberg::kResultTrue) {
                 plugin_sample_size = Steinberg::Vst::kSample64;
-                csound->Message(csound, "vst3_plugin_t::updateProcessSetup: processing 64 bit samples: %d.\n", plugin_sample_size);
+                csound->Message(csound, "vst3_plugin_t::updateProcessSetup: processing 64 bit samples.\n");
+	            setup.symbolicSampleSize = Steinberg::Vst::kSample64;
             } else {
                 plugin_sample_size = Steinberg::Vst::kSample32;
-                csound->Message(csound, "vst3_plugin_t::updateProcessSetup: processing 32 bit samples: %d.\n", plugin_sample_size);
+                csound->Message(csound, "vst3_plugin_t::updateProcessSetup: processing 32 bit samples.\n");
+	            setup.symbolicSampleSize = Steinberg::Vst::kSample32;
             }          
             component->activateBus(Steinberg::Vst::kEvent, Steinberg::Vst::kInput, 0, false);
+            component->activateBus(Steinberg::Vst::kEvent, Steinberg::Vst::kOutput, 0, false);
             component->activateBus(Steinberg::Vst::kAudio, Steinberg::Vst::kInput, 0, false);
             component->activateBus(Steinberg::Vst::kAudio, Steinberg::Vst::kOutput, 0, false);
-            Steinberg::Vst::ProcessSetup setup;
             setup.processMode = Steinberg::Vst::kRealtime;
-	        setup.symbolicSampleSize = Steinberg::Vst::kSample32;
 	        setup.maxSamplesPerBlock = blockSize;
 	        setup.sampleRate = sampleRate;
             if (processor->setupProcessing(setup) != Steinberg::kResultOk) {
-                csound->Message(csound, "vst3_plugin_t::updateProcessSetup: setupProcessing returned 'false'.\n");
+                csound->Message(csound, "vst3_plugin_t::updateProcessSetup: setupProcessing returned not OK.\n");
                 return false;
             }
             if (component->setActive(true) != Steinberg::kResultOk) {
@@ -580,6 +586,7 @@ namespace csound {
                 return false;
             }
             component->activateBus(Steinberg::Vst::kEvent, Steinberg::Vst::kInput, 0, true);
+            component->activateBus(Steinberg::Vst::kEvent, Steinberg::Vst::kOutput, 0, true);
             component->activateBus(Steinberg::Vst::kAudio, Steinberg::Vst::kInput, 0, true);
             component->activateBus(Steinberg::Vst::kAudio, Steinberg::Vst::kOutput, 0, true);
             processor->setProcessing(true);
@@ -594,7 +601,7 @@ namespace csound {
             auto vstEvent = Steinberg::Vst::midiToEvent(event.type, event.channel, event.data0, event.data1);
             if (vstEvent) {
                 vstEvent->busIndex = port;
-                if (eventList.addEvent(*vstEvent) != Steinberg::kResultOk) {
+                if (inputEventList.addEvent(*vstEvent) != Steinberg::kResultOk) {
                     assert(false && "Event was not added to EventList!");
                 }
                 return true;
@@ -651,8 +658,8 @@ namespace csound {
                 csound->Message(csound, "               class:      sdkVersion:          %s\n", classInfo.sdkVersion().c_str());
                 csound->Message(csound, "               class:      subCategoriesString: %s\n", classInfo.subCategoriesString().c_str());
                 csound->Message(csound, "               class:      classFlags:          %i\n", classInfo.classFlags());
-                csound->Message(csound, "               can process 32 bit samples: %d\n", processor->canProcessSampleSize(Steinberg::Vst::kSample32));
-                csound->Message(csound, "               can process 64 bit samples: %d\n", processor->canProcessSampleSize(Steinberg::Vst::kSample64));
+                csound->Message(csound, "               can process 32 bit samples: %d\n", processor->canProcessSampleSize(Steinberg::Vst::kSample32) == Steinberg::kResultTrue);
+                csound->Message(csound, "               can process 64 bit samples: %d\n", processor->canProcessSampleSize(Steinberg::Vst::kSample64) == Steinberg::kResultTrue);
                 csound->Message(csound, "               Csound samples: %d bits\n", int((sizeof(MYFLT) * 8)));
                 // Input and output busses.
                 // There is no ID in a BusInfo.
@@ -816,8 +823,10 @@ namespace csound {
         Steinberg::IPtr<Steinberg::Vst::IEditController> controller;
         Steinberg::Vst::HostProcessData hostProcessData;
         Steinberg::Vst::ProcessContext processContext;
-        Steinberg::Vst::EventList eventList;
+        Steinberg::Vst::EventList inputEventList;
+        Steinberg::Vst::EventList outputEventList;
         Steinberg::Vst::ParameterChanges inputParameterChanges;
+        Steinberg::Vst::ParameterChanges outputParameterChanges;
         Steinberg::Vst::ParameterChangeTransfer paramTransferrer;
         //std::shared_ptr<Steinberg::Vst::EditorHost::WindowController> windowController;
         MidiCCMapping midiCCMapping;
@@ -1171,7 +1180,7 @@ namespace csound {
             if (event) {
                 midi_channel_message = *event;
                 if (std::memcmp(&prior_midi_channel_message, &midi_channel_message, sizeof(Steinberg::Vst::Event)) != 0) {
-                    if (vst3_plugin->eventList.addEvent(midi_channel_message) != Steinberg::kResultOk) {
+                    if (vst3_plugin->inputEventList.addEvent(midi_channel_message) != Steinberg::kResultOk) {
                         log(csound, "vst3midiout: addEvent error.\n");
                     }
                     std::memcpy(&prior_midi_channel_message, &midi_channel_message, sizeof(Steinberg::Vst::Event));
@@ -1277,7 +1286,7 @@ namespace csound {
             log(csound, "                   note_on_event.length:        %d\n", note_on_event.noteOn.length);
             log(csound, "                   note_on_event.noteId:        %d\n", note_on_event.noteOn.noteId);
 #endif
-            if (vst3_plugin->eventList.addEvent(note_on_event) != Steinberg::kResultOk) {
+            if (vst3_plugin->inputEventList.addEvent(note_on_event) != Steinberg::kResultOk) {
                 log(csound, "vst3note::init: addEvent error for Note On.\n");
             }
             *i_note_id = note_on_event.noteOn.noteId;
@@ -1298,7 +1307,7 @@ namespace csound {
             log(csound, "                   note_off_event.velocity:     %f\n", note_off_event.noteOff.velocity);
             log(csound, "                   note_off_event.noteId:       %d\n", note_off_event.noteOff.noteId);
 #endif
-            if (vst3_plugin->eventList.addEvent(note_off_event) != Steinberg::kResultOk) {
+            if (vst3_plugin->inputEventList.addEvent(note_off_event) != Steinberg::kResultOk) {
                 log(csound, "vst3note: addEvent error for Note Off.\n");
             }
             return result;
@@ -1400,16 +1409,30 @@ namespace csound {
             auto stream_size = memory_stream.getSize();
             input_stream.close();
             Steinberg::int64 position = 0;
-            auto tuid = vst3_plugin->classInfo.ID().data();
-            auto classid = Steinberg::FUID::fromTUID(tuid);            
-            memory_stream.seek (0, Steinberg::IBStream::kIBSeekSet, &position);
-            log(csound, "vst3presetload: stream_size: %d\n", stream_size);
-            auto result = Steinberg::Vst::PresetFile::loadPreset(&memory_stream, classid, vst3_plugin->component);
-            if (result == false) {
-                log(csound, "vst3presetload: failed to load: %s\n", preset_filepath.c_str());
-                return NOTOK;
+            auto result = memory_stream.seek (0, Steinberg::IBStream::kIBSeekSet, &position);
+            char iidString[50];
+            vst3_plugin->component->iid.toString(iidString);
+            log(csound, "vst3presetload: component class ID: %s\n", iidString);
+            if (result == Steinberg::kResultOk) {
+                log(csound, "vst3presetload: stream_size: %d\n", stream_size);
+                // In the PresetFile source code, the class ID is definitely the _Component_ ID.
+                result = Steinberg::Vst::PresetFile::loadPreset(&memory_stream, vst3_plugin->component->iid, vst3_plugin->component);
+                if (result == Steinberg::kResultOk) {
+                    log(csound, "vst3presetload::init: loaded from preset file: %s\n", preset_filepath.c_str());
+                    return OK;                    
+                } else {
+                    log(csound, "vst3presetload: failed to load from preset file: %s\n", preset_filepath.c_str());
+                }
             }
-            log(csound, "vst3presetload::init: loaded: %s\n", preset_filepath.c_str());
+            // If that doesn't work, assume it's a "simple plugin" and see if 
+            // the component can simply read the file.
+            result = memory_stream.seek (0, Steinberg::IBStream::kIBSeekSet, &position);
+            result = vst3_plugin->component->setState(&memory_stream);
+            if (result == false) {
+                log(csound, "vst3presetload: failed to set loaded state: %s\n", preset_filepath.c_str());
+                return NOTOK;
+            } 
+            log(csound, "vst3presetload::init: set loaded state: %s\n", preset_filepath.c_str());            
             return OK;
         };
     };
