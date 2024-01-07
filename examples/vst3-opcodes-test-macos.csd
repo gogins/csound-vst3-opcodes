@@ -32,7 +32,7 @@ to run this piece from the `csound-vst3/vst3-opcodes` subdirectory.
 
 </CsLicense>
 <CsOptions>
--m195 -odac ; --opcode-lib="../../build-macos/lib/Debug/libvst3_plugins.dylib" -z1
+-m162 -odac
 </CsOptions>
 <CsInstruments>
 
@@ -56,16 +56,16 @@ alwayson "Delay"
 alwayson "Reverb"
 alwayson "Master_Output"
 
-gi_vst3_handle_jx10 vst3init "../build-macos/VST3/Debug/mda-vst3.vst3", "mda JX10", 1
+gi_vst3_handle_jx10 vst3init "../build-macos/VST3/Debug/mda-vst3.vst3", "mda JX10", "", 1
 vst3info gi_vst3_handle_jx10
 
-gi_vst3_handle_piano vst3init "../build-macos/VST3/Debug/mda-vst3.vst3", "mda Piano", 1
+gi_vst3_handle_piano vst3init "../build-macos/VST3/Debug/mda-vst3.vst3", "mda Piano", "", 1
 vst3info gi_vst3_handle_piano
 
-gi_vst3_handle_delay vst3init "../build-macos/VST3/Debug/mda-vst3.vst3", "mda Delay", 1
+gi_vst3_handle_delay vst3init "../build-macos/VST3/Debug/mda-vst3.vst3", "mda Delay", "", 1
 vst3info gi_vst3_handle_delay
 
-gi_vst3_handle_ambience vst3init "../build-macos/VST3/Debug/mda-vst3.vst3", "mda Ambience", 1
+gi_vst3_handle_ambience vst3init "../build-macos/VST3/Debug/mda-vst3.vst3", "mda Ambience", "", 1
 vst3info gi_vst3_handle_ambience
 
 // Array of instrument plugins indexed by instrument number, for sending 
@@ -146,14 +146,14 @@ endin
 instr Save_Preset
 i_target_plugin = p4
 S_preset_name init p5
-i_vst3_plugin init gi_plugins[p4]
+i_vst3_plugin init gi_plugins[i_target_plugin]
 vst3presetsave i_vst3_plugin, S_preset_name
 prints "%-24s i %9.4f t %9.4f d %9.4f target: %3d  preset: %s #%3d\n", nstrstr(p1), p1, p2, p3, i_target_plugin, S_preset_name, active(p1)
 endin
 
 instr Program_Change
 i_target_plugin = p4
-i_vst3_plugin init gi_plugins[p4]
+i_vst3_plugin init gi_plugins[i_target_plugin]
 ; May only be relevant to the MDA example plugins.
 k_parameter_id init p5
 k_parameter_value init p6
@@ -165,7 +165,7 @@ endin
 instr Load_Preset
 i_target_plugin = p4
 S_preset_name init p5
-i_vst3_plugin init gi_plugins[p4]
+i_vst3_plugin init gi_plugins[i_target_plugin]
 vst3presetload i_vst3_plugin, S_preset_name
 prints "%-24s i %9.4f t %9.4f d %9.4f target: %3d  preset: %s #%3d\n", nstrstr(p1), p1, p2, p3, i_target_plugin, S_preset_name, active(p1)
 endin
@@ -216,10 +216,10 @@ i "Print_Info" 10.5 1 4
 ; Restores original parameter state.
 i "Load_Preset" 25 1 4 "jx10.vstpreset"
 i "Print_Info" 25.5 1 4
-i "Program_Change" 25 1 4 0 12
-i "Print_Info" 30.0 1 4
-i "Program_Change" 30.1 4 0 5
-i "Print_Info" 30.2 1 3
+;i "Program_Change" 25 1 4 0 12
+;i "Print_Info" 30.0 1 4
+;i "Program_Change" 30.1 4 0 5
+;i "Print_Info" 30.2 1 3
 
 </CsScore>
 </CsoundSynthesizer>

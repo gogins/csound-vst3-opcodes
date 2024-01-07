@@ -24,7 +24,7 @@ several other plugins in the VST3 SDK. Parameters and presets also are used.
 
 </CsLicense>
 <CsOptions>
--m195 --opcode-lib="~/csound-vst3-opcodes/build/lib/Release/libvst3_plugins.so" -z1
+-m162 
 </CsOptions>
 <CsInstruments>
 
@@ -38,10 +38,10 @@ connect "JX10_Output", "outright", "Master_Output", "inright"
 connect "Piano_Output", "outleft", "Master_Output", "inleft"
 connect "Piano_Output", "outright", "Master_Output", "inright"
 
-gi_vst3_handle_jx10 vst3init "/Users/michaelgogins/csound-vst3-opcodes/build-macos/VST3/Debug/mda-vst3.vst3", "mda JX10", 1
+gi_vst3_handle_jx10 vst3init "/Users/michaelgogins/csound-vst3-opcodes/build-macos/VST3/Debug/mda-vst3.vst3", "mda JX10", "", 1
 ;vst3info gi_vst3_handle_jx10
 
-gi_vst3_handle_piano vst3init "/Users/michaelgogins/csound-vst3-opcodes/build-macos/VST3/Debug/mda-vst3.vst3", "mda Piano", 1
+gi_vst3_handle_piano vst3init "/Users/michaelgogins/csound-vst3-opcodes/build-macos/VST3/Debug/mda-vst3.vst3", "mda Piano", "", 1
 ;vst3info gi_vst3_handle_piano
 
 // Array of instrument plugins indexed by instrument number, for sending 

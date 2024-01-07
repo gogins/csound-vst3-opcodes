@@ -18,7 +18,7 @@ This Csound piece demonstrates how to use the following vst3 opcodes:
 
 </CsLicense>
 <CsOptions>
--m195 --opcode-lib="/home/mkg/csound-vst3-opcodes/build/lib/Debug/libvst3_plugins.so" -z1
+-dm162 -odac --sample-accurate
 </CsOptions>
 <CsInstruments>
 
@@ -36,10 +36,10 @@ alwayson "CollidingCombSynth_Output"
 alwayson "Piano_Output"
 alwayson "Master_Output"
 
-gi_vst3_handle_CollidingCombSynth vst3init "/usr/lib/vst3/CollidingCombSynth.vst3", "CollidingCombSynth", 1
+gi_vst3_handle_CollidingCombSynth vst3init "/Users/michaelgogins/code/vst/VSTPlugins/build/VST3/Release/CollidingCombSynth.vst3", "CollidingCombSynth", 1
 vst3info gi_vst3_handle_CollidingCombSynth
 
-gi_vst3_handle_piano vst3init "/home/mkg/csound-vst3-opcodes/build/VST3/Debug/mda-vst3.vst3", "mda Piano", 1
+gi_vst3_handle_piano vst3init "/Library/Audio/Plug-Ins/VST3/mda-vst3.vst3", "mda Piano", 1
 vst3info gi_vst3_handle_piano
 
 // Array of instrument plugins indexed by instrument number, for sending 
