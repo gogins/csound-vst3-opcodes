@@ -420,8 +420,10 @@ namespace csound {
                             sample_offset,
                             parameter_value);
                         // Pass on to EditController.
-                        controller->setParamNormalized(parameter_id, parameter_value);
+                        ///controller->setParamNormalized(parameter_id, parameter_value);
                     }
+                    // Pass on to EditController.
+                    controller->setParamNormalized(parameter_id, parameter_value);
                 }
             }
 #endif
@@ -487,7 +489,7 @@ namespace csound {
         // such must be normalized.  Note that `id` is `id`, and not an index. 
         // Note also that many parameters one might think are not normalized, 
         // _are_ normalized (legacy code).
-        void setParameter(int32 id, double value, int32 sampleOffset) {
+        void setParameter(Steinberg::int32 id, double value, Steinberg::int32 sampleOffset) {
             double normalized_value = controller->plainParamToNormalized(id, value);
 #if PARAMETER_DEBUGGING
             csound->Message(csound, "vst3_plugin_t::setParameter: id: %9d  value: %9.4f normalized: %9.4f offset: %d\n", 
@@ -501,8 +503,8 @@ namespace csound {
             Steinberg::Vst::ParameterInfo parameter_info;
             controller->getParameterInfo(id, parameter_info);
 #if PARAMETER_DEBUGGING
-            csound->Message(csound, "vst3_plugin_t::setParameter: getParameterInfo: id: %9d  flags: %d kIsProgramChange: %d\n", 
-                parameter_info.id, parameter_info.flags, parameter_info.kIsProgramChange, (parameter_info.flags & parameter_info.kIsProgramChange));
+            csound->Message(csound, "vst3_plugin_t::setParameter: getParameterInfo: id: %9d  flags: %d program change? %d\n", 
+                parameter_info.id, parameter_info.flags, (parameter_info.flags & parameter_info.kIsProgramChange));
 #endif
             if (id == program_change_id) {
                 auto controller_parameter_count = controller->getParameterCount();
@@ -532,6 +534,9 @@ namespace csound {
                 component->setActive(false);
                 processor->setProcessing(false);
                 controller->setParamNormalized(id, normalized_value);
+#if PARAMETER_DEBUGGING
+                csound->Message(csound, "vst3_plugin_t::setParameter: IEditController::setParamNormalized: id: %9d normalized_value: %9.4f.\n", id, normalized_value); 
+#endif
                 if (host_controller) {
                     host_controller->endEditFromHost(id);
                 }
@@ -539,7 +544,10 @@ namespace csound {
                 component->setActive(true);
             }
             paramTransferrer.addChange(id, normalized_value, sampleOffset);
-       }
+#if PARAMETER_DEBUGGING
+            csound->Message(csound, "vst3_plugin_t::setParameter: ParameterChangeTransfer::addChange: id: %9d normalized_value: %9.4f sample offset: %9d.\n", id, normalized_value, sampleOffset); 
+#endif
+        }
         bool initialize(CSOUND *csound_, const VST3::Hosting::ClassInfo &classInfo_, Steinberg::Vst::PlugProvider *provider_) {
             csound = csound_;
             provider = provider_;
@@ -1481,8 +1489,8 @@ namespace csound {
         };
         int kontrol(CSOUND *csound) {
             int result = OK;
-            parameter_id = int(*k_parameter_id);
-            parameter_value = double(*k_parameter_value);
+            parameter_id = static_cast<Steinberg::int32>(*k_parameter_id);
+            parameter_value = static_cast<double>(*k_parameter_value);
             // Find the frame at the beginning of the kperiod, and compute the 
             // delta frames for "now."
             if (parameter_id != prior_parameter_id || parameter_value != prior_parameter_value) {

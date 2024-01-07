@@ -209,10 +209,10 @@ i "Print_Info" 1.1 1 4
 i "Save_Preset" 1.2 1 4 "jx10.vstpreset"
 i "Print_Info" 1.3 1 4
 ; Changes filter state...
-i "Param_Change" 10 1 4 1 .15
-i "Param_Change" 10 1 4 7 .15
-i "Param_Change" 10 1 4 12 .1
-i "Print_Info" 10.5 1 4
+i "Param_Change" 10 .1 4 1 .15
+i "Param_Change" 11 .1 4 7 .8
+i "Param_Change" 12 .1 4 12 .1
+i "Print_Info" 13 .1 4
 ; Restores original parameter state.
 i "Load_Preset" 25 1 4 "jx10.vstpreset"
 i "Print_Info" 25.5 1 4
