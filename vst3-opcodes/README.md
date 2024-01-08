@@ -33,7 +33,7 @@ The opcodes consist of:
 
   1. [vst3audio](#vst3audio)
   2. [vst3info](#vst3info)
-  3. [vst3init](#vst3init)
+  3. [vst3init](#vst3init), [vst3initpreset](#vst3init)
   4. [vst3midi](#vst3midi)
   5. [vst3note](#vst3note)
   6. [vst3paramget](#vst3paramget)
@@ -44,9 +44,10 @@ The opcodes consist of:
   
 The typical lifecycle of a VST3 plugin in Csound is:
 
-  1. Load the plugin with [vst3init](#vst3init).
-  2. Load a preset with [vst3presetload](#vst3presetload), 
-     or select a loaded program with [vst3paramset](#vst3paramset).
+  1. Load the plugin with [vst3init](#vst3init). If you wish to use a VST3 
+     preset, it should be loaded using [vst3initpreset](#vst3init).
+  2. You can select a loaded program at any time using 
+     [vst3paramset](#vst3paramset).
   3. Send notes to the plugin with [vst3note](#vst3note).
   4. Send parameter changes to the plugin with [vst3paramset](#vst3paramset).
      Changing the value of the program change parameter should effect a 
@@ -71,7 +72,8 @@ own presets, the best practice is as follows:
      such as Reaper.
   2. Edit the parameters interactively until you achieve a sound you want to 
      use. Export the current state of the parameters as a preset file.
-  3. In Csound, use vst3presetload to load your custom preset file.
+  3. In Csound, use [vst3initpreset](#vst3initpreset) to load your custom 
+     preset file at the time of initialization.
   4. Alternatively, simply use vst3paramset to send all the parameter changes 
      that you need to define your preset before you play any notes, or define 
      a Csound instrument that will send such parameters for you from your 
@@ -420,6 +422,7 @@ http://michaelgogins.tumblr.com<br>
 michael dot gogins at gmail dot com<br>
 
 ## vst3init
+## vst3initpreset
 
 vst3-opcodes -- VST3 plugin hosting in Csound.
 
@@ -429,12 +432,19 @@ vst3-opcodes -- VST3 plugin hosting in Csound.
 other vst3-opcodes. Both VST3 effects and instruments (synthesizers) can be 
 used. 
 
+**vst3initpreset** loads a VST3 plugin into memory for use with the 
+other vst3-opcodes. Both VST3 effects and instruments (synthesizers) can be 
+used. The preset file also is loaded. Currently this is the only way of 
+loading a preset file using the VST3 opcodes.
+
 Note that for VST3, there may be multiple plugins defined in one loadable 
 module.
 
 ### Syntax
 
 i_handle **vst3init** S_module_pathname, S_plugin_name [,i_verbose]
+
+i_handle **vst3initpreset** S_module_pathname, S_plugin_name, S_preset_filename [,i_verbose]
 
 ### Initialization
 
@@ -447,6 +457,8 @@ path separator.
 
 *S_plugin_name* -- the name of a plugin within the module. If you do not know 
 the name of the plugin, run with *i_verbose" set to true to find the name.
+
+*S_preset_filename* -- the name of a VST3 preset file.
 
 *i_verbose* -- print a list of all the plugins defined in the module, as well 
 as other information.
@@ -677,8 +689,10 @@ presets, or a list of presets that is loaded by the plugin itself.
 
 *k_parameter* -- the identification number of the parameter. This can be 
 obtained from the plugin's documentation, or by using [vst3info](#vst3info).
-Note that this must be the id number of the parameter, not its index in the 
-list of parameters.
+Note that this must be the _id_ number of the parameter, not its index in the 
+list of parameters. To set a VST3 program, use [vst3info](#vst3info) to 
+identify the parameter id that is "program change" and the number of the 
+program itself.
 
 *k_value* -- the value of the parameter, _not_ normalized, but passed in 
 the musical units and ranges indicated by [vst3info](#vst3info).
@@ -717,9 +731,12 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 ### Description
 
-**vst3presetload** loads a preset from a file. A preset consists 
-of a component (instrument or effect) identifier, the value of each parameter in the preset, and 
-possibly other data such as a program list.
+**vst3presetload** loads a preset from a file. A preset consists of a 
+component (instrument or effect) identifier, the value of each parameter 
+in the preset, and possibly other data such as a program list. 
+
+_Currently this opcode doesn't work, use [vst3initpreset](#vst3initpreset) 
+instead._
 
 ### Syntax
 

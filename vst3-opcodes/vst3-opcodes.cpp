@@ -66,6 +66,7 @@
 #include "public.sdk/source/vst/vstpresetfile.h"
 #include "public.sdk/source/vst/vstparameters.h"
 
+
 /**
  * (1) VST3 Modules may implement any number of VST3 plugins.
  * (2) The vst3init opcode uses a singleton vst3_host_t instance to load a 
@@ -414,14 +415,6 @@ namespace csound {
                         parameter_id, 
                         sample_offset, 
                         parameter_value);
-                    if (parameter_id == Steinberg::Vst::ParameterInfo::kIsProgramChange) {
-                        csound->Message(csound, "vst3_plugin_t::preprocess: parameter id: %-16d sample offset: %-16d parameter_value: %9.4f\n", 
-                            parameter_id,
-                            sample_offset,
-                            parameter_value);
-                        // Pass on to EditController.
-                        ///controller->setParamNormalized(parameter_id, parameter_value);
-                    }
                     // Pass on to EditController.
                     controller->setParamNormalized(parameter_id, parameter_value);
                 }
@@ -498,8 +491,8 @@ namespace csound {
                 normalized_value, 
                 sampleOffset);
 #endif
-             // Handle program changes.
-             // The controller is queried and its parameters are sent to the processor.
+            // Handle program changes.
+            // The controller is queried and its parameters are sent to the processor.
             Steinberg::Vst::ParameterInfo parameter_info;
             controller->getParameterInfo(id, parameter_info);
 #if PARAMETER_DEBUGGING
@@ -609,7 +602,7 @@ namespace csound {
             }
             Steinberg::Vst::ProcessSetup setup;
             csound->Message(csound, "vst3_plugin_t::updateProcessSetup: canProcessSampleSize (S2.2).\n");
-           if (processor->canProcessSampleSize(Steinberg::Vst::kSample64) == Steinberg::kResultTrue) {
+            if (processor->canProcessSampleSize(Steinberg::Vst::kSample64) == Steinberg::kResultTrue) {
                 plugin_sample_size = Steinberg::Vst::kSample64;
                 csound->Message(csound, "vst3_plugin_t::updateProcessSetup: processing 64 bit samples.\n");
 	            setup.symbolicSampleSize = Steinberg::Vst::kSample64;
@@ -869,53 +862,27 @@ namespace csound {
         }
         int load_preset(const std::string &preset_filepath) {
             csound->Message(csound, "load_preset: preset_filepath: %s\n", preset_filepath.c_str());
-            std::fstream input_stream(preset_filepath.c_str(), std::fstream::in | std::fstream::binary);
-            Steinberg::MemoryStream memory_stream;
-            char c;
-            Steinberg::int32 bytes_to_write = 1;
-            Steinberg::int32 bytes_written = 0;
-            while (input_stream.get(c)) {
-                memory_stream.write(&c, sizeof(c), &bytes_written);
-            }
-            auto stream_size = memory_stream.getSize();
-            input_stream.close();
-            csound->Message(csound, "load_preset: stream_size: %d\n", stream_size);
-            if (stream_size <= 0) {
-                csound->Message(csound, "load_preset::init: no file or no data: %s\n", preset_filepath.c_str());
+            auto ibstream = Steinberg::Vst::FileStream::open(preset_filepath.c_str(), "rb");
+            if (ibstream == nullptr) {
+                csound->Message(csound, "load_preset: failed to open file or create IBStream.\n");    
                 return NOTOK;
             }
-            Steinberg::int64 position = 0;
-            auto result = memory_stream.seek (0, Steinberg::IBStream::kIBSeekSet, &position);
-            if (result != Steinberg::kResultOk) {
-                csound->Message(csound, "load_preset::init: could not seek in IBStream.\n");
-                return NOTOK;            
-            }
-            char iidString[50];
             const auto uid = classInfo.ID(); 
             auto tuid = classInfo.ID().data();
             auto module_class_id = Steinberg::FUID::fromTUID(tuid);            
-            module_class_id.toString(iidString);
-            component->iid.toString(iidString);
-            csound->Message(csound, "load_preset: component class ID:  %s\n", iidString);
-            if (processor->setProcessing(false) != Steinberg::kResultOk) {
-                csound->Message(csound, "load_preset::init: failed to turn Processor off.\n");         
-            }
-            if (component->setActive(false) != Steinberg::kResultOk) {
-                csound->Message(csound, "load_preset::init: failed to deactivate Component.\n");         
-            }
-            result = Steinberg::Vst::PresetFile::loadPreset(&memory_stream, component->iid, component);
-            if (result == Steinberg::kResultOk) {
-                csound->Message(csound, "load_preset::init: loaded preset file: %s\n", preset_filepath.c_str());
+            char midString[50];
+            module_class_id.toString(midString);
+            csound->Message(csound, "load_preset: module class ID:     %s\n", midString);
+            char cidString[50];
+            component->iid.toString(cidString);
+            csound->Message(csound, "load_preset: component class ID:  %s\n", cidString);
+            auto result = Steinberg::Vst::PresetFile::loadPreset(ibstream, module_class_id, component);
+            if (result == true) {
+                csound->Message(csound, "load_preset: loaded preset file: %s\n", preset_filepath.c_str());
                 return OK;
             } else {
-                csound->Message(csound, "load_preset::init: failed to load preset file: %s\n", preset_filepath.c_str());
+                csound->Message(csound, "load_preset: failed to load preset file: %s\n", preset_filepath.c_str());
                 return NOTOK;
-            }
-            if (component->setActive(true) != Steinberg::kResultOk) {
-                csound->Message(csound, "load_preset::init: failed to reactivate Component.\n");         
-            }            
-            if (processor->setProcessing(true) != Steinberg::kResultOk) {
-                csound->Message(csound, "load_preset::init: failed to turn Processor back on.\n");         
             }
         }
         CSOUND* csound = nullptr;
@@ -1203,6 +1170,29 @@ namespace csound {
         // Inputs.
         MYFLT *i_module_pathname;
         MYFLT *i_plugin_name;
+        MYFLT *i_verbose;
+        int init(CSOUND *csound) {
+            int result = OK;
+            log(csound, "\nvst3init::init...\n");
+            auto host = vst3_host_for_csound(csound);
+            log(csound, "vst3init::init: host: %p\n", host);
+            std::string module_pathname  =((STRINGDAT *)i_module_pathname)->data;
+            std::string plugin_name = ((STRINGDAT *)i_plugin_name)->data;
+            log(csound, "vst3init::init: loading module: \"%s\",  \"%s\"...\n", module_pathname.c_str(), plugin_name.c_str());
+            *i_vst3_handle = host->load_module(csound, module_pathname, plugin_name,(bool)*i_verbose); 
+            log(csound, "vst3init::init: loaded module: \"%s\",  \"%s\" i_vst3_handle: %ld...\n", module_pathname.c_str(), plugin_name.c_str(), (size_t)*i_vst3_handle);
+            auto vst3_plugin = get_plugin(csound, static_cast<size_t>(*i_vst3_handle));
+            log(csound, "vst3init::init: created plugin: \"%s\": address: %p handle: %ld\n", plugin_name.c_str(), vst3_plugin,(size_t) *i_vst3_handle);
+            return result;
+        };
+    };
+
+       struct VST3INITPRESET : public csound::OpcodeBase<VST3INITPRESET> {
+        // Outputs.
+        MYFLT *i_vst3_handle;
+        // Inputs.
+        MYFLT *i_module_pathname;
+        MYFLT *i_plugin_name;
         MYFLT *i_preset_filepath;
         MYFLT *i_verbose;
         int init(CSOUND *csound) {
@@ -1225,6 +1215,7 @@ namespace csound {
             return result;
         };
     };
+
 
 #if EDITOR_IMPLEMENTED
 
@@ -1535,7 +1526,7 @@ namespace csound {
             auto tuid = vst3_plugin->classInfo.ID().data();
             auto classid = Steinberg::FUID::fromTUID(tuid);            
             Steinberg::MemoryStream memory_stream;
-            auto result = Steinberg::Vst::PresetFile::savePreset(&memory_stream, classid, vst3_plugin->component); // , vst3_plugin->controller);
+            auto result = Steinberg::Vst::PresetFile::savePreset(&memory_stream, vst3_plugin->component->iid, vst3_plugin->component); // , vst3_plugin->controller);
             if (result == false) {
                 log(csound, "vst3presetsave::init: failed to save preset: %s\n", preset_filepath.c_str());
                 return NOTOK;
@@ -1573,7 +1564,8 @@ namespace csound {
     static OENTRY localops[] = {
         {"vst3audio",           sizeof(VST3AUDIO),      0, 3, "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm", "M", &VST3AUDIO::init_, &VST3AUDIO::audio_, 0},
         {"vst3info",            sizeof(VST3INFO),       0, 1, "", "i", &VST3INFO::init_, 0, 0}, 
-        {"vst3init",            sizeof(VST3INIT),       0, 1, "i", "TTTo", &VST3INIT::init_, 0, 0},
+        {"vst3init",            sizeof(VST3INIT),       0, 1, "i", "TTo", &VST3INIT::init_, 0, 0},
+        {"vst3initpreset",      sizeof(VST3INITPRESET), 0, 1, "i", "TTTo", &VST3INITPRESET::init_, 0, 0},
 #if EDITOR_IMPLEMENTED
         {"vst3edit",            sizeof(VST3EDIT),       0, 1, "", "i", &VST3EDIT::init_, 0, 0},
 #endif

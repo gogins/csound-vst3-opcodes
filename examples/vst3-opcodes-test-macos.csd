@@ -56,7 +56,8 @@ alwayson "Delay"
 alwayson "Reverb"
 alwayson "Master_Output"
 
-gi_vst3_handle_jx10 vst3init "../build-macos/VST3/Debug/mda-vst3.vst3", "mda JX10", "", 1
+gi_vst3_handle_jx10 vst3init "../build-macos/VST3/Debug/mda-vst3.vst3", "mda JX10", "/Users/michaelgogins/csound-vst3-opcodes/examples/jx10-saved-from-reaper.vstpreset", 1
+; gi_vst3_handle_jx10 vst3init "../build-macos/VST3/Debug/mda-vst3.vst3", "mda JX10", "/Users/michaelgogins/csound-vst3-opcodes/examples/jx10.vstpreset", 1
 vst3info gi_vst3_handle_jx10
 
 gi_vst3_handle_piano vst3init "../build-macos/VST3/Debug/mda-vst3.vst3", "mda Piano", "", 1
@@ -206,16 +207,16 @@ i "Score_Generator" 1 1 3 .989 .5 36 60
 i "Score_Generator" 1 1 4 .989 .5 78 6
 ; Stores original parameter state...
 i "Print_Info" 1.1 1 4
-i "Save_Preset" 1.2 1 4 "jx10.vstpreset"
+i "Save_Preset" 1.2 1 4 "/Users/michaelgogins/csound-vst3-opcodes/examples/jx10.vstpreset"
 i "Print_Info" 1.3 1 4
 ; Changes filter state...
-i "Param_Change" 10 .1 4 1 .15
-i "Param_Change" 11 .1 4 7 .8
-i "Param_Change" 12 .1 4 12 .1
-i "Print_Info" 13 .1 4
+i "Param_Change" 10 .1 4 1 .08
+i "Param_Change" 10 .1 4 3 .9
+i "Param_Change" 10 .1 4 12 .1
+i "Print_Info"   11 .1 4
 ; Restores original parameter state.
-i "Load_Preset" 25 1 4 "jx10.vstpreset"
-i "Print_Info" 25.5 1 4
+i "Load_Preset" 25 1 4 "/Users/michaelgogins/csound-vst3-opcodes/examples/jx10-saved-from-reaper.vstpreset"
+i "Print_Info"  25.5 1 4
 ;i "Program_Change" 25 1 4 0 12
 ;i "Print_Info" 30.0 1 4
 ;i "Program_Change" 30.1 4 0 5
