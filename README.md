@@ -71,6 +71,8 @@ project has been corrected and simplified.
 Program changes are now working, at least for the sample plugins in the VST3 
 SDK.
 
+Loading presets has been implemented using the `vst3initpreset` opcode.
+
 There was a bug in that the VST3 plugin busses were not being properly 
 activated, causing some VST3 plugins not to process audio. This has been fixed.
 
