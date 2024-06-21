@@ -16,7 +16,7 @@ connect "Piano_Output", "outright", "Master_Output", "inright"
 alwayson "Piano_Output"
 alwayson "Master_Output"
 
-gi_vst3_handle_piano vst3init "/Library/Audio/Plug-Ins/VST3/Pianoteq 8.vst3", "Pianoteq 8", "",  1
+gi_vst3_handle_piano vst3init "/Library/Audio/Plug-Ins/VST3/Pianoteq 8.vst3", "Pianoteq 8", 1
 vst3info gi_vst3_handle_piano
 
 // Score generating instrument.
