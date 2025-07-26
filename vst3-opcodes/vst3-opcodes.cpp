@@ -1103,7 +1103,8 @@ namespace csound {
                 return NOTOK;
             }
             if (frame_count != vst3_plugin->hostProcessData.numSamples) {
-                log(csound, "vst3audio::audio: error! ksmps (%d) != numSamples: %d\n", ksmps(), vst3_plugin->hostProcessData.numSamples);       
+                log(csound, "vst3audio::audio: warning! ksmps (%d) != numSamples: %d\n", ksmps(), vst3_plugin->hostProcessData.numSamples);       
+                /// return NOTOK;
             }
             // Because this opcode should always be on, and because the plugins 
             // _themselves_ are actually responsible for scheduling by sample 

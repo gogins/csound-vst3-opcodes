@@ -1,6 +1,6 @@
 <CsoundSynthesizer>
 <CsOptions>
---m-amps=1 --m-range=1 --m-dB=1 --m-benchmarks=1 --m-warnings=0 -+msg_color=0 -d -oambisonic.wav
+--m-amps=1 --m-range=1 --m-dB=1 --m-benchmarks=1 --m-warnings=0 -+msg_color=0 -d -Wfopianoteq8.wav
 </CsOptions>
 <CsInstruments>
 
@@ -25,14 +25,14 @@ gi_iterations init 100
 gi_duration init 2
 gi_time_step init .25
 gi_loudness init 70
-instr Score_Generator
+instr 1,2,3
 i_time = p2
-i_instrument = 2
+i_instrument init 4
 i_c = p5
 i_y = p6
 i_bass = p7
 i_range = p8
-i_iteration = 0
+i_iteration init 0
 while i_iteration < gi_iterations do
     i_iteration = i_iteration + 1
     i_time = p2 + (i_iteration * gi_time_step)
@@ -40,8 +40,8 @@ while i_iteration < gi_iterations do
     i_y1 = i_c * i_y * (1 - i_y) * 4
     i_y = i_y1
     i_pitch = floor(i_bass + (i_y * i_range)) 
-    event_i "i", i_instrument, i_time, gi_duration, i_pitch, gi_loudness
     prints "   %f => i %f %f %f %f %f\n", i_y, i_instrument, i_time, gi_duration, i_pitch, gi_loudness
+    event_i "i", i_instrument, i_time, gi_duration, i_pitch, gi_loudness
 od
 prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
@@ -78,9 +78,9 @@ endin
 </CsInstruments>
 <CsScore>
 f 0 35
-i "Score_Generator" 1 1 3 .989 .5 [36 +  0] 60
-i "Score_Generator" 2 1 4 .989 .5 [36 +  9] 60
-i "Score_Generator" 3 1 4 .989 .5 [36 + 16] 60
+i 1 1 1 3 .989 .5 [36 +  0] 60
+i 2 2 1 4 .989 .5 [36 +  9] 60
+i 2 3 1 4 .989 .5 [36 + 16] 60
 i "Program_Change" 20 1 1 0 27
 </CsScore>
 </CsoundSynthesizer>
