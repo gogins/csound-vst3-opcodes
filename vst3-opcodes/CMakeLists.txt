@@ -10,6 +10,23 @@ project(vst3_opcodes
     DESCRIPTION "Csound opcodes that host VST3 plugins."
 )
 
+option(ENABLE_ASAN "Enable AddressSanitizer (ASan)" OFF)
+option(ENABLE_TSAN "Enable ThreadSanitizer (TSan)" OFF)
+
+if (ENABLE_ASAN AND ENABLE_TSAN)
+    message(FATAL_ERROR "ASan and TSan cannot be enabled at the same time.")
+endif()
+
+if (ENABLE_ASAN)
+    message(STATUS "AddressSanitizer enabled.")
+    add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address)
+elseif (ENABLE_TSAN)
+    message(STATUS "ThreadSanitizer enabled.")
+    add_compile_options(-fsanitize=thread -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=thread)
+endif()
+
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
 add_compile_definitions(RELEASE=1)
 set(SMTG_BUILD_UNIVERSAL_BINARY On)
