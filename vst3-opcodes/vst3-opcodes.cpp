@@ -14,12 +14,13 @@
  */
 
 #define DEBUGGING 0
-#define TUNING_DEBUGGING 0
-#define PARAMETER_DEBUGGING 0
-#define PROCESS_DEBUGGING 0
 #define EDITOR_IMPLEMENTED 0
-#define NOTE_DEBUGGING 0
-#define EVENT_DEBUGGING 0
+
+#define TUNING_TRACING 0
+#define PARAMETER_TRACING 0
+#define PROCESS_TRACING 0
+#define NOTE_TRACING 0
+#define EVENT_TRACING 0
 
 // This one must come first to avoid conflict with Csound #defines.
 #include <thread>
@@ -408,13 +409,13 @@ struct vst3_plugin_t  {
 #endif
     }
     void preprocess(int64_t continousFrames) {
-#if PROCESS_DEBUGGING
+#if PROCESS_TRACING
         csound->Message(csound, "vst3_plugin_t::preprocess: hostProcessData.numSamples: %d.\n", hostProcessData.numSamples);
 #endif
         hostProcessData.numSamples = blockSize;
         processContext.continousTimeSamples = continousFrames;
         paramTransferrer.transferChangesTo(inputParameterChanges);
-#if PARAMETER_DEBUGGING
+#if PARAMETER_TRACING
         // Making sure the parameter changes made it down to the bottom of
         // the stack, and will get to the processor...
         auto input_parameter_count = hostProcessData.inputParameterChanges->getParameterCount();
@@ -443,7 +444,7 @@ struct vst3_plugin_t  {
         outputParameterChanges.clearQueue();
     }
     bool process(int64_t continuous_frames) {
-#if PROCESS_DEBUGGING
+#if PROCESS_TRACING
         csound->Message(csound, "vst3_plugin_t::process: time in frames: %ld.\n", continuous_frames);
 #endif
         if (!processor || !isProcessing) {
@@ -504,7 +505,7 @@ struct vst3_plugin_t  {
     // _are_ normalized (legacy code).
     void setParameter(Steinberg::int32 id, double value, Steinberg::int32 sampleOffset) {
         double normalized_value = controller->plainParamToNormalized(id, value);
-#if PARAMETER_DEBUGGING
+#if PARAMETER_TRACING
         csound->Message(csound, "vst3_plugin_t::setParameter: id: %9d  value: %9.4f normalized: %9.4f offset: %d\n",
                         id,
                         value,
@@ -515,7 +516,7 @@ struct vst3_plugin_t  {
         // The controller is queried and its parameters are sent to the processor.
         Steinberg::Vst::ParameterInfo parameter_info;
         controller->getParameterInfo(id, parameter_info);
-#if PARAMETER_DEBUGGING
+#if PARAMETER_TRACING
         csound->Message(csound, "vst3_plugin_t::setParameter: getParameterInfo: id: %9d  flags: %d program change? %d\n",
                         parameter_info.id, parameter_info.flags, (parameter_info.flags & parameter_info.kIsProgramChange));
 #endif
@@ -528,18 +529,18 @@ struct vst3_plugin_t  {
                     auto id = parameter_info.id;
                     auto normalized_value = controller->getParamNormalized(id);
                     paramTransferrer.addChange(id, normalized_value, 0);
-#if PARAMETER_DEBUGGING
+#if PARAMETER_TRACING
                     csound->Message(csound, "vst3_plugin_t::setParameter: preset change from controller: id: %9d  normalized value: %9.4f\n",
                                     id, normalized_value);
 #endif
                 }
             }
-#if PARAMETER_DEBUGGING
+#if PARAMETER_TRACING
             csound->Message(csound, "vst3_plugin_t::setParameter: handling program change...\n");
 #endif
             Steinberg::FUnknownPtr<Steinberg::Vst::IEditControllerHostEditing> host_controller(controller);
             if (host_controller) {
-#if PARAMETER_DEBUGGING
+#if PARAMETER_TRACING
                 csound->Message(csound, "vst3_plugin_t::setParameter: got IEditControllerHostEditing.\n");
 #endif
                 host_controller->beginEditFromHost(id);
@@ -547,7 +548,7 @@ struct vst3_plugin_t  {
             component->setActive(false);
             processor->setProcessing(false);
             controller->setParamNormalized(id, normalized_value);
-#if PARAMETER_DEBUGGING
+#if PARAMETER_TRACING
             csound->Message(csound, "vst3_plugin_t::setParameter: IEditController::setParamNormalized: id: %9d normalized_value: %9.4f.\n", id, normalized_value);
 #endif
             if (host_controller) {
@@ -557,7 +558,7 @@ struct vst3_plugin_t  {
             component->setActive(true);
         }
         paramTransferrer.addChange(id, normalized_value, sampleOffset);
-#if PARAMETER_DEBUGGING
+#if PARAMETER_TRACING
         csound->Message(csound, "vst3_plugin_t::setParameter: ParameterChangeTransfer::addChange: id: %9d normalized_value: %9.4f sample offset: %9d.\n", id, normalized_value, sampleOffset);
 #endif
     }
@@ -1093,10 +1094,8 @@ struct VST3AUDIO :
     MYFLT zerodbfs;
     Steinberg::int32 opcode_input_channel_count;
     Steinberg::int32 plugin_input_channel_count;
-    Steinberg::int32 input_channel_count;
     Steinberg::int32 opcode_output_channel_count;
     Steinberg::int32 plugin_output_channel_count;
-    Steinberg::int32 output_channel_count;
     vst3_plugin_t *vst3_plugin;
     Steinberg::Vst::Sample32 **plugin_input_channels_32;
     Steinberg::Vst::Sample64 **plugin_input_channels_64;
@@ -1110,6 +1109,9 @@ struct VST3AUDIO :
         auto sr = csound->GetSr(csound);
         vst3_plugin->setSamplerate(sr);
         frame_count = ksmps();
+        vst3_plugin->setBlockSize(frame_count);
+        vst3_plugin->updateProcessSetup();
+        log(csound, "Final plugin configuration:\n");
         // Because Csound and the plugin may not use the same sample word
         // size, allowance must be made for different buffer shapes and
         // sample word sizes, and the audio streams must be copied in and
@@ -1150,9 +1152,7 @@ struct VST3AUDIO :
         /// output_channel_count = std::min(opcode_output_channel_count, plugin_output_channel_count);
         /// process_data.numOutputs = output_channel_count;
         /// log(csound, "vst3audio::init: vst3_plugin: %p input channels: %3d  output channels: %3d isProcessing: %d\n", vst3_plugin, input_channel_count, output_channel_count, vst3_plugin->isProcessing);
-        log(csound, "Final bus arrangements:\n");
-        vst3_plugin->setBlockSize(frame_count);
-        vst3_plugin->updateProcessSetup();
+
         vst3_plugin->information(true);
         // Create buffers to match busses.
         return result;
@@ -1168,9 +1168,8 @@ struct VST3AUDIO :
             log(csound, "vst3audio::audio: warning! ksmps (%d) != numSamples: %d\n", ksmps(), vst3_plugin->hostProcessData.numSamples);
             /// return NOTOK;
         }
-#if EVENT_DEBUGGING
+#if EVENT_TRACING
         auto &data = vst3_plugin->hostProcessData;
-
         if (data.inputEvents) {
             const Steinberg::int32 numEvents = data.inputEvents->getEventCount();
             for (Steinberg::int32 i = 0; i < numEvents; ++i) {
@@ -1218,7 +1217,7 @@ struct VST3AUDIO :
                 if (channel_index_in < opcode_input_channel_count) {
                     for (Steinberg::int32 frame_index = 0; frame_index < frame_count; ++frame_index) {
                         plugin_input_channels_32[channel_index_in][frame_index] = a_input_channels[channel_index_in][frame_index];
-#if PROCESS_DEBUGGING
+#if PROCESS_TRACING
                         log(csound, "vst3audio::audio in for 32 bits: sample[%4d][%4d]: opcode: %f plugin: %f\n",
                             channel_index_in, frame_index, a_input_channels[channel_index_in][frame_index], plugin_input_channels_32[channel_index_in][frame_index]);
 #endif
@@ -1231,7 +1230,7 @@ struct VST3AUDIO :
                     /// a_output_channels[channel_index][frame_index] = static_cast<double>(plugin_output_channels_32[channel_index][frame_index]);
                     if (channel_index < opcode_output_channel_count) {
                         a_output_channels[channel_index][frame_index] = plugin_output_channels_32[channel_index][frame_index];
-#if PROCESS_DEBUGGING
+#if PROCESS_TRACING
                         log(csound, "vst3audio::audio out for 32 bits: sample[%4d][%4d]: opcode: %f plugin: %f\n",
                             channel_index, frame_index, a_output_channels[channel_index][frame_index], plugin_output_channels_32[channel_index][frame_index]);
 #endif
@@ -1239,16 +1238,16 @@ struct VST3AUDIO :
                 }
             }
         } else {
-            for (Steinberg::int32 channel_index_in = 0; channel_index_in < input_channel_count; ++channel_index_in) {
+            for (Steinberg::int32 channel_index_in = 0; channel_index_in < plugin_input_channel_count; ++channel_index_in) {
                 for (Steinberg::int32 frame_index = 0; frame_index < frame_count; ++frame_index) {
                     plugin_input_channels_64[channel_index_in][frame_index] = a_input_channels[channel_index_in][frame_index];
                 }
             }
             vst3_plugin->process(current_time_in_frames);
-            for (Steinberg::int32 channel_index = 0; channel_index < output_channel_count; ++channel_index) {
+            for (Steinberg::int32 channel_index = 0; channel_index < plugin_output_channel_count; ++channel_index) {
                 for (Steinberg::int32 frame_index = 0; frame_index < frame_count; ++frame_index) {
                     a_output_channels[channel_index][frame_index] = plugin_output_channels_64[channel_index][frame_index];
-#if PROCESS_DEBUGGING
+#if PROCESS_TRACING
                     log(csound, "vst3audio::audio out for 64 bits: sample[%4d][%4d]: opcode: %f plugin: %f\n",
                         channel_index, frame_index, a_output_channels[channel_index][frame_index], plugin_output_channels_64[channel_index][frame_index]);
 #endif
@@ -1267,7 +1266,7 @@ struct VST3INFO : public csound::OpcodeBase<VST3INFO> {
     int init(CSOUND *csound) {
         int result = OK;
         vst3_plugin = get_plugin(csound, static_cast<size_t>(*i_vst3_handle));
-        log(csound, "vst3info::init: printing plugin information...\n");
+        log(csound, "vst3info::init: Current plugin configuration...\n");
         vst3_plugin->information(true);
         return result;
     };
@@ -1465,7 +1464,7 @@ struct VST3NOTE : public csound::OpcodeNoteoffBase<VST3NOTE> {
         pitch = *i_key;
         midi_key = std::round(pitch);
         tuning_cents = (pitch - midi_key) * double(100.0);
-#if TUNING_DEBUGGING
+#if TUNING_TRACING
         log(csound, "pitch: %9.4f midi_key: %4d tuning_cents: %9.4f\n", pitch, midi_key, tuning_cents);
 #endif
         velocity = *i_velocity;
@@ -1489,7 +1488,7 @@ struct VST3NOTE : public csound::OpcodeNoteoffBase<VST3NOTE> {
         note_off_event.noteOff.tuning = note_on_event.noteOn.tuning;
         note_off_event.noteOff.velocity = 0;
         note_off_event.noteOff.noteId = note_on_event.noteOn.noteId;
-#if NOTE_DEBUGGING
+#if NOTE_TRACING
         log(csound, "vst3note::init:    current_time:                %12.5f [%12d]\n", current_time, csound->GetCurrentTimeSamples(csound));
         log(csound, "                   note_on_event time:          %12.5f\n", note_on_time);
         log(csound, "                   delta_time:                  %12.5f\n", delta_time);
@@ -1557,7 +1556,7 @@ struct VST3PARAMGET : public csound::OpcodeBase<VST3PARAMGET> {
         int result = OK;
         parameter_id = int(*k_parameter_id);
         *k_parameter_value = vst3_plugin->controller->getParamNormalized(parameter_id);
-#if PARAMETER_DEBUGGING
+#if PARAMETER_TRACING
         if (*k_parameter_value != old_parameter_value) {
             log(csound, "vst3paramget::kontrol: id: %4d  value: %9.4f\n", parameter_id, *k_parameter_value);
             old_parameter_value = *k_parameter_value;
@@ -1598,7 +1597,7 @@ struct VST3PARAMSET : public csound::OpcodeBase<VST3PARAMSET> {
             int64_t current_time_frames = csound->GetCurrentTimeSamples(csound);
             Steinberg::int32 delta_frames = static_cast<Steinberg::int32>(current_time_frames - block_start_frames);
             vst3_plugin->setParameter(parameter_id, parameter_value, delta_frames);
-#if PARAMETER_DEBUGGING
+#if PARAMETER_TRACING
             log(csound, "vst3paramset::kontrol: id: %4d  value: %9.4f  delta_frames: %4d\n", parameter_id, parameter_value, delta_frames);
 #endif
             prior_parameter_id = parameter_id;
