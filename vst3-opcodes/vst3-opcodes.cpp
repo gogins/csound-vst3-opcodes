@@ -136,8 +136,6 @@ static inline bool configureBusArrangementsFromPlugin(Steinberg::Vst::IComponent
         //             Steinberg::Vst::SpeakerArr::getChannelCount(arr),
         //             arr);
     }
-
-    // Query output buses
     for (Steinberg::int32 i = 0; i < numOutputBuses; ++i) {
         Steinberg::Vst::SpeakerArrangement arr;
         if (processor->getBusArrangement(Steinberg::Vst::kOutput, i, arr) != Steinberg::kResultOk) {
@@ -145,11 +143,7 @@ static inline bool configureBusArrangementsFromPlugin(Steinberg::Vst::IComponent
         } else {
             outputArrangements.push_back(arr);
         }
-        // std::printf("Output bus %d: %d channels (0x%08x)\n", i,
-        //             Steinberg::Vst::SpeakerArr::getChannelCount(arr),
-        //             arr);
     }
-
     // Echo arrangements back to the plugin
     Steinberg::tresult result = processor->setBusArrangements(
                                     inputArrangements.data(), static_cast<Steinberg::int32>(inputArrangements.size()),
@@ -469,12 +463,12 @@ struct vst3_plugin_t  {
         if (blockSize == 0) {
             return true;
         }
-        return updateProcessSetup();
+        return update_process_setup();
     }
     /**
      * Here the host (this) creates buffers for hostProcessData.
      */
-    bool setBlockSize(Steinberg::int32 value) {
+    bool create_audio_buffers(Steinberg::int32 value) {
         blockSize = value;
         if (sampleRate == 0) {
             return true;
@@ -491,12 +485,12 @@ struct vst3_plugin_t  {
         hostProcessData.numInputs = 1;
         hostProcessData.numOutputs = 1;
         auto result = hostProcessData.prepare(*component, blockSize, plugin_sample_size);
-        /// result = updateProcessSetup();
-        csound->Message(csound, "vst3_plugin::setBlockSize: plugin_sample_size: %s\n", plugin_sample_size ? "64 bits" : "32 bits");
-        csound->Message(csound, "vst3_plugin::setBlockSize: sampleRate:         %9.3f\n", sampleRate);
-        csound->Message(csound, "vst3_plugin::setBlockSize: blockSize:          %9d\n", blockSize);
-        csound->Message(csound, "vst3_plugin::setBlockSize: input busses:       %9d\n", hostProcessData.numInputs);
-        csound->Message(csound, "vst3_plugin::setBlockSize: output busses:      %9d\n", hostProcessData.numOutputs);
+        /// result = update_process_setup();
+        csound->Message(csound, "vst3_plugin::create_audio_buffers: plugin_sample_size: %s\n", plugin_sample_size ? "64 bits" : "32 bits");
+        csound->Message(csound, "vst3_plugin::create_audio_buffers: sampleRate:         %9.3f\n", sampleRate);
+        csound->Message(csound, "vst3_plugin::create_audio_buffers: blockSize:          %9d\n", blockSize);
+        csound->Message(csound, "vst3_plugin::create_audio_buffers: input busses:       %9d\n", hostProcessData.numInputs);
+        csound->Message(csound, "vst3_plugin::create_audio_buffers: output busses:      %9d\n", hostProcessData.numOutputs);
         return result;
     }
     // It is assumed that "values" may be in musical units and ranges, and
@@ -605,14 +599,14 @@ struct vst3_plugin_t  {
         // Csound's default tempo is one beat per second.
         processContext.tempo = 60;
     }
-    bool updateProcessSetup() {
+    bool update_process_setup() {
         if (!processor) {
-            csound->Message(csound, "vst3_plugin_t::updateProcessSetup: null IProcessor.\n");
+            csound->Message(csound, "vst3_plugin_t::update_process_setup: null IProcessor.\n");
             return false;
         }
         if (isProcessing) {
             if (processor->setProcessing(false) != Steinberg::kResultOk) {
-                csound->Message(csound, "vst3_plugin_t::updateProcessSetup: Could not stop processing.\n");
+                csound->Message(csound, "vst3_plugin_t::update_process_setup: Could not stop processing.\n");
                 return false;
             }
             if (component->setActive(false) != Steinberg::kResultOk) {
@@ -621,14 +615,14 @@ struct vst3_plugin_t  {
             }
         }
         Steinberg::Vst::ProcessSetup setup;
-        csound->Message(csound, "vst3_plugin_t::updateProcessSetup: canProcessSampleSize.\n");
+        csound->Message(csound, "vst3_plugin_t::update_process_setup: canProcessSampleSize.\n");
         if (processor->canProcessSampleSize(Steinberg::Vst::kSample64) == Steinberg::kResultTrue) {
             plugin_sample_size = Steinberg::Vst::kSample64;
-            csound->Message(csound, "vst3_plugin_t::updateProcessSetup: processing 64 bit samples.\n");
+            csound->Message(csound, "vst3_plugin_t::update_process_setup: processing 64 bit samples.\n");
             setup.symbolicSampleSize = Steinberg::Vst::kSample64;
         } else {
             plugin_sample_size = Steinberg::Vst::kSample32;
-            csound->Message(csound, "vst3_plugin_t::updateProcessSetup: processing 32 bit samples.\n");
+            csound->Message(csound, "vst3_plugin_t::update_process_setup: processing 32 bit samples.\n");
             setup.symbolicSampleSize = Steinberg::Vst::kSample32;
         }
 
@@ -658,10 +652,10 @@ struct vst3_plugin_t  {
         setup.maxSamplesPerBlock = blockSize;
         setup.sampleRate = sampleRate;
         if (processor->setupProcessing(setup) != Steinberg::kResultOk) {
-            csound->Message(csound, "vst3_plugin_t::updateProcessSetup: setupProcessing returned not OK.\n");
+            csound->Message(csound, "vst3_plugin_t::update_process_setup: setupProcessing returned not OK.\n");
             return false;
         }
-        csound->Message(csound, "vst3_plugin_t::updateProcessSetup: activateBus.\n");
+        csound->Message(csound, "vst3_plugin_t::update_process_setup: activateBus.\n");
         result = component->activateBus(Steinberg::Vst::kEvent, Steinberg::Vst::kInput, 0, true);
         csound->Message(csound, "activateBus(kEvent, kInput, 0)  returned %d\n", result);
         result = component->activateBus(Steinberg::Vst::kEvent, Steinberg::Vst::kOutput, 0, true);
@@ -671,11 +665,11 @@ struct vst3_plugin_t  {
         result = component->activateBus(Steinberg::Vst::kAudio, Steinberg::Vst::kOutput, 0, true);
         csound->Message(csound, "activateBus(kAudio, kOutput, 0) returned %d\n", result);
         if (component->setActive(true) != Steinberg::kResultOk) {
-            csound->Message(csound, "vst3_plugin_t::updateProcessSetup: setActive returned not OK.\n");
+            csound->Message(csound, "vst3_plugin_t::update_process_setup: setActive returned not OK.\n");
             return false;
         }
         result = processor->setProcessing(true);
-        csound->Message(csound, "vst3_plugin_t::updateProcessSetup: setProcessing returned %d.\n", result);
+        csound->Message(csound, "vst3_plugin_t::update_process_setup: setProcessing returned %d.\n", result);
         if (result == Steinberg::kResultOk) {
             isProcessing = true;
         } else {
@@ -954,8 +948,6 @@ struct vst3_plugin_t  {
     bool isProcessing = false;
     double sampleRate = 0;
     int32 blockSize = 0;
-    int32 inputs_index = 0;
-    int32 outputs_index = 0;
     int32 plugin_sample_size;
     // Records the id of the parameter used for program changes.
     int32 program_change_id = -1;
@@ -1091,12 +1083,12 @@ struct VST3AUDIO :
     MYFLT *i_vst3_handle;
     MYFLT *a_input_channels[32];
     // State.
+    vst3_plugin_t *vst3_plugin;
     MYFLT zerodbfs;
     Steinberg::int32 opcode_input_channel_count;
     Steinberg::int32 plugin_input_channel_count;
     Steinberg::int32 opcode_output_channel_count;
     Steinberg::int32 plugin_output_channel_count;
-    vst3_plugin_t *vst3_plugin;
     Steinberg::Vst::Sample32 **plugin_input_channels_32;
     Steinberg::Vst::Sample64 **plugin_input_channels_64;
     Steinberg::Vst::Sample32 **plugin_output_channels_32;
@@ -1109,13 +1101,13 @@ struct VST3AUDIO :
         auto sr = csound->GetSr(csound);
         vst3_plugin->setSamplerate(sr);
         frame_count = ksmps();
-        vst3_plugin->setBlockSize(frame_count);
-        vst3_plugin->updateProcessSetup();
+        vst3_plugin->create_audio_buffers(frame_count);
+        vst3_plugin->update_process_setup();
         log(csound, "Final plugin configuration:\n");
         // Because Csound and the plugin may not use the same sample word
         // size, allowance must be made for different buffer shapes and
         // sample word sizes, and the audio streams must be copied in and
-        // out word for word. Csound will try to match its input and
+        // out sample for sample. Csound will try to match its input and
         // output channels with the hosted plugin, and the maximum matching
         // set will be used. Whether the HostProcessData busses are "Main"
         // is not considered. The Csound instrument hosting this opcode
@@ -1136,8 +1128,6 @@ struct VST3AUDIO :
             log(csound, "vst3audio::init: no plugin input channels.\n");
             plugin_input_channel_count = 0;
         }
-        /// input_channel_count = std::min(opcode_input_channel_count, plugin_input_channel_count);
-        /// process_data.numInputs = input_channel_count;
         opcode_output_channel_count = output_arg_count();
         if (process_data.numOutputs > 0) {
             plugin_output_channel_count = process_data.outputs[0].numChannels;
@@ -1149,12 +1139,7 @@ struct VST3AUDIO :
             log(csound, "vst3audio::init: no plugin output channels.\n");
             plugin_output_channel_count = 0;
         }
-        /// output_channel_count = std::min(opcode_output_channel_count, plugin_output_channel_count);
-        /// process_data.numOutputs = output_channel_count;
-        /// log(csound, "vst3audio::init: vst3_plugin: %p input channels: %3d  output channels: %3d isProcessing: %d\n", vst3_plugin, input_channel_count, output_channel_count, vst3_plugin->isProcessing);
-
         vst3_plugin->information(true);
-        // Create buffers to match busses.
         return result;
     };
     int audio(CSOUND *csound) {
@@ -1208,10 +1193,10 @@ struct VST3AUDIO :
             }
         }
 #endif
-        // We must read or assign every element of the host buffers, but we
-        // must not access nonexistent elements of the opcode buffers. This
-        // assumes that the number of opcode buffers is never greater than
-        // the number of plugin buffers or that, if it is, no harm comes.
+        // We must read or write every sample in the host buffers, but we
+        // must not access nonexistent samples in the opcode buffers. This
+        // assumes that the number of opcode channels is never greater than 
+        // the number of plugin channels or that, if it is, no harm comes.
         if (plugin_sample_size == Steinberg::Vst::kSample32) {
             for (Steinberg::int32 channel_index_in = 0; channel_index_in < plugin_input_channel_count; ++channel_index_in) {
                 if (channel_index_in < opcode_input_channel_count) {
