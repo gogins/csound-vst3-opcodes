@@ -56,17 +56,17 @@ alwayson "Delay"
 alwayson "Reverb"
 alwayson "Master_Output"
 
-gi_vst3_handle_jx10 vst3init "../build-macos/VST3/Debug/mda-vst3.vst3", "mda JX10", "/Users/michaelgogins/csound-vst3-opcodes/examples/jx10-saved-from-reaper.vstpreset", 1
-; gi_vst3_handle_jx10 vst3init "../build-macos/VST3/Debug/mda-vst3.vst3", "mda JX10", "/Users/michaelgogins/csound-vst3-opcodes/examples/jx10.vstpreset", 1
+; gi_vst3_handle_jx10 vst3initpreset "/Users/michaelgogins/csound-vst3-opcodes/build-macos/VST3/RelWithDebInfo/mda-vst3.vst3", "mda JX10", "jx10-saved-from-reaper.vstpreset", 1
+gi_vst3_handle_jx10 vst3init "/Users/michaelgogins/csound-vst3-opcodes/build-macos/VST3/RelWithDebInfo/mda-vst3.vst3", "mda JX10", 1
 vst3info gi_vst3_handle_jx10
 
-gi_vst3_handle_piano vst3init "../build-macos/VST3/Debug/mda-vst3.vst3", "mda Piano", "", 1
+gi_vst3_handle_piano vst3init "../build-macos/VST3/RelWithDebInfo/mda-vst3.vst3", "mda Piano", 1
 vst3info gi_vst3_handle_piano
 
-gi_vst3_handle_delay vst3init "../build-macos/VST3/Debug/mda-vst3.vst3", "mda Delay", "", 1
+gi_vst3_handle_delay vst3init "../build-macos/VST3/RelWithDebInfo/mda-vst3.vst3", "mda Delay", 1
 vst3info gi_vst3_handle_delay
 
-gi_vst3_handle_ambience vst3init "../build-macos/VST3/Debug/mda-vst3.vst3", "mda Ambience", "", 1
+gi_vst3_handle_ambience vst3init "../build-macos/VST3/RelWithDebInfo/mda-vst3.vst3", "mda Ambience", 1
 vst3info gi_vst3_handle_ambience
 
 // Array of instrument plugins indexed by instrument number, for sending 

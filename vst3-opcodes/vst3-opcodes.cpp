@@ -811,27 +811,30 @@ struct vst3_plugin_t  {
         if (controller) {
             int32 n = controller->getParameterCount();
             Steinberg::Vst::ParameterInfo parameterInfo;
-            if (print == true) csound->Message(csound, "               parameter count:   %4d\n", n);
-            for (int i = 0; i < n; ++i) {
-                controller->getParameterInfo(i, parameterInfo);
-                Steinberg::String title(parameterInfo.title);
-                title.toMultiByte(Steinberg::kCP_Utf8);
-                Steinberg::String units(parameterInfo.units);
-                units.toMultiByte(Steinberg::kCP_Utf8);
-                double value = controller->getParamNormalized(parameterInfo.id);
-                int32 step_count = parameterInfo.stepCount;
-                if (((parameterInfo.flags & Steinberg::Vst::ParameterInfo::kIsProgramChange) == Steinberg::Vst::ParameterInfo::kIsProgramChange)) {
-                    program_change_id = parameterInfo.id;
+            if (print == true)
+            {   
+                csound->Message(csound, "               parameter count:   %4d\n", n);
+                for (int i = 0; i < n; ++i) {
+                    controller->getParameterInfo(i, parameterInfo);
+                    Steinberg::String title(parameterInfo.title);
+                    title.toMultiByte(Steinberg::kCP_Utf8);
+                    Steinberg::String units(parameterInfo.units);
+                    units.toMultiByte(Steinberg::kCP_Utf8);
+                    double value = controller->getParamNormalized(parameterInfo.id);
+                    int32 step_count = parameterInfo.stepCount;
+                    if (((parameterInfo.flags & Steinberg::Vst::ParameterInfo::kIsProgramChange) == Steinberg::Vst::ParameterInfo::kIsProgramChange)) {
+                        program_change_id = parameterInfo.id;
+                    }
+                    if (print == true) csound->Message(csound, "               parameter:  index: %4d: id: %12d name: %-64s units: %-16s step count: %-4d default: %9.4f value: %9.4f %s\n",
+                                                           i,
+                                                           parameterInfo.id,
+                                                           title.text8(),
+                                                           units.text8(),
+                                                           step_count,
+                                                           parameterInfo.defaultNormalizedValue,
+                                                           value,
+                                                           ((parameterInfo.flags & Steinberg::Vst::ParameterInfo::kIsProgramChange) == Steinberg::Vst::ParameterInfo::kIsProgramChange) ? "program change" : "");
                 }
-                if (print == true) csound->Message(csound, "               parameter:  index: %4d: id: %12d name: %-64s units: %-16s step count: %-4d default: %9.4f value: %9.4f %s\n",
-                                                       i,
-                                                       parameterInfo.id,
-                                                       title.text8(),
-                                                       units.text8(),
-                                                       step_count,
-                                                       parameterInfo.defaultNormalizedValue,
-                                                       value,
-                                                       ((parameterInfo.flags & Steinberg::Vst::ParameterInfo::kIsProgramChange) == Steinberg::Vst::ParameterInfo::kIsProgramChange) ? "program change" : "");
             }
         }
         if (print == true) {
@@ -1195,7 +1198,7 @@ struct VST3AUDIO :
 #endif
         // We must read or write every sample in the host buffers, but we
         // must not access nonexistent samples in the opcode buffers. This
-        // assumes that the number of opcode channels is never greater than 
+        // assumes that the number of opcode channels is never greater than
         // the number of plugin channels or that, if it is, no harm comes.
         if (plugin_sample_size == Steinberg::Vst::kSample32) {
             for (Steinberg::int32 channel_index_in = 0; channel_index_in < plugin_input_channel_count; ++channel_index_in) {
