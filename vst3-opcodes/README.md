@@ -435,7 +435,8 @@ used.
 **vst3initpreset** loads a VST3 plugin into memory for use with the 
 other vst3-opcodes. Both VST3 effects and instruments (synthesizers) can be 
 used. The preset file also is loaded. Currently this is the only way of 
-loading a preset file using the VST3 opcodes.
+loading a preset file using the VST3 opcodes. The preset file can be in any 
+readable location on the filesystem.
 
 Note that for VST3, there may be multiple plugins defined in one loadable 
 module.
