@@ -346,13 +346,13 @@ the plugin.
 
 Note that the mininum of the plugin inputs and the opcode inputs, and the 
 minimum of the plugin outputs and the opcode outputs, are used. It is assumed 
-that the "Main" audio and event busses in the plugin are the first input 
-busses and first output busses.
+that the "Main" audio and event buses in the plugin are the first input 
+buses and first output buses.
 
 The audio sent to the plugin must come from some other source in Csound, such
-as an input opcode or a Csound buss channel, and the audio received from the 
+as an input opcode or a Csound bus channel, and the audio received from the 
 plugin must be sent to some other sink in Csound, such as an opcode output or 
-a Csound buss channel.
+a Csound bus channel.
 
 ### Examples
 
@@ -384,7 +384,7 @@ vst3-opcodes -- VST plugin hosting in Csound.
 ### Description
 
 **vst3info** prints information about the plugin module, input and output 
-busses, parameters, presets, and program lists. Not all plugins provide 
+buses, parameters, presets, and program lists. Not all plugins provide 
 all types of information.
 
 ### Syntax
@@ -435,7 +435,8 @@ used.
 **vst3initpreset** loads a VST3 plugin into memory for use with the 
 other vst3-opcodes. Both VST3 effects and instruments (synthesizers) can be 
 used. The preset file also is loaded. Currently this is the only way of 
-loading a preset file using the VST3 opcodes.
+loading a preset file using the VST3 opcodes. The preset file can be in any 
+readable location on the filesystem.
 
 Note that for VST3, there may be multiple plugins defined in one loadable 
 module.
@@ -494,7 +495,7 @@ vst3-opcodes -- VST plugin hosting in Csound.
 
 ### Description
 
-**vst3midi** sends raw MIDI messages to a VST3 plugin. Essentially, 
+**vst3midi** sends raw MIDI channel messages to a VST3 plugin. These 
 there are all MIDI messages that can be sent as 2 or 3 bytes. System 
 exclusive messages are not handled.
 

@@ -8,6 +8,7 @@ sr      = 48000
 ; NOTE: ksmps = 128 messes up timing!
 ksmps   = 100
 nchnls  = 2
+;; nchnls_i = 1
 0dbfs   = 2
 
 connect "Piano_Output", "outleft", "Master_Output", "inleft"
@@ -54,7 +55,7 @@ endin
 instr Piano_Output
 a_in_left init 0
 a_in_right init 0
-a_out_left, a_out_right vst3audio gi_vst3_handle_piano, a_in_left
+a_out_left, a_out_right vst3audio gi_vst3_handle_piano
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
 prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
