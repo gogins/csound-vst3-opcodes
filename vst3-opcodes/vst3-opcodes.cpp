@@ -82,7 +82,7 @@
  * (2) The vst3init opcode uses a singleton vst3_host_t instance to load a
  *     VST3 Module, and obtains from the Module a VST3 PluginFactory.
  * (3) All of the VST3 ClassInfo objects exposed by the PluginFactory
- *     are iterated.
+ *     are iterated. Component, processor, and controller class IDs are saved.
  * (4) The plugin that is named in the vst3init call is used to create a
  *     vst3_plugin_t instance, which actually obtains the interfaces called
  *     by Csound to use the plugin.
@@ -561,8 +561,15 @@ struct vst3_plugin_t  {
         csound = csound_;
         provider = provider_;
         classInfo = classInfo_;
+        component_class_id = Steinberg::FUID{ classInfo.ID().data() };
+        processor_class_id = component_class_id;
         component = provider->getComponent();
         controller = provider->getController();
+        Steinberg::TUID controllerClassTUID;
+        if (component->getControllerClassId(controllerClassTUID) != Steinberg::kResultOk) {
+            csound->Message(csound, "vst3_plugin_t::initialize: This component does not export an edit controller class ID!\n");
+        }
+        controller_class_id = Steinberg::FUID{ controllerClassTUID };
 #if EDITOR_IMPLEMENTED
         if (controller) {
             controller->setComponentHandler(component_handler());
@@ -718,23 +725,18 @@ struct vst3_plugin_t  {
 #endif
     void information(bool print) {
         Steinberg::TUID controllerClassTUID;
-        if (component->getControllerClassId(controllerClassTUID) != Steinberg::kResultOk) {
-            csound->Message(csound, "vst3_plugin_t: This component does not export an edit controller class ID!\n");
-        }
-        Steinberg::FUID controllerClassUID;
-        controllerClassUID = Steinberg::FUID::fromTUID(controllerClassTUID);
-        if (controllerClassUID.isValid() == false) {
+        if (controller_class_id.isValid() == false) {
             csound->Message(csound, "vst3_plugin_t: The edit controller class has no valid UID!\n");
         }
         // Class information.
         if (print == true) {
-            Steinberg::FUID component_class_id { classInfo.ID().data() };
             char buffer[0x200];
             component_class_id.toRegistryString(buffer);
             csound->Message(csound, "vst3_plugin_t: class:      component class id:  %s\n", buffer);
-            controllerClassUID.toRegistryString(buffer);
+            // Same as Component class ID.
+            csound->Message(csound, "               class:      processor class id:  %s\n", buffer);
+            controller_class_id.toRegistryString(buffer);
             csound->Message(csound, "               class:      controller class id: %s\n", buffer);
-            //csound->Message(csound, "               class:      processor class id:  %s\n", pidString);
             csound->Message(csound, "               class:      cardinality:         %i\n", classInfo.cardinality());
             csound->Message(csound, "               class:      category:            %s\n", classInfo.category().c_str());
             csound->Message(csound, "               class:      name:                %s\n", classInfo.name().c_str());
@@ -905,40 +907,10 @@ struct vst3_plugin_t  {
         static ComponentHandler component_handler_;
         return &component_handler_;
     }
-    int load_presetx(const std::string &preset_filepath) {
-        csound->Message(csound, "load_preset: preset_filepath: %s\n", preset_filepath.c_str());
-        // Open as IBStream
-        auto ibstream = Steinberg::Vst::FileStream::open(preset_filepath.c_str(), "rb");
-        if (!ibstream) {
-            csound->Message(csound, "load_preset: failed to open file or create IBStream.\n");
-            return NOTOK;
-        }
-        // For debugging, log the IDs.
-        auto tuid = classInfo.ID().data();
-        auto module_class_id = Steinberg::FUID::fromTUID(tuid);
-        char midString[50], cidString[50];
-        module_class_id.toString(midString);
-        component->iid.toString(cidString);
-        csound->Message(csound, "load_preset: module class ID:     %s\n", midString);
-        csound->Message(csound, "load_preset: component class ID:  %s\n", cidString);
-        // DO NOT use PresetFile::loadPreset — it expects .vstpreset!
-        if (component) {
-            if (component->setState(ibstream) == Steinberg::kResultOk) {
-                csound->Message(csound, "load_preset: successfully loaded preset via setState.\n");
-                return OK;
-            } else {
-                csound->Message(csound, "load_preset: setState failed.\n");
-            }
-        } else {
-            csound->Message(csound, "load_preset: component is null.\n");
-        }
-        return NOTOK;
-    } 
     // Returns true on success; false on any failure.
     inline bool load_preset(const std::string &filepath) {
-        csound->Message(csound, "vst3init::load_preset: filepath: %s\n", filepath.c_str());
         const std::filesystem::path& file{filepath};
-        csound->Message(csound, "vst3init::load_preset: file:     %s\n", file.string().c_str());
+        csound->Message(csound, "Loading preset from file: \"%s\"...\n", file.string().c_str());
         if (!component) {
             csound->Message(csound, "Error: IComponent is null.\n");
             return false;
@@ -964,7 +936,7 @@ struct vst3_plugin_t  {
         Steinberg::FUID component_class_id { classInfo.ID().data() };
         std::vector<Steinberg::FUID> otherClassIDs; // collects other IDs embedded in the preset, if any
         if (Steinberg::Vst::PresetFile::loadPreset(stream, component_class_id, component, controller, &otherClassIDs)) {
-            csound->Message(csound, "Loaded preset file: %s\n");
+            csound->Message(csound, "Loaded preset file.\n");
             return true;
         } else {
             csound->Message(csound, "Warning: Could not read preset file, trying to read chunk list.\n");
@@ -994,16 +966,18 @@ struct vst3_plugin_t  {
                 csound->Message(csound, "Error: Failed to restore controller state.\n");
             }
         }
-        csound->Message(csound, "Loaded preset from %s\n");
+        csound->Message(csound, "Loaded preset file.\n");
         return true;
     }
     CSOUND* csound = nullptr;
     Steinberg::IPtr<Steinberg::Vst::PlugProvider> provider;
     VST3::Hosting::ClassInfo classInfo;
     Steinberg::IPtr<Steinberg::Vst::IComponent> component;
+    Steinberg::FUID component_class_id;
     Steinberg::FUnknownPtr<Steinberg::Vst::IAudioProcessor> processor;
-    Steinberg::TUID controller_class_id;
+    Steinberg::FUID processor_class_id;
     Steinberg::IPtr<Steinberg::Vst::IEditController> controller;
+    Steinberg::FUID controller_class_id;
     Steinberg::Vst::HostProcessData hostProcessData;
     Steinberg::Vst::ProcessContext processContext;
     Steinberg::Vst::EventList inputEventList;
@@ -1370,7 +1344,6 @@ struct VST3INITPRESET : public csound::OpcodeBase<VST3INITPRESET> {
         log(csound, "vst3init::init: created plugin: \"%s\": address: %p handle: %ld\n", plugin_name.c_str(), vst3_plugin,(size_t) *i_vst3_handle);
         std::string preset_filepath = ((STRINGDAT *)i_preset_filepath)->data;
         if (preset_filepath.length() > 0) {
-            log(csound, "vst3init::init: loading preset \"%s\"...\n", preset_filepath.c_str());
             result = vst3_plugin->load_preset(preset_filepath);
         }
         return result;
@@ -1476,8 +1449,8 @@ struct VST3NOTE : public csound::OpcodeNoteoffBase<VST3NOTE> {
     float tuning_cents;	// 1.f = +1 cent, -1.f = -1 cent
     float velocity;		// range [0.0, 1.0]
     int32 length;		// in sample frames (optional, Note Off has to follow in any case!)
-    Steinberg::Vst::Event note_on_event;
-    Steinberg::Vst::Event note_off_event;
+    Steinberg::Vst::Event note_on_event{};
+    Steinberg::Vst::Event note_off_event{};
     size_t framesRemaining;
     vst3_plugin_t *vst3_plugin;
     MYFLT note_on_time;
@@ -1686,46 +1659,31 @@ struct VST3PRESETSAVE : public csound::OpcodeBase<VST3PRESETSAVE> {
             log(csound, "vst3presetsave::init: invalid plugin handle or null component.\n");
             return NOTOK;
         }
-
-        // Convert path
         std::string preset_filepath = ((STRINGDAT *)i_preset_filepath)->data;
         log(csound, "vst3presetsave: preset_filepath: %s\n", preset_filepath.c_str());
-
-        // Prepare memory stream
         Steinberg::MemoryStream memory_stream;
-
-        // Save component state into memory stream as .vstpreset
-        Steinberg::FUID class_id = vst3_plugin->component->iid;
-
         bool ok = Steinberg::Vst::PresetFile::savePreset(
             &memory_stream,
-            class_id,
-            vst3_plugin->component
-            // Optional: , vst3_plugin->controller
+            vst3_plugin->processor_class_id,
+            vst3_plugin->component,
+            vst3_plugin->controller
         );
-
         if (!ok) {
             log(csound, "vst3presetsave::init: failed to serialize state.\n");
             return NOTOK;
         }
-
-        // Write to disk
         std::ofstream output(preset_filepath.c_str(), std::ios::binary | std::ios::trunc);
         if (!output) {
-            log(csound, "vst3presetsave::init: could not open file: %s\n", preset_filepath.c_str());
+            log(csound, "vst3presetsave::init: could not open file for writing: %s\n", preset_filepath.c_str());
             return NOTOK;
         }
-
         output.write(memory_stream.getData(), memory_stream.getSize());
         output.close();
-
         log(csound, "vst3presetsave::init: saved preset to %s (%zu bytes).\n",
             preset_filepath.c_str(), memory_stream.getSize());
-
         return OK;
     };
 };
-
 
 struct VST3TEMPO : public csound::OpcodeBase<VST3TEMPO> {
     // Inputs.
