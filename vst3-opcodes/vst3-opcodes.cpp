@@ -29,19 +29,6 @@
 #include <csound.h>
 #include <OpcodeBase.hpp>
 
-#include <array>
-#include <cmath>
-#include <codecvt>
-#include <cstdio>
-#include <cstring>
-#include <filesystem>
-#include <fstream>
-#include <functional>
-#include <locale>
-#include <map>
-#include <string>
-#include <vector>
-
 #include "pluginterfaces/gui/iplugview.h"
 #include "pluginterfaces/gui/iplugviewcontentscalesupport.h"
 #include "pluginterfaces/vst/ivstaudioprocessor.h"
