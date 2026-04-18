@@ -1,71 +1,67 @@
-cmake_minimum_required(VERSION 3.12) # or higher
+cmake_minimum_required(VERSION 3.12)
+
 project(vst3_opcodes
     VERSION 1.1.1
     DESCRIPTION "Csound opcodes that host VST3 plugins."
     LANGUAGES CXX
 )
-message(STATUS "CMAKE_SOURCE_DIR      = ${CMAKE_SOURCE_DIR}")
-message(STATUS "CMAKE_CURRENT_LIST_DIR = ${CMAKE_CURRENT_LIST_DIR}")
-message(STATUS "CMAKE_MODULE_PATH      = ${CMAKE_MODULE_PATH}")
-list(PREPEND CMAKE_MODULE_PATH
-    "${CMAKE_SOURCE_DIR}/cmake"
-    "$ENV{HOME}/cmake"
-)
-include(FindCsoundHomeFirst)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-# Use -std=c++17 instead of -std=gnu++17
-set(CMAKE_CXX_EXTENSIONS OFF) 
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Useful information.
 message(STATUS "CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
-message(STATUS "CMAKE_HOST_SYSTEM_NAME: ${CMAKE_HOST_SYSTEM_NAME}")    
-message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")    
+message(STATUS "CMAKE_HOST_SYSTEM_NAME: ${CMAKE_HOST_SYSTEM_NAME}")
+message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
+message(STATUS "CMAKE_CURRENT_LIST_DIR: ${CMAKE_CURRENT_LIST_DIR}")
 
-set(CMAKE_OSX_ARCHITECTURES=arm64;x86_64)
+set(CMAKE_OSX_ARCHITECTURES arm64;x86_64)
 
 option(ENABLE_ASAN "Enable AddressSanitizer (ASan)" OFF)
 option(ENABLE_TSAN "Enable ThreadSanitizer (TSan)" OFF)
 
-if (ENABLE_ASAN AND ENABLE_TSAN)
+if(ENABLE_ASAN AND ENABLE_TSAN)
     message(FATAL_ERROR "ASan and TSan cannot be enabled at the same time.")
 endif()
 
-if (ENABLE_ASAN)
+if(ENABLE_ASAN)
     message(STATUS "AddressSanitizer enabled.")
     add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
     add_link_options(-fsanitize=address)
-elseif (ENABLE_TSAN)
+elseif(ENABLE_TSAN)
     message(STATUS "ThreadSanitizer enabled.")
     add_compile_options(-fsanitize=thread -fno-omit-frame-pointer)
     add_link_options(-fsanitize=thread)
 endif()
 
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
-add_compile_definitions(RELEASE=1)
 set(SMTG_BUILD_UNIVERSAL_BINARY On)
+
+#
+# Find Csound, preferring $HOME installs and then root/system installs.
+#
+include("${CMAKE_CURRENT_LIST_DIR}/cmake/FindCsoundHomeFirst.cmake")
+
+if(NOT CSOUND_FOUND)
+    message(FATAL_ERROR "Csound was not found.")
+endif()
+
+message(STATUS "Using Csound executable:    ${CSOUND_EXECUTABLE}")
+message(STATUS "Using Csound library:       ${CSOUND_LIBRARY}")
+message(STATUS "Using Csound include dirs:  ${CSOUND_INCLUDE_DIRS}")
+message(STATUS "Using Csound framework dir: ${CSOUND_FRAMEWORK_DIR}")
+message(STATUS "Using Csound version:       ${CSOUND_VERSION}")
 
 set(vst3sdk_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../vst3sdk)
 add_subdirectory(${vst3sdk_SOURCE_DIR} ${PROJECT_BINARY_DIR}/vst3sdk)
 smtg_enable_vst3_sdk()
 
-# Global CMake configuration.
-set(CMAKE_CXX_STANDARD 17)
-if (SMTG_WIN)
-    set(SMTG_USE_STDATOMIC_H OFF CACHE BOOL “” FORCE)
+if(SMTG_WIN)
+    set(SMTG_USE_STDATOMIC_H OFF CACHE BOOL "" FORCE)
 endif()
 
-# Target-specific configuration.
 set(vst3_plugins_sources
     vst3-opcodes.cpp
-    #    ${vst3sdk_SOURCE_DIR}/public.sdk/samples/vst-hosting/editorhost/source/editorhost.cpp
-    #    ${vst3sdk_SOURCE_DIR}/public.sdk/samples/vst-hosting/editorhost/source/editorhost.h
-    #    ${vst3sdk_SOURCE_DIR}/public.sdk/samples/vst-hosting/editorhost/source/platform/appinit.h
-    #    ${vst3sdk_SOURCE_DIR}/public.sdk/samples/vst-hosting/editorhost/source/platform/iapplication.h
-    #    ${vst3sdk_SOURCE_DIR}/public.sdk/samples/vst-hosting/editorhost/source/platform/iplatform.h
-    #    ${vst3sdk_SOURCE_DIR}/public.sdk/samples/vst-hosting/editorhost/source/platform/iwindow.h
-    #    ${vst3sdk_SOURCE_DIR}/public.sdk/samples/vst-hosting/editorhost/source/usediids.cpp
     ${vst3sdk_SOURCE_DIR}/public.sdk/source/common/memorystream.cpp
     ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/connectionproxy.cpp
     ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/connectionproxy.h
@@ -77,7 +73,7 @@ set(vst3_plugins_sources
     ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/module.h
     ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/utility/optional.h
     ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/parameterchanges.cpp
-    ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/parameterchanges.h 
+    ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/parameterchanges.h
     ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/pluginterfacesupport.cpp
     ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/pluginterfacesupport.h
     ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/plugprovider.cpp
@@ -87,83 +83,125 @@ set(vst3_plugins_sources
     ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/utility/stringconvert.cpp
     ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/utility/stringconvert.h
     ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/utility/uid.h
-    ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/vstinitiids.cpp      
+    ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/vstinitiids.cpp
 )
+
+set(vst3_plugins_PLATFORM_LIBS)
+set(APP_PROPERTIES)
+
 if(SMTG_MAC)
-    set(vst3_plugins_sources
-        ${vst3_plugins_sources}
+    list(APPEND vst3_plugins_sources
         ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/module_mac.mm
         ${vst3sdk_SOURCE_DIR}/public.sdk/source/common/systemclipboard_mac.mm
         ${vst3sdk_SOURCE_DIR}/public.sdk/source/common/threadchecker_mac.mm
     )
-    set(vst3_plugins_PLATFORM_LIBS
+
+    list(APPEND vst3_plugins_PLATFORM_LIBS
         "-framework Cocoa"
     )
+
     get_filename_component(InfoPlistFile "resource/Info.plist" ABSOLUTE)
+
     set(APP_PROPERTIES
         MACOSX_BUNDLE TRUE
         MACOSX_BUNDLE_INFO_PLIST ${InfoPlistFile}
     )
+
 elseif(SMTG_LINUX)
-    #find_package(X11 REQUIRED)
     find_package(PkgConfig REQUIRED)
-    #pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
     pkg_check_modules(GTKMM3 REQUIRED gtkmm-3.0)
-    #include_directories(${X11_INCLUDE_DIR} ${GTKMM3_INCLUDE_DIRS} ${GTK3_INCLUDE_DIRS})
-    set(vst3_plugins_sources
-        ${vst3_plugins_sources}
+
+    list(APPEND vst3_plugins_sources
         ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/module_linux.cpp
         ${vst3sdk_SOURCE_DIR}/public.sdk/source/common/systemclipboard_linux.cpp
         ${vst3sdk_SOURCE_DIR}/public.sdk/source/common/threadchecker_linux.cpp
     )
-    set(vst3_plugins_PLATFORM_LIBS
-        #${X11_LIBRARIES}
-        #${GTK3_LIBRARIES}
-        #${GTKMM3_LIBRARIES}
-    )
-    set(APP_PROPERTIES
-    )
+
 elseif(SMTG_WIN)
-    set(vst3_plugins_sources
-        ${vst3_plugins_sources}
+    list(APPEND vst3_plugins_sources
         ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/module_win32.cpp
         ${vst3sdk_SOURCE_DIR}/public.sdk/source/common/systemclipboard_win32.cpp
-        ${vst3sdk_SOURCE_DIR}/public.sdk/source/common/threadchecker_win32.cpp    
+        ${vst3sdk_SOURCE_DIR}/public.sdk/source/common/threadchecker_win32.cpp
     )
-    set(vst3_plugins_PLATFORM_LIBS
-    )
+
     set(APP_PROPERTIES
         LINK_FLAGS "/SUBSYSTEM:console"
         LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib
-    ) 
+    )
 endif()
 
 set(target vst3_plugins)
 add_library(${target} MODULE ${vst3_plugins_sources})
 smtg_target_setup_universal_binary(${target})
 
-target_link_libraries(${target} PRIVATE base pluginterfaces sdk sdk_common sdk_hosting ${vst3_plugins_PLATFORM_LIBS})
-target_compile_definitions(${target} PRIVATE USE_DOUBLE)
-if (SMTG_MAC)
-    target_compile_options(${target} PRIVATE "-fobjc-arc")
-    target_include_directories(${target} PRIVATE 
-        "/Library/Frameworks/CsoundLib64.framework/Headers"
-        "/Users/runner/work/csound-vst3-opcodes/csound-vst3-opcodes/csound/include"
-        ".")
+target_link_libraries(${target}
+    PRIVATE
+        base
+        pluginterfaces
+        sdk
+        sdk_common
+        sdk_hosting
+        ${vst3_plugins_PLATFORM_LIBS}
+        ${CSOUND_LIBRARIES}
+)
+
+target_compile_definitions(${target}
+    PRIVATE
+        RELEASE=1
+        USE_DOUBLE
+        CSOUND_VERSION_MAJOR=${CSOUND_VERSION_MAJOR}
+        CSOUND_VERSION_MINOR=${CSOUND_VERSION_MINOR}
+        CSOUND_AC_CSOUND_VERSION_MAJOR=${CSOUND_VERSION_MAJOR}
+        CSOUND_AC_CSOUND_VERSION_MINOR=${CSOUND_VERSION_MINOR}
+)
+
+target_include_directories(${target}
+    PRIVATE
+        "${CSOUND_INCLUDE_DIRS}"
+        "."
+)
+
+if(SMTG_MAC)
+    target_compile_options(${target}
+        PRIVATE
+            "-fobjc-arc"
+    )
+
+    if(CSOUND_FRAMEWORK_DIR)
+        get_filename_component(_csound_framework_parent "${CSOUND_FRAMEWORK_DIR}" DIRECTORY)
+        target_link_options(${target}
+            PRIVATE
+                "-F${_csound_framework_parent}"
+                "-Wl,-rpath,${_csound_framework_parent}"
+        )
+    endif()
 endif()
-target_include_directories(${target} PRIVATE ${CSOUND_INCLUDE_DIR})
-if (SMTG_LINUX)
-    target_include_directories(${target} PRIVATE 
-    "/home/runner/work/csound-vst3-opcodes/csound-vst3-opcodes/csound/include"
-    ".")
+
+if(SMTG_LINUX)
+    target_include_directories(${target}
+        PRIVATE
+            "/home/runner/work/csound-vst3-opcodes/csound-vst3-opcodes/csound/include"
+    )
+
+    if(CSOUND_LIBRARY)
+        get_filename_component(_csound_lib_dir "${CSOUND_LIBRARY}" DIRECTORY)
+        target_link_options(${target}
+            PRIVATE
+                "-Wl,-rpath,${_csound_lib_dir}"
+        )
+    endif()
 endif()
-if (SMTG_WIN)
+
+if(SMTG_WIN)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:__cplusplus /std:c++17")
-    target_include_directories(${target} PRIVATE 
-        "${CMAKE_SOURCE_DIR}/../csound/include"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../../csound/include"
-        ".")
+
+    target_include_directories(${target}
+        PRIVATE
+            "${CMAKE_SOURCE_DIR}/../csound/include"
+            "${CMAKE_CURRENT_SOURCE_DIR}/../../csound/include"
+    )
 endif()
-if (APP_PROPERTIES)
+
+if(APP_PROPERTIES)
     set_target_properties(${target} PROPERTIES ${APP_PROPERTIES})
 endif()

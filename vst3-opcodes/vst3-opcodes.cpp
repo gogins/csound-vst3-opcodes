@@ -1127,7 +1127,7 @@ struct VST3AUDIO :
     int init(CSOUND *csound) {
         int result = OK;
         vst3_plugin = get_plugin(csound, static_cast<size_t>(*i_vst3_handle));
-        auto sr = csound->GetSr(csound);
+        auto sr = csoundGetSr(csound);
         vst3_plugin->setSamplerate(sr);
         frame_count = ksmps();
         vst3_plugin->create_audio_buffers(frame_count);
@@ -1206,6 +1206,7 @@ struct VST3AUDIO :
                             std::printf("Poly Pressure: Channel %d, Pitch %d, Pressure %.2f\n",
                                         event.polyPressure.channel,
                                         event.polyPressure.pitch,
+                                        std::printf("Other MIDI event type: %d\n", event.type);
                                         event.polyPressure.pressure);
                         break;
                 case Steinberg::Vst::Event::kDataEvent:
@@ -1215,7 +1216,6 @@ struct VST3AUDIO :
                                         event.data.bytes[2]);
                         break;
                 default:
-                            std::printf("Other MIDI event type: %d\n", event.type);
                         break;
                     }
                 }
@@ -1456,7 +1456,7 @@ struct VST3NOTE : public csound::OpcodeNoteoffBase<VST3NOTE> {
         note_on_time = opds.insdshead->p2.value;
         note_duration = *i_duration;
         delta_time = note_on_time - current_time;
-        int delta_frames = delta_time * csound->GetSr(csound);
+        int delta_frames = delta_time * csoundGetSr(csound);
         // Use the warped p3 to schedule the note off message.
         if (note_duration > FL(0.0)) {
             note_off_time = note_on_time + MYFLT(opds.insdshead->p3.value);
@@ -1493,7 +1493,7 @@ struct VST3NOTE : public csound::OpcodeNoteoffBase<VST3NOTE> {
         note_on_event.noteOn.pitch = midi_key;
         note_on_event.noteOn.tuning = tuning_cents;
         note_on_event.noteOn.velocity = velocity;
-        note_on_event.noteOn.length = note_duration * csound->GetSr(csound);
+        note_on_event.noteOn.length = note_duration * csoundGetSr(csound);
         note_on_event.noteOn.noteId = vst3_plugin->note_id;
         note_off_event.type = Steinberg::Vst::Event::EventTypes::kNoteOffEvent;
         note_off_event.noteOff.channel = note_on_event.noteOn.channel;
@@ -1525,7 +1525,7 @@ struct VST3NOTE : public csound::OpcodeNoteoffBase<VST3NOTE> {
     int noteoff(CSOUND *csound) {
         int result = OK;
         // Offset does not seem to apply to the notoff callback.
-        auto current_time = csound->GetCurrentTimeSamples(csound) / csound->GetSr(csound);
+        auto current_time = csound->GetCurrentTimeSamples(csound) / csoundGetSr(csound);
         note_off_event.sampleOffset = 0;
 #if DEBUGGING
         log(csound, "vst3note::noteoff: current_time:                %12.5f [%12d]\n", current_time, csound->GetCurrentTimeSamples(csound));
@@ -1594,7 +1594,7 @@ struct VST3PARAMSET : public csound::OpcodeBase<VST3PARAMSET> {
     int init(CSOUND *csound) {
         int result = OK;
         vst3_plugin = get_plugin(csound, static_cast<size_t>(*i_vst3_handle));
-        frames_per_kperiod = csound->GetKsmps(csound);
+        frames_per_kperiod = csoundGetKsmps(csound);
         prior_parameter_id = -1;
         prior_parameter_value = -1;
         return result;
