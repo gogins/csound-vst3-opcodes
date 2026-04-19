@@ -25,8 +25,6 @@
 // This one must come first to avoid conflict with Csound #defines.
 #include <thread>
 
-#include <csdl.h>
-#include <csound.h>
 #include <OpcodeBase.hpp>
 
 #include "pluginterfaces/gui/iplugview.h"
@@ -1451,24 +1449,24 @@ struct VST3NOTE : public csound::OpcodeNoteoffBase<VST3NOTE> {
     int init(CSOUND *csound) {
         int result = OK;
         vst3_plugin = get_plugin(csound, static_cast<size_t>(*i_vst3_handle));
-        auto current_time = csound->GetCurrentTimeSamples(csound) / csound->GetSr(csound);
+        auto current_time = csound->GetCurrentTimeSamples(csound) / csoundGetSr(csound);
         // If scheduled after the beginning of the kperiod, will be slightly later.
         note_on_time = opds.insdshead->p2.value;
         note_duration = *i_duration;
         delta_time = note_on_time - current_time;
         int delta_frames = delta_time * csoundGetSr(csound);
         // Use the warped p3 to schedule the note off message.
-        if (note_duration > FL(0.0)) {
+        if (note_duration > static_cast<MYFLT>(0.0)) {
             note_off_time = note_on_time + MYFLT(opds.insdshead->p3.value);
             // In case of real-time performance with indefinite p3...
-        } else if (note_duration == FL(0.0)) {
+        } else if (note_duration == static_cast<MYFLT>(0.0)) {
 #if DEBUGGING
             csound->Message(csound,
                             Str("vstnote::init: not scheduling 0 duration note.\n"));
 #endif
             return OK;
         } else {
-            note_off_time = note_on_time + FL(1000000.0);
+            note_off_time = note_on_time + static_cast<MYFLT>(1000000.0);
         }
         channel = Steinberg::int16(*i_channel) & 0xf;
         // Split the real-valued MIDI key number
@@ -1525,7 +1523,7 @@ struct VST3NOTE : public csound::OpcodeNoteoffBase<VST3NOTE> {
     int noteoff(CSOUND *csound) {
         int result = OK;
         // Offset does not seem to apply to the notoff callback.
-        auto current_time = csound->GetCurrentTimeSamples(csound) / csoundGetSr(csound);
+        auto current_time = csoundGetCurrentTimeSamples(csound) / csoundGetSr(csound);
         note_off_event.sampleOffset = 0;
 #if DEBUGGING
         log(csound, "vst3note::noteoff: current_time:                %12.5f [%12d]\n", current_time, csound->GetCurrentTimeSamples(csound));
@@ -1694,6 +1692,27 @@ struct VST3TEMPO : public csound::OpcodeBase<VST3TEMPO> {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 #endif
+
+#if defined(CSOUND_VERSION_MAJOR) && (CSOUND_VERSION_MAJOR >= 7)
+static OENTRY localops[] = {
+    {"vst3audio",           sizeof(VST3AUDIO),      0, "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm", "M", &VST3AUDIO::init_, &VST3AUDIO::audio_, 0},
+    {"vst3info",            sizeof(VST3INFO),       0, "", "i", &VST3INFO::init_, 0, 0},
+    {"vst3init",            sizeof(VST3INIT),       0, "i", "TTo", &VST3INIT::init_, 0, 0},
+    {"vst3initpreset",      sizeof(VST3INITPRESET), 0, "i", "TTTo", &VST3INITPRESET::init_, 0, 0},
+#if EDITOR_IMPLEMENTED
+    {"vst3edit",            sizeof(VST3EDIT),       0, "", "i", &VST3EDIT::init_, 0, 0},
+#endif
+    {"vst3midiout",         sizeof(VST3MIDIOUT),    0, "", "ikkkk", &VST3MIDIOUT::init_, &VST3MIDIOUT::kontrol_, 0},
+    {"vst3channelmessage",  sizeof(VST3MIDIOUT),    0, "", "ikkkk", &VST3MIDIOUT::init_, &VST3MIDIOUT::kontrol_, 0},
+    {"vst3note",            sizeof(VST3NOTE),       0, "i", "iiiii", &VST3NOTE::init_, &VST3NOTE::kontrol_, &VST3NOTE::noteoff_},
+    {"vst3paramget",        sizeof(VST3PARAMGET),   0, "k", "ik", &VST3PARAMGET::init_, &VST3PARAMGET::kontrol_, 0},
+    {"vst3paramset",        sizeof(VST3PARAMSET),   0, "", "ikk", &VST3PARAMSET::init_, &VST3PARAMSET::kontrol_, 0},
+    {"vst3presetload",      sizeof(VST3PRESETLOAD), 0, "", "iT", &VST3PRESETLOAD::init_, 0, 0},
+    {"vst3presetsave",      sizeof(VST3PRESETSAVE), 0, "", "iT", &VST3PRESETSAVE::init_, 0, 0},
+    {"vst3tempo",           sizeof(VST3TEMPO),      0, "", "ki", 0, &VST3TEMPO::init_, 0 /*, &vstedit_deinit*/ },
+    {0, 0, 0, 0, 0,(SUBR)0,(SUBR)0,(SUBR)0}
+};
+#else
 static OENTRY localops[] = {
     {"vst3audio",           sizeof(VST3AUDIO),      0, 3, "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm", "M", &VST3AUDIO::init_, &VST3AUDIO::audio_, 0},
     {"vst3info",            sizeof(VST3INFO),       0, 1, "", "i", &VST3INFO::init_, 0, 0},
@@ -1712,6 +1731,7 @@ static OENTRY localops[] = {
     {"vst3tempo",           sizeof(VST3TEMPO),      0, 2, "", "ki", 0, &VST3TEMPO::init_, 0 /*, &vstedit_deinit*/ },
     {0, 0, 0, 0, 0, 0,(SUBR)0,(SUBR)0,(SUBR)0}
 };
+#endif
 };
 
 #ifdef __GNUC__
@@ -1740,11 +1760,19 @@ extern "C" {
         OENTRY *ep =(OENTRY *)&(csound::localops[0]);
         int err = 0;
         while (ep->opname != NULL) {
+#if defined(CSOUND_VERSION_MAJOR) && (CSOUND_VERSION_MAJOR >= 7)
+            err |= csound->AppendOpcode(csound, ep->opname, ep->dsblksiz, ep->flags,
+                                        ep->outypes, ep->intypes,
+                                        (int(*)(CSOUND *, void *))ep->init,
+                                        (int(*)(CSOUND *, void *))ep->perf,
+                                        (int(*)(CSOUND *, void *))ep->deinit);
+#else
             err |= csound->AppendOpcode(csound, ep->opname, ep->dsblksiz, ep->flags,
                                         ep->thread, ep->outypes, ep->intypes,
                                         (int(*)(CSOUND *, void *))ep->iopadr,
                                         (int(*)(CSOUND *, void *))ep->kopadr,
                                         (int(*)(CSOUND *, void *))ep->aopadr);
+#endif
             ep++;
         }
         return err;
