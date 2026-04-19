@@ -25,7 +25,7 @@
 // This one must come first to avoid conflict with Csound #defines.
 #include <thread>
 
-#include <OpcodeBase.hpp>
+#include <OpcodeBaseAC.hpp>
 
 #include "pluginterfaces/gui/iplugview.h"
 #include "pluginterfaces/gui/iplugviewcontentscalesupport.h"

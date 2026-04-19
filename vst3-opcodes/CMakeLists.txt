@@ -15,6 +15,11 @@ message(STATUS "CMAKE_HOST_SYSTEM_NAME: ${CMAKE_HOST_SYSTEM_NAME}")
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
 message(STATUS "CMAKE_CURRENT_LIST_DIR: ${CMAKE_CURRENT_LIST_DIR}")
 
+file(DOWNLOAD
+    "https://raw.githubusercontent.com/gogins/csound-ac/master/CsoundAC/OpcodeBaseAC.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/OpcodeBaseAC.hpp"
+)
+
 # Big trouble lurking.
 set(CMAKE_OSX_ARCHITECTURES arm64)
 # set(CMAKE_OSX_ARCHITECTURES arm64;x86_64)
