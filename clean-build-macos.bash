@@ -9,7 +9,7 @@ rm -rf build-macos
 mkdir -p build-macos
 cd build-macos
 
-CSOUND_FRAMEWORK_DIR="$HOME/Library/Frameworks"
+CSOUND_FRAMEWORK_DIR="/Library/Frameworks"
 CSOUND_FRAMEWORK="$CSOUND_FRAMEWORK_DIR/CsoundLib64.framework"
 CSOUND_INCLUDE_DIR="$CSOUND_FRAMEWORK/Headers"
 CSOUND_LIBRARY="$CSOUND_FRAMEWORK/CsoundLib64"
@@ -24,7 +24,7 @@ cmake ../vst3-opcodes \
     -DCMAKE_EXE_LINKER_FLAGS="-framework Foundation -F$CSOUND_FRAMEWORK_DIR -Wl,-rpath,$CSOUND_FRAMEWORK_DIR" \
     -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 \
     -DCMAKE_OSX_ARCHITECTURES=arm64 \
-    -DCMAKE_PREFIX_PATH="$HOME/Library;$HOME/Library/Frameworks" \
+    -DCMAKE_PREFIX_PATH="/Library;/Library/Frameworks" \
     -DCMAKE_FRAMEWORK_PATH="$CSOUND_FRAMEWORK_DIR" \
     -DCSOUND_INCLUDE_DIR="$CSOUND_INCLUDE_DIR" \
     -DCSOUND_INCLUDE_DIRS="$CSOUND_INCLUDE_DIR" \
