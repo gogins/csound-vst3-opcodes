@@ -1,132 +1,115 @@
-# NOTE: Csound is not installed and is not built. These actions use a csound 
-# submodule to obtain Csound's header files, which are all that is required. 
-# Csound's float-version.h and version.h files are edited and stored in this 
-# repository.
+name: Build and Release
 
-name: Build on push or pull request, upload artifacts, and create pre-release
-
-# Controls when the action will run. 
 on:
-  # When the workflow is triggered.
-  push:
-    branches: [ master, csound_submodule ]
-  pull_request:
-    branches: [ master ]
-
-  # Allows this workflow to be run manually from the Actions tab.
   workflow_dispatch:
-  
-env:
-    # This will change for later macOS versions, to /opt/homebrew.
-    HOMEBREW_PREFIX: /usr/local
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
 jobs:
   build:
-    runs-on: ${{ matrix.config.os }} 
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+
     strategy:
       fail-fast: false
       matrix:
-        config:
-        - name: "macOS Latest Clang"
-          os: macos-latest
-          cc: "clang"
-          cxx: "clang++"
-        - name: "Ubuntu Latest GCC"
-          os: ubuntu-latest
-          cc: "gcc"
-          cxx: "g++"
-        - name: "Windows Latest MSVC"
-          os: windows-latest
-          cc: "cl"
-          cxx: "cl"
-          environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+        include:
+          - name: macos
+            runner: macos-latest
+            build_dir: build-macos
+            cmake_target: verify_dist
+
+          - name: linux
+            runner: ubuntu-latest
+            build_dir: build-linux
+            cmake_target: archive_dist
+
+          - name: windows
+            runner: windows-latest
+            build_dir: build-windows
+            cmake_target: archive_dist
+
     steps:
-      - name: Check out csound-vst3-opcodes
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-      - name: Fetch the current VST3 SDK and Csound sources
-        run: bash update-submodules.bash
-        
-      - name: Build on Mac OS
-        if: runner.os == 'macOS'
+      - name: Install Linux dependencies
+        if: matrix.name == 'linux'
         run: |
-          echo "Environment on runner:"
-          env
-          echo "Installing Csound..."
-          brew install csound
-          which csound
-          echo "Trying to find csdl.h..."
-          find /Users/runner -name "csdl.h" -ls 2>/dev/null
-          bash clean-build-macos.bash
-          ls -ll
-          bash zip-macos.bash
-          echo "Finding plugin opcodes..."
-          find . -name "*vst3_plugins.dylib" -ls 2>/dev/null
-          
-      - name: Build on Linux
-        if: runner.os == 'Linux'
-        run: |
-          echo "Environment on runner:"
-          env
           sudo apt-get update
-          sudo apt-get install --fix-missing cmake libx11-xcb-dev libxcb-util-dev libxcb-cursor-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev libfontconfig1-dev libcairo2-dev libgtkmm-3.0-dev libsqlite3-dev libxcb-keysyms1-dev
-          echo "Trying to find csdl.h..."
-          find /usr -name "csdl.h" -ls 2>/dev/null
-          find /home/runner -name "csdl.h" -ls 2>/dev/null
-          bash clean-build-linux.bash
-          ls -ll
-          bash zip-linux.bash
-          echo "Finding plugin opcodes..."
-          find . -name "*vst3_plugins.so" -ls 2>/dev/null
-        
-      - name: Build on Windows
-        if: runner.os == 'Windows'
+          sudo apt-get install -y cmake ninja-build pkg-config libgtkmm-3.0-dev p7zip-full
+
+      - name: Install macOS dependencies
+        if: matrix.name == 'macos'
         run: |
-          echo "Environment on runner:"
-          env 
-          bash clean-build-windows.bash
-          bash zip-windows.bash
-          dir
-          Get-ChildItem -Path "D:" -Recurse -File -Filter *vst3_plugins.dll
+          brew install ninja
 
-      - uses: "marvinpinto/action-automatic-releases@latest"
-        if: runner.os == 'macOS'
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "macos-latest"
-          prerelease: true
-          title: "Mac OS Development Release"
-          files: |
-            LICENSE
-            README.md
-            VST_Compatible_Logo_Steinberg_with_TM_negative.png
-            csound-vst3-macos.zip
+      - name: Install Windows dependencies
+        if: matrix.name == 'windows'
+        shell: pwsh
+        run: |
+          choco install ninja -y
 
-      - uses: "marvinpinto/action-automatic-releases@latest"
-        if: runner.os == 'Linux'
+      - name: Import macOS signing certificate
+        if: matrix.name == 'macos'
+        uses: apple-actions/import-codesign-certs@v3
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "linux-latest"
-          prerelease: true
-          title: "Linux Development Release"
-          files: |
-            LICENSE
-            README.md
-            VST_Compatible_Logo_Steinberg_with_TM_negative.png
-            csound-vst3-linux.zip
-           
-      - uses: "marvinpinto/action-automatic-releases@latest"
-        if: runner.os == 'Windows'
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "windows-latest"
-          prerelease: true
-          title: "Windows Development Release"
-          files: |
-            LICENSE
-            README.md
-            VST_Compatible_Logo_Steinberg_with_TM_negative.png
-            csound-vst3-windows.zip
-            
- 
-            
+          p12-file-base64: ${{ secrets.MACOS_CODESIGN_CERTIFICATE_BASE64 }}
+          p12-password: ${{ secrets.MACOS_CODESIGN_CERTIFICATE_PASSWORD }}
 
+      - name: Decode App Store Connect API key
+        if: matrix.name == 'macos'
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/private_keys"
+          echo "${{ secrets.APPLE_API_KEY_P8_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/private_keys/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8"
+
+      - name: Configure macOS
+        if: matrix.name == 'macos'
+        shell: bash
+        run: |
+          cmake -S vst3-opcodes -B ${{ matrix.build_dir }} -G Ninja \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCSOUND_VST3_OPCODE_SIGN=ON \
+            -DCSOUND_VST3_OPCODE_CODESIGN_IDENTITY="${{ secrets.APPLE_CODESIGN_IDENTITY }}" \
+            -DCSOUND_VST3_OPCODE_NOTARIZE=ON \
+            -DCSOUND_VST3_OPCODE_NOTARY_KEY="$RUNNER_TEMP/private_keys/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8" \
+            -DCSOUND_VST3_OPCODE_NOTARY_KEY_ID="${{ secrets.APPLE_API_KEY_ID }}" \
+            -DCSOUND_VST3_OPCODE_NOTARY_ISSUER="${{ secrets.APPLE_API_ISSUER_ID }}"
+
+      - name: Configure Linux
+        if: matrix.name == 'linux'
+        run: |
+          cmake -S vst3-opcodes -B ${{ matrix.build_dir }} -G Ninja \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo
+
+      - name: Configure Windows
+        if: matrix.name == 'windows'
+        shell: pwsh
+        run: |
+          cmake -S vst3-opcodes -B ${{ matrix.build_dir }} -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DSMTG_USE_STDATOMIC_H=OFF
+
+      - name: Build package target
+        run: |
+          cmake --build ${{ matrix.build_dir }} --target ${{ matrix.cmake_target }} --verbose
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: csound-vst3-opcodes-${{ matrix.name }}
+          path: ${{ matrix.build_dir }}/*.zip
+          if-no-files-found: error
+
+      - name: Upload zip to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v3
+        with:
+          files: ${{ matrix.build_dir }}/*.zip
