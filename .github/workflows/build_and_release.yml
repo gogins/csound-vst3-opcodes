@@ -43,18 +43,60 @@ jobs:
         if: matrix.name == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build pkg-config libgtkmm-3.0-dev p7zip-full
+          sudo apt-get install -y \
+            git build-essential cmake ninja-build pkg-config \
+            libgtkmm-3.0-dev p7zip-full \
+            libsndfile1-dev libasound2-dev libjack-jackd2-dev \
+            libpulse-dev portaudio19-dev liblo-dev \
+            libffi-dev libcurl4-openssl-dev
 
       - name: Install macOS dependencies
         if: matrix.name == 'macos'
         run: |
-          brew install ninja
+          brew install cmake ninja libsndfile portaudio
 
       - name: Install Windows dependencies
         if: matrix.name == 'windows'
         shell: pwsh
         run: |
           choco install ninja -y
+
+      - name: Install Csound 7 from GitHub on Linux
+        if: matrix.name == 'linux'
+        run: |
+          git clone --depth 1 https://github.com/csound/csound.git
+          cmake -S csound -B csound/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_TESTS=OFF \
+            -DBUILD_JAVA_INTERFACE=OFF \
+            -DBUILD_PYTHON_INTERFACE=OFF
+          cmake --build csound/build --parallel
+          sudo cmake --install csound/build
+          echo "/usr/local/lib" | sudo tee /etc/ld.so.conf.d/csound.conf
+          sudo ldconfig
+
+      - name: Install Csound 7 from GitHub on macOS
+        if: matrix.name == 'macos'
+        run: |
+          git clone --depth 1 https://github.com/csound/csound.git
+          cmake -S csound -B csound/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_TESTS=OFF \
+            -DBUILD_JAVA_INTERFACE=OFF \
+            -DBUILD_PYTHON_INTERFACE=OFF \
+            -DCMAKE_INSTALL_PREFIX=/usr/local
+          cmake --build csound/build --parallel
+          sudo cmake --install csound/build
+
+      - name: Install Csound 7 on Windows
+        if: matrix.name == 'windows'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest `
+            -Uri https://github.com/csound/csound/releases/download/7.0.0/Csound-7.0.0-windows-x86_64.exe `
+            -OutFile csound-installer.exe
+          Start-Process -FilePath csound-installer.exe -ArgumentList "/S" -Wait
+          echo "C:\Program Files\Csound7_x64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Import macOS signing certificate
         if: matrix.name == 'macos'
@@ -76,6 +118,7 @@ jobs:
         run: |
           cmake -S vst3-opcodes -B ${{ matrix.build_dir }} -G Ninja \
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_PREFIX_PATH="/usr/local;/usr;/Library/Frameworks" \
             -DCSOUND_VST3_OPCODE_SIGN=ON \
             -DCSOUND_VST3_OPCODE_CODESIGN_IDENTITY="${{ secrets.APPLE_CODESIGN_IDENTITY }}" \
             -DCSOUND_VST3_OPCODE_NOTARIZE=ON \
@@ -87,7 +130,8 @@ jobs:
         if: matrix.name == 'linux'
         run: |
           cmake -S vst3-opcodes -B ${{ matrix.build_dir }} -G Ninja \
-            -DCMAKE_BUILD_TYPE=RelWithDebInfo
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_PREFIX_PATH="/usr/local;/usr"
 
       - name: Configure Windows
         if: matrix.name == 'windows'
@@ -95,6 +139,7 @@ jobs:
         run: |
           cmake -S vst3-opcodes -B ${{ matrix.build_dir }} -G Ninja `
             -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_PREFIX_PATH="C:/Program Files/Csound7_x64" `
             -DSMTG_USE_STDATOMIC_H=OFF
 
       - name: Build package target
