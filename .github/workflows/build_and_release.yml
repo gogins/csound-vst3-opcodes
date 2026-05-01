@@ -53,7 +53,9 @@ jobs:
       - name: Install macOS dependencies
         if: matrix.name == 'macos'
         run: |
-          brew install cmake ninja libsndfile portaudio
+          brew install cmake ninja libsndfile portaudio bison flex
+          echo "$(brew --prefix bison)/bin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix flex)/bin" >> "$GITHUB_PATH"
 
       - name: Install Windows dependencies
         if: matrix.name == 'windows'
