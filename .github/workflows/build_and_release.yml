@@ -81,8 +81,12 @@ jobs:
         if: matrix.name == 'macos'
         run: |
           git clone --depth 1 https://github.com/csound/csound.git
+          BISON_EXECUTABLE="$(brew --prefix bison)/bin/bison"
+          FLEX_EXECUTABLE="$(brew --prefix flex)/bin/flex"
           cmake -S csound -B csound/build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
+            -DBISON_EXECUTABLE="$BISON_EXECUTABLE" \
+            -DFLEX_EXECUTABLE="$FLEX_EXECUTABLE" \
             -DBUILD_TESTS=OFF \
             -DBUILD_JAVA_INTERFACE=OFF \
             -DBUILD_PYTHON_INTERFACE=OFF \
