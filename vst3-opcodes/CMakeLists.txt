@@ -108,8 +108,8 @@ if(SMTG_WIN)
 endif()
 
 set(vst3_plugins_sources
-    ${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}/vst3-opcodes.cpp
-    ${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}/OpcodeBaseAC.hpp
+    ${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}/vst3-opcodes/vst3-opcodes.cpp
+    ${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}/vst3-opcodes/OpcodeBaseAC.hpp
     ${vst3sdk_SOURCE_DIR}/public.sdk/source/common/memorystream.cpp
     ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/connectionproxy.cpp
     ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/eventlist.cpp
