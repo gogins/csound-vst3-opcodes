@@ -59,8 +59,16 @@ jobs:
             libxcb-shape0-dev \
             libxcb-randr0-dev \
             libxcb-render-util0-dev \
-            libxcb-cursor0-dev \
+            libxcb-cursor-dev \
             bison flex
+
+      - name: Diagnose xcb-cursor
+        if: matrix.name == 'linux'
+        run: |
+          dpkg -l | grep xcb-cursor || true
+          dpkg -L libxcb-cursor-dev || true
+          pkg-config --modversion xcb-cursor || true
+          find /usr -name "xcb-cursor.pc" -print
 
       - name: Install macOS dependencies
         if: matrix.name == 'macos'
