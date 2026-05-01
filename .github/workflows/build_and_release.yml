@@ -21,7 +21,7 @@ jobs:
           - name: macos
             runner: macos-latest
             build_dir: build-macos
-            cmake_target: verify_dist
+            cmake_target: notarize_dist
 
           - name: linux
             runner: ubuntu-latest
