@@ -48,7 +48,8 @@ jobs:
             libgtkmm-3.0-dev p7zip-full \
             libsndfile1-dev libasound2-dev libjack-jackd2-dev \
             libpulse-dev portaudio19-dev liblo-dev \
-            libffi-dev libcurl4-openssl-dev
+            libffi-dev libcurl4-openssl-dev \
+            libxcb-util-dev
 
       - name: Install macOS dependencies
         if: matrix.name == 'macos'
