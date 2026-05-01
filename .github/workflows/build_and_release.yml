@@ -59,7 +59,7 @@ jobs:
             libxcb-shape0-dev \
             libxcb-randr0-dev \
             libxcb-render-util0-dev \
-            libxcb-cursor-dev \
+            libxcb-cursor0-dev \
             bison flex
 
       - name: Install macOS dependencies
