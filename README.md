@@ -10,7 +10,8 @@ http://michaelgogins.tumblr.com
 ## Introduction
 
 This project provides Csound plugin opcodes for hosting VST3 plugin 
-instruments and effects in Csound.
+instruments and effects in Csound (previously only for Csound version 6, 
+currently only for Csound version 7).
 
 These opcodes are a port of the older vst4cs opcodes, which support only the 
 VST2 protocol, to the newer and more capable VST3 protocol. The opcodes have 
@@ -25,6 +26,9 @@ LGPLv2.1 license that permits relicensing to any later version of the GPL.
 
 ## Building
 
+You should use the release binaries if you can. If you need to build this 
+project for your own reasons, then...
+
 Do not directly build the VST3 SDK. It functions as a subdirectory of the 
 `csound-vst3-plugins` project. There are platform-specific shell scripts for 
 building this project. The following instructions are for macOS. Just 
@@ -37,13 +41,14 @@ depending on your platform.
  2. Run `clean-build-macos.bash`. It should finish with a list showing the 
     new Csound plugin shared library.
 
- 3. Run `zip-macos.bash` to create a Zip file containing the shared library,
+On macOS, if you need to sign and notarize your built package, you will have 
+some configuration work to do!
     
 ## Installation
 
 Copy the vst3-opcodes shared library to your Csound plugin directory, which is 
-specified in the `OPCODE6DIR64` environment variable. Or, preferably, create a 
-symbolic link in the `OPCODE6DIR64` directory to the vst3-plugins shared 
+specified in the `OPCODE7DIR64` environment variable. Or, preferably, create a 
+symbolic link in the `OPCODE7DIR64` directory to the vst3-plugins shared 
 library.
 
 ## User Guide
@@ -59,6 +64,17 @@ and interpolation.
 For a reference to the opcodes, see their [README.md](csound-vst3/vst3-opcodes/README.md).
 
 ## Release Notes
+
+### v2.0.0-beta
+
+On macOS, the vst3-opcodes shared library is now built only for the amd64 
+architecture.
+
+This release is also built only for Csound version 7.
+
+The toolchain for configuring, compiling, packaging, signing and notarizing 
+(only on macOS), and releasing is now implemented completely as a GitHub 
+Action.
 
 ### v1.1.0
 

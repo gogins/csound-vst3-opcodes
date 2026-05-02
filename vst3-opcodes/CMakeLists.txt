@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(vst3_opcodes
-    VERSION 1.1.1
+    VERSION 2.0.0
     DESCRIPTION "Csound opcodes that host VST3 plugins."
     LANGUAGES CXX
 )
@@ -211,11 +211,18 @@ add_custom_target(clean_dist
 
 add_custom_target(stage_dist ALL
     DEPENDS clean_dist vst3_plugins
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:vst3_plugins>" "${CSOUND_VST3_OPCODE_DIST_DIR}/bin/$<TARGET_FILE_NAME:vst3_plugins>"
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}/README.md" "${CSOUND_VST3_OPCODE_DIST_DIR}/README.md"
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}/LICENSE" "${CSOUND_VST3_OPCODE_DIST_DIR}/LICENSE"
-    COMMAND "${CMAKE_COMMAND}" -E copy_directory "${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}/examples" "${CSOUND_VST3_OPCODE_DIST_DIR}/examples"
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_CURRENT_LIST_DIR}/README.md" "${CSOUND_VST3_OPCODE_DIST_DIR}/vst3-opcodes-README.md"
+    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        "$<TARGET_FILE:vst3_plugins>"
+        "${CSOUND_VST3_OPCODE_DIST_DIR}/bin/$<TARGET_FILE_NAME:vst3_plugins>"
+    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        "${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}/README.md"
+        "${CSOUND_VST3_OPCODE_DIST_DIR}/README.md"
+    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        "${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}/LICENSE"
+        "${CSOUND_VST3_OPCODE_DIST_DIR}/LICENSE"
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory
+        "${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}/examples"
+        "${CSOUND_VST3_OPCODE_DIST_DIR}/examples"
     COMMENT "Staging README.md, LICENSE, examples, and build artifacts in dist"
 )
 
