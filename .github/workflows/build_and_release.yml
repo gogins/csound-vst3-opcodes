@@ -49,17 +49,20 @@ jobs:
             libsndfile1-dev libasound2-dev libjack-jackd2-dev \
             libpulse-dev portaudio19-dev liblo-dev \
             libffi-dev libcurl4-openssl-dev \
-            libxcb-util-dev \
-            libxcb-keysyms1-dev \
-            libxcb-image0-dev \
-            libxcb-shm0-dev \
+            libxcb-cursor-dev \
             libxcb-icccm4-dev \
-            libxcb-sync-dev \
-            libxcb-xfixes0-dev \
-            libxcb-shape0-dev \
+            libxcb-image0-dev \
+            libxcb-keysyms1-dev \
             libxcb-randr0-dev \
             libxcb-render-util0-dev \
-            libxcb-cursor-dev \
+            libxcb-shape0-dev \
+            libxcb-shm0-dev \
+            libxcb-sync-dev \
+            libxcb-util-dev \
+            libxcb-xfixes0-dev \
+            libxcb-xkb-dev \
+            libxkbcommon-dev \
+            libxkbcommon-x11-dev \
             bison flex
 
       - name: Diagnose xcb-cursor
