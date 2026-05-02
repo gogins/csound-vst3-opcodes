@@ -119,19 +119,20 @@ jobs:
         if: matrix.name == 'windows'
         shell: pwsh
         run: |
-          git clone --depth 1 https://github.com/csound/csound.git
+          choco install -y winflexbison3 curl
 
-          cmake -S csound -B csound/build -G Ninja `
-            -DCMAKE_BUILD_TYPE=Release `
+          git clone --depth 1 --recurse-submodules https://github.com/csound/csound.git
+
+          cd csound
+          .\vcpkg\bootstrap-vcpkg.bat
+
+          cmake -B build -S . `
             -DBUILD_TESTS=OFF `
-            -DBUILD_JAVA_INTERFACE=OFF `
-            -DBUILD_PYTHON_INTERFACE=OFF `
-            -DCMAKE_INSTALL_PREFIX="$env:RUNNER_TEMP/csound-install"
+            -DUSE_VCPKG=1 `
+            -DCUSTOM_CMAKE="./platform/windows/Custom-vs.cmake"
 
-          cmake --build csound/build --parallel
-          cmake --install csound/build
-
-          echo "$env:RUNNER_TEMP/csound-install/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          cmake --build build --config Release
+          cmake --install build --prefix build\install --config Release
 
       - name: Import macOS signing certificate
         if: matrix.name == 'macos'
@@ -172,12 +173,10 @@ jobs:
         if: matrix.name == 'windows'
         shell: pwsh
         run: |
-          $bison = "C:\ProgramData\chocolatey\bin\win_bison.exe"
-          $flex  = "C:\ProgramData\chocolatey\bin\win_flex.exe"
-          cmake -S vst3-opcodes -B ${{ matrix.build_dir }} -G Ninja `
+          cmake -S vst3-opcodes -B ${{ matrix.build_dir }} `
             -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_PREFIX_PATH="$env:RUNNER_TEMP/csound-install" `
-            -DCSOUND_ROOT_HINT="$env:RUNNER_TEMP/csound-install" `
+            -DCMAKE_PREFIX_PATH="${{ github.workspace }}\csound\build\install" `
+            -DCSOUND_ROOT_HINT="${{ github.workspace }}\csound\build\install" `
             -DSMTG_USE_STDATOMIC_H=OFF
 
       - name: Build package target
