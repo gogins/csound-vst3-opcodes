@@ -161,9 +161,9 @@ jobs:
             -DCSOUND_VST3_OPCODE_SIGN=ON \
             -DCSOUND_VST3_OPCODE_NOTARIZE=ON \
             -DAPPLE_CODESIGN_IDENTITY="${{ secrets.APPLE_CODESIGN_IDENTITY }}" \
-            -DAPPLE_NOTARY_KEY="$RUNNER_TEMP/private_keys/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8" \
-            -DAPPLE_NOTARY_KEY_ID="${{ secrets.APPLE_API_KEY_ID }}" \
-            -DAPPLE_NOTARY_ISSUER_ID="${{ secrets.APPLE_API_ISSUER_ID }}"
+            -DAPPLE_NOTARY_KEY="$RUNNER_TEMP/private_keys/AuthKey_${{ secrets.APPLE_NOTARY_KEY_ID }}.p8" \
+            -DAPPLE_NOTARY_KEY_ID="${{ secrets.APPLE_NOTARY_KEY_ID }}" \
+            -DAPPLE_NOTARY_ISSUER_ID="${{ secrets.APPLE_NOTARY_ISSUER_ID }}"
 
       - name: Configure Linux
         if: matrix.name == 'linux'
