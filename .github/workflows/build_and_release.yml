@@ -149,7 +149,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p "$RUNNER_TEMP/private_keys"
-          echo "${{ secrets.APPLE_API_KEY_P8_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/private_keys/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8"
+          echo "${{ secrets.APPLE_API_KEY_P8_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/private_keys/AuthKey_${{ secrets.APPLE_NOTARY_KEY_ID }}.p8"
 
       - name: Configure macOS
         if: matrix.name == 'macos'
@@ -159,11 +159,11 @@ jobs:
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DCMAKE_PREFIX_PATH="/usr/local;/usr;/Library/Frameworks" \
             -DCSOUND_VST3_OPCODE_SIGN=ON \
-            -DCSOUND_VST3_OPCODE_CODESIGN_IDENTITY="${{ secrets.APPLE_CODESIGN_IDENTITY }}" \
             -DCSOUND_VST3_OPCODE_NOTARIZE=ON \
-            -DCSOUND_VST3_OPCODE_NOTARY_KEY="$RUNNER_TEMP/private_keys/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8" \
-            -DCSOUND_VST3_OPCODE_NOTARY_KEY_ID="${{ secrets.APPLE_API_KEY_ID }}" \
-            -DCSOUND_VST3_OPCODE_NOTARY_ISSUER="${{ secrets.APPLE_API_ISSUER_ID }}"
+            -DAPPLE_CODESIGN_IDENTITY="${{ secrets.APPLE_CODESIGN_IDENTITY }}" \
+            -DAPPLE_NOTARY_KEY="$RUNNER_TEMP/private_keys/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8" \
+            -DAPPLE_NOTARY_KEY_ID="${{ secrets.APPLE_API_KEY_ID }}" \
+            -DAPPLE_NOTARY_ISSUER_ID="${{ secrets.APPLE_API_ISSUER_ID }}"
 
       - name: Configure Linux
         if: matrix.name == 'linux'

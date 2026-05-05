@@ -19,34 +19,10 @@ option(ENABLE_TSAN "Enable ThreadSanitizer." OFF)
 option(CSOUND_VST3_OPCODE_SIGN "Sign executable artifacts when signing tools and credentials are available." ON)
 option(CSOUND_VST3_OPCODE_NOTARIZE "Notarize the macOS distribution archive when notary credentials are available." ON)
 
-set(CSOUND_VST3_OPCODE_CODESIGN_IDENTITY "$ENV{APPLE_CODESIGN_IDENTITY}" CACHE STRING "macOS codesigning identity.")
-set(CSOUND_VST3_OPCODE_APPLE_ID "$ENV{APPLE_ID}" CACHE STRING "Apple ID for notarytool.")
-set(CSOUND_VST3_OPCODE_APPLE_TEAM_ID "$ENV{APPLE_TEAM_ID}" CACHE STRING "Apple team ID for notarytool.")
-set(CSOUND_VST3_OPCODE_APPLE_APP_PASSWORD "$ENV{APPLE_APP_PASSWORD}" CACHE STRING "Apple app-specific password for notarytool.")
-set(CSOUND_VST3_OPCODE_REPOSITORY_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." CACHE PATH "Repository root containing README.md and examples/.")
-set(CSOUND_VST3_OPCODE_DIST_DIR "${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}/dist" CACHE PATH "Distribution staging directory.")
-set(CSOUND_VST3_OPCODE_ARCHIVE_NAME "csound-vst3-opcodes-${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}.zip" CACHE STRING "Distribution archive filename.")
-
-set(CSOUND_VST3_OPCODE_CODESIGN_IDENTITY
-    "$ENV{APPLE_CODESIGN_IDENTITY}"
-    CACHE STRING "macOS codesigning identity."
-)
-
-# App Store Connect API key (preferred for notarytool)
-set(CSOUND_VST3_OPCODE_NOTARY_KEY
-    "$ENV{APPLE_API_KEY_PATH}"
-    CACHE FILEPATH "Path to AuthKey_XXXX.p8 for notarytool."
-)
-
-set(CSOUND_VST3_OPCODE_NOTARY_KEY_ID
-    "$ENV{APPLE_API_KEY_ID}"
-    CACHE STRING "App Store Connect API Key ID."
-)
-
-set(CSOUND_VST3_OPCODE_NOTARY_ISSUER
-    "$ENV{APPLE_API_ISSUER_ID}"
-    CACHE STRING "App Store Connect API Issuer ID."
-)
+set(APPLE_CODESIGN_IDENTITY "$ENV{APPLE_CODESIGN_IDENTITY}" CACHE STRING "Apple code signing identity")
+set(APPLE_NOTARY_KEY "$ENV{APPLE_NOTARY_KEY}" CACHE FILEPATH "App Store Connect API key")
+set(APPLE_NOTARY_KEY_ID "$ENV{APPLE_NOTARY_KEY_ID}" CACHE STRING "App Store Connect API key ID")
+set(APPLE_NOTARY_ISSUER_ID "$ENV{APPLE_NOTARY_ISSUER_ID}" CACHE STRING "App Store Connect API issuer ID")
 
 set(CSOUND_VST3_OPCODE_REPOSITORY_ROOT
     "${CMAKE_CURRENT_LIST_DIR}/.."
@@ -233,7 +209,7 @@ if(APPLE)
             "${CMAKE_CURRENT_LIST_DIR}/cmake/sign-macos-dist.bash"
             "${CSOUND_VST3_OPCODE_DIST_DIR}/bin"
             "${CSOUND_VST3_OPCODE_SIGN}"
-            "${CSOUND_VST3_OPCODE_CODESIGN_IDENTITY}"
+            "${APPLE_CODESIGN_IDENTITY}"
         VERBATIM
         COMMENT "Signing macOS executable artifacts in dist/bin"
     )
@@ -251,9 +227,9 @@ if(APPLE)
             "${CMAKE_CURRENT_LIST_DIR}/cmake/notarize-macos-dist.bash"
             "${CSOUND_VST3_OPCODE_ARCHIVE}"
             "${CSOUND_VST3_OPCODE_NOTARIZE}"
-            "${CSOUND_VST3_OPCODE_NOTARY_KEY}"
-            "${CSOUND_VST3_OPCODE_NOTARY_KEY_ID}"
-            "${CSOUND_VST3_OPCODE_NOTARY_ISSUER}"
+            "${APPLE_NOTARY_KEY}"
+            "${APPLE_NOTARY_KEY_ID}"
+            "${APPLE_NOTARY_ISSUER_ID}"
         VERBATIM
         COMMENT "Notarizing macOS dist archive"
     )
