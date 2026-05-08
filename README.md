@@ -41,8 +41,24 @@ depending on your platform.
  2. Run `clean-build-macos.bash`. It should finish with a list showing the 
     new Csound plugin shared library.
 
-On macOS, if you need to sign and notarize your built package, you will have 
-some configuration work to do!
+On macOS, local builds are by default not signed or notarized. If you need to 
+build signed or notarized releases, export environment variables for the 
+required secrets using a shell script such as:
+```
+# ~/csound-release-signing.env
+# This file is used to set environment variables for code signing and 
+# notarization when locally building Csound-based projects. It should be 
+# sourced before running such builds.
+export APPLE_CODESIGN_IDENTITY="Developer ID Application: My Name (9999999999)"
+export APPLE_NOTARY_KEY="$HOME$/private-keys/AuthKey_9999999999.p8"
+export APPLE_NOTARY_KEY_ID="9999999999"
+export APPLE_NOTARY_ISSUER_ID="a9a9a9a9-a9a9-a9a9-a9a9-a9a9a9a9a9a9"
+```
+Then:
+```
+source ~/csound-release-signing.env
+cmake -DCSOUND_AC_ENABLE_CODESIGN=ON -DCSOUND_AC_ENABLE_NOTARIZATION=ON ...
+```
     
 ## Installation
 
