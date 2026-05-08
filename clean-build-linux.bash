@@ -1,13 +1,20 @@
-#!/bin/bash
-clear
-echo "Starting a clean build of csound-vst3 for Linux..."
-find . -name CMakeCache.txt -delete
-rm -rf build-linux
-mkdir -p build-linux
-cd build-linux
-cmake ../vst3-opcodes -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_FLAGS=-O2 -DCMAKE_CXX_FLAGS=-O2
-cmake --build . --verbose --parallel 4
-cd ..
-find . -name "libvst3_plugins.*" -ls 2>/dev/null
-echo "Completed a clean build of csound-vst3 for Linux."
+#!/usr/bin/env bash
+set -euo pipefail
 
+echo "Cleaning and building csound-vst3-opcodes for Linux..."
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+build_dir="${repo_root}/build-linux"
+install_dir="${repo_root}/dist"
+cmake_args=("$@")
+
+rm -rf "${build_dir}" "${install_dir}"
+cmake -S "${repo_root}/vst3-opcodes" -B "${build_dir}" -G Ninja \
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+    -DCMAKE_INSTALL_PREFIX="${install_dir}" \
+    "${cmake_args[@]}"
+cmake --build "${build_dir}" --parallel --target stage_dist
+cmake --install "${build_dir}" --prefix "${install_dir}"
+cmake --build "${build_dir}" --target archive_dist
+find "${install_dir}" -type f -print
+cmake -E echo "Archive: ${build_dir}/csound-vst3-opcodes-2.0.0-linux.zip"
+echo "Completed clean build of csound-vst3-opcodes for Linux. Built artifacts are in dist/."

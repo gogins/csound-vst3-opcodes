@@ -1,16 +1,33 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-dist_bin_dir="$1"
-sign_enabled="$2"
-codesign_identity="$3"
+dist_dir="${1:?dist directory is required}"
+enable_codesign="${2:-OFF}"
+codesign_identity="${APPLE_CODESIGN_IDENTITY:-}"
 
-if [[ "$sign_enabled" != "ON" || -z "$codesign_identity" ]]; then
-    echo "Skipping macOS codesign."
+case "${enable_codesign}" in
+    ON|on|On|TRUE|true|True|1|YES|yes|Yes)
+        ;;
+    *)
+        echo "Code signing disabled."
+        exit 0
+        ;;
+esac
+
+if [[ -z "${codesign_identity}" ]]; then
+    echo "APPLE_CODESIGN_IDENTITY is not set; skipping signing."
     exit 0
 fi
 
-find "$dist_bin_dir" -type f \( -perm -111 -o -name "*.dylib" -o -name "*.so" \) -print0 |
-while IFS= read -r -d '' artifact; do
-    codesign --force --timestamp --options runtime --sign "$codesign_identity" "$artifact"
-done
+if ! command -v codesign >/dev/null 2>&1; then
+    echo "codesign not found; skipping signing."
+    exit 0
+fi
+
+while IFS= read -r -d '' artifact
+do
+    if file "${artifact}" | grep -q "Mach-O"; then
+        echo "Signing ${artifact}"
+        codesign --force --timestamp --options runtime --sign "${codesign_identity}" "${artifact}"
+    fi
+done < <(find "${dist_dir}" -type f -print0)

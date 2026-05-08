@@ -16,13 +16,13 @@ endif()
 
 option(ENABLE_ASAN "Enable AddressSanitizer." OFF)
 option(ENABLE_TSAN "Enable ThreadSanitizer." OFF)
-option(CSOUND_VST3_OPCODE_SIGN "Sign executable artifacts when signing tools and credentials are available." ON)
-option(CSOUND_VST3_OPCODE_NOTARIZE "Notarize the macOS distribution archive when notary credentials are available." ON)
+option(CSOUND_AC_ENABLE_CODESIGN "Sign Mach-O artifacts in dist when credentials are available." OFF)
+option(CSOUND_AC_ENABLE_NOTARIZATION "Notarize the macOS distribution archive when credentials are available." OFF)
 
-set(APPLE_CODESIGN_IDENTITY "$ENV{APPLE_CODESIGN_IDENTITY}" CACHE STRING "Apple code signing identity")
-set(APPLE_NOTARY_KEY "$ENV{APPLE_NOTARY_KEY}" CACHE FILEPATH "App Store Connect API key")
-set(APPLE_NOTARY_KEY_ID "$ENV{APPLE_NOTARY_KEY_ID}" CACHE STRING "App Store Connect API key ID")
-set(APPLE_NOTARY_ISSUER_ID "$ENV{APPLE_NOTARY_ISSUER_ID}" CACHE STRING "App Store Connect API issuer ID")
+set(CSOUND_VST3_OPCODE_SOURCE_DIR
+    "${CMAKE_CURRENT_LIST_DIR}"
+    CACHE PATH "Directory containing the vst3-opcodes sources."
+)
 
 set(CSOUND_VST3_OPCODE_REPOSITORY_ROOT
     "${CMAKE_CURRENT_LIST_DIR}/.."
@@ -31,11 +31,13 @@ set(CSOUND_VST3_OPCODE_REPOSITORY_ROOT
 
 set(CSOUND_VST3_OPCODE_DIST_DIR
     "${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}/dist"
-    CACHE PATH "Distribution staging directory."
+    CACHE PATH "Distribution staging and install directory."
 )
 
+string(TOLOWER "${CMAKE_SYSTEM_NAME}" CSOUND_VST3_OPCODE_SYSTEM_NAME_LOWER)
+
 set(CSOUND_VST3_OPCODE_ARCHIVE_NAME
-    "csound-vst3-opcodes-${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}.zip"
+    "csound-vst3-opcodes-${PROJECT_VERSION}-${CSOUND_VST3_OPCODE_SYSTEM_NAME_LOWER}.zip"
     CACHE STRING "Distribution archive filename."
 )
 
@@ -58,12 +60,51 @@ endif()
 
 message(STATUS "CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 message(STATUS "CMAKE_CURRENT_LIST_DIR: ${CMAKE_CURRENT_LIST_DIR}")
+message(STATUS "CSOUND_VST3_OPCODE_SOURCE_DIR: ${CSOUND_VST3_OPCODE_SOURCE_DIR}")
 message(STATUS "CSOUND_VST3_OPCODE_REPOSITORY_ROOT: ${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}")
 message(STATUS "CSOUND_VST3_OPCODE_DIST_DIR: ${CSOUND_VST3_OPCODE_DIST_DIR}")
 message(STATUS "CSOUND_VST3_OPCODE_ARCHIVE_NAME: ${CSOUND_VST3_OPCODE_ARCHIVE_NAME}")
 message(STATUS "CSOUND_VST3_OPCODE_ARCHIVE: ${CSOUND_VST3_OPCODE_ARCHIVE}")
+message(STATUS "CSOUND_AC_ENABLE_CODESIGN: ${CSOUND_AC_ENABLE_CODESIGN}")
+message(STATUS "CSOUND_AC_ENABLE_NOTARIZATION: ${CSOUND_AC_ENABLE_NOTARIZATION}")
 
-include("${CMAKE_CURRENT_LIST_DIR}/cmake/FindCsoundHomeFirst.cmake")
+message(STATUS "Refreshing shared files from csound-ac repository head...")
+
+file(DOWNLOAD
+    "https://raw.githubusercontent.com/gogins-dev/csound-ac/refs/heads/master/cmake/FindCsoundHomeFirst.cmake"
+    "${CSOUND_VST3_OPCODE_SOURCE_DIR}/cmake/FindCsoundHomeFirst.cmake"
+    STATUS find_csound_download_status
+    SHOW_PROGRESS
+)
+
+list(GET find_csound_download_status 0 find_csound_download_code)
+
+if(NOT find_csound_download_code EQUAL 0)
+    list(GET find_csound_download_status 1 find_csound_download_message)
+    message(WARNING
+        "Failed to refresh FindCsoundHomeFirst.cmake from csound-ac head: "
+        "${find_csound_download_message}. Using local copy."
+    )
+endif()
+
+file(DOWNLOAD
+    "https://raw.githubusercontent.com/gogins-dev/csound-ac/refs/heads/master/CsoundAC/OpcodeBaseAC.hpp"
+    "${CSOUND_VST3_OPCODE_SOURCE_DIR}/OpcodeBaseAC.hpp"
+    STATUS opcode_base_download_status
+    SHOW_PROGRESS
+)
+
+list(GET opcode_base_download_status 0 opcode_base_download_code)
+
+if(NOT opcode_base_download_code EQUAL 0)
+    list(GET opcode_base_download_status 1 opcode_base_download_message)
+    message(WARNING
+        "Failed to refresh OpcodeBaseAC.hpp from csound-ac head: "
+        "${opcode_base_download_message}. Using local copy."
+    )
+endif()
+
+include("${CSOUND_VST3_OPCODE_SOURCE_DIR}/cmake/FindCsoundHomeFirst.cmake")
 
 if(NOT CSOUND_FOUND)
     message(FATAL_ERROR "Csound was not found.")
@@ -75,7 +116,11 @@ message(STATUS "Using Csound include dirs:  ${CSOUND_INCLUDE_DIRS}")
 message(STATUS "Using Csound framework dir: ${CSOUND_FRAMEWORK_DIR}")
 message(STATUS "Using Csound version:       ${CSOUND_VERSION}")
 
-set(vst3sdk_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../vst3sdk" CACHE PATH "Steinberg VST3 SDK source directory.")
+set(vst3sdk_SOURCE_DIR
+    "${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}/vst3sdk"
+    CACHE PATH "Steinberg VST3 SDK source directory."
+)
+
 add_subdirectory("${vst3sdk_SOURCE_DIR}" "${PROJECT_BINARY_DIR}/vst3sdk")
 smtg_enable_vst3_sdk()
 
@@ -84,43 +129,43 @@ if(SMTG_WIN)
 endif()
 
 set(vst3_plugins_sources
-    ${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}/vst3-opcodes/vst3-opcodes.cpp
-    ${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}/vst3-opcodes/OpcodeBaseAC.hpp
-    ${vst3sdk_SOURCE_DIR}/public.sdk/source/common/memorystream.cpp
-    ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/connectionproxy.cpp
-    ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/eventlist.cpp
-    ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/hostclasses.cpp
-    ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/module.cpp
-    ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/parameterchanges.cpp
-    ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/pluginterfacesupport.cpp
-    ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/plugprovider.cpp
-    ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/processdata.cpp
-    ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/utility/stringconvert.cpp
-    ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/vstinitiids.cpp
+    "${CSOUND_VST3_OPCODE_SOURCE_DIR}/vst3-opcodes.cpp"
+    "${CSOUND_VST3_OPCODE_SOURCE_DIR}/OpcodeBaseAC.hpp"
+    "${vst3sdk_SOURCE_DIR}/public.sdk/source/common/memorystream.cpp"
+    "${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/connectionproxy.cpp"
+    "${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/eventlist.cpp"
+    "${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/hostclasses.cpp"
+    "${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/module.cpp"
+    "${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/parameterchanges.cpp"
+    "${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/pluginterfacesupport.cpp"
+    "${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/plugprovider.cpp"
+    "${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/processdata.cpp"
+    "${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/utility/stringconvert.cpp"
+    "${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/vstinitiids.cpp"
 )
 
 set(vst3_plugins_platform_libs)
 
 if(SMTG_MAC)
     list(APPEND vst3_plugins_sources
-        ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/module_mac.mm
-        ${vst3sdk_SOURCE_DIR}/public.sdk/source/common/systemclipboard_mac.mm
-        ${vst3sdk_SOURCE_DIR}/public.sdk/source/common/threadchecker_mac.mm
+        "${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/module_mac.mm"
+        "${vst3sdk_SOURCE_DIR}/public.sdk/source/common/systemclipboard_mac.mm"
+        "${vst3sdk_SOURCE_DIR}/public.sdk/source/common/threadchecker_mac.mm"
     )
     list(APPEND vst3_plugins_platform_libs "-framework Cocoa" "-framework Foundation")
 elseif(SMTG_LINUX)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(GTKMM3 REQUIRED gtkmm-3.0)
     list(APPEND vst3_plugins_sources
-        ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/module_linux.cpp
-        ${vst3sdk_SOURCE_DIR}/public.sdk/source/common/systemclipboard_linux.cpp
-        ${vst3sdk_SOURCE_DIR}/public.sdk/source/common/threadchecker_linux.cpp
+        "${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/module_linux.cpp"
+        "${vst3sdk_SOURCE_DIR}/public.sdk/source/common/systemclipboard_linux.cpp"
+        "${vst3sdk_SOURCE_DIR}/public.sdk/source/common/threadchecker_linux.cpp"
     )
 elseif(SMTG_WIN)
     list(APPEND vst3_plugins_sources
-        ${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/module_win32.cpp
-        ${vst3sdk_SOURCE_DIR}/public.sdk/source/common/systemclipboard_win32.cpp
-        ${vst3sdk_SOURCE_DIR}/public.sdk/source/common/threadchecker_win32.cpp
+        "${vst3sdk_SOURCE_DIR}/public.sdk/source/vst/hosting/module_win32.cpp"
+        "${vst3sdk_SOURCE_DIR}/public.sdk/source/common/systemclipboard_win32.cpp"
+        "${vst3sdk_SOURCE_DIR}/public.sdk/source/common/threadchecker_win32.cpp"
     )
 endif()
 
@@ -150,7 +195,7 @@ target_compile_definitions(vst3_plugins
 
 target_include_directories(vst3_plugins
     PRIVATE
-        "${CMAKE_CURRENT_LIST_DIR}"
+        "${CSOUND_VST3_OPCODE_SOURCE_DIR}"
         "${CSOUND_INCLUDE_DIRS}"
 )
 
@@ -158,8 +203,19 @@ if(SMTG_MAC)
     set_target_properties(vst3_plugins PROPERTIES
         PREFIX "lib"
         SUFFIX ".dylib"
+        BUILD_WITH_INSTALL_RPATH ON
+        INSTALL_RPATH "@loader_path;@loader_path/../lib;/Library/Frameworks;/usr/local/lib"
     )
+
     target_compile_options(vst3_plugins PRIVATE -fobjc-arc)
+
+    target_link_options(vst3_plugins PRIVATE
+        "-Wl,-rpath,@loader_path"
+        "-Wl,-rpath,@loader_path/../lib"
+        "-Wl,-rpath,/Library/Frameworks"
+        "-Wl,-rpath,/usr/local/lib"
+    )
+
     if(CSOUND_FRAMEWORK_DIR)
         get_filename_component(csound_framework_parent "${CSOUND_FRAMEWORK_DIR}" DIRECTORY)
         target_link_options(vst3_plugins PRIVATE
@@ -168,15 +224,38 @@ if(SMTG_MAC)
         )
     endif()
 elseif(SMTG_LINUX)
-    set_target_properties(vst3_plugins PROPERTIES PREFIX "lib" SUFFIX ".so")
+    set_target_properties(vst3_plugins PROPERTIES
+        PREFIX "lib"
+        SUFFIX ".so"
+    )
     if(CSOUND_LIBRARY)
         get_filename_component(csound_lib_dir "${CSOUND_LIBRARY}" DIRECTORY)
         target_link_options(vst3_plugins PRIVATE "-Wl,-rpath,${csound_lib_dir}")
     endif()
 elseif(SMTG_WIN)
     target_compile_options(vst3_plugins PRIVATE /Zc:__cplusplus)
-    set_target_properties(vst3_plugins PROPERTIES PREFIX "" SUFFIX ".dll")
+    set_target_properties(vst3_plugins PROPERTIES
+        PREFIX ""
+        SUFFIX ".dll"
+    )
 endif()
+
+install(TARGETS vst3_plugins
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION bin
+    ARCHIVE DESTINATION lib
+)
+
+install(FILES
+    "${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}/README.md"
+    "${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}/LICENSE"
+    DESTINATION .
+)
+
+install(DIRECTORY
+    "${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}/examples"
+    DESTINATION .
+)
 
 add_custom_target(clean_dist
     COMMAND "${CMAKE_COMMAND}" -E rm -rf "${CSOUND_VST3_OPCODE_DIST_DIR}"
@@ -185,7 +264,7 @@ add_custom_target(clean_dist
     COMMENT "Creating clean dist directory"
 )
 
-add_custom_target(stage_dist ALL
+add_custom_target(stage_dist
     DEPENDS clean_dist vst3_plugins
     COMMAND "${CMAKE_COMMAND}" -E copy_if_different
         "$<TARGET_FILE:vst3_plugins>"
@@ -206,17 +285,16 @@ if(APPLE)
     add_custom_target(sign_dist
         DEPENDS stage_dist
         COMMAND /bin/bash
-            "${CMAKE_CURRENT_LIST_DIR}/cmake/sign-macos-dist.bash"
-            "${CSOUND_VST3_OPCODE_DIST_DIR}/bin"
-            "${CSOUND_VST3_OPCODE_SIGN}"
-            "${APPLE_CODESIGN_IDENTITY}"
+            "${CSOUND_VST3_OPCODE_SOURCE_DIR}/cmake/sign-macos-dist.bash"
+            "${CSOUND_VST3_OPCODE_DIST_DIR}"
+            "$<IF:$<BOOL:${CSOUND_AC_ENABLE_CODESIGN}>,ON,OFF>"
         VERBATIM
-        COMMENT "Signing macOS executable artifacts in dist/bin"
+        COMMENT "Signing macOS Mach-O artifacts in dist when enabled"
     )
 
     add_custom_target(archive_dist
         DEPENDS sign_dist
-        COMMAND "${CMAKE_COMMAND}" -E tar cfv "${PROJECT_BINARY_DIR}/${CSOUND_VST3_OPCODE_ARCHIVE_NAME}" --format=zip -- dist
+        COMMAND "${CMAKE_COMMAND}" -E tar cfv "${CSOUND_VST3_OPCODE_ARCHIVE}" --format=zip -- dist
         WORKING_DIRECTORY "${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}"
         COMMENT "Creating macOS dist archive"
     )
@@ -224,14 +302,11 @@ if(APPLE)
     add_custom_target(notarize_dist
         DEPENDS archive_dist
         COMMAND /bin/bash
-            "${CMAKE_CURRENT_LIST_DIR}/cmake/notarize-macos-dist.bash"
+            "${CSOUND_VST3_OPCODE_SOURCE_DIR}/cmake/notarize-macos-dist.bash"
             "${CSOUND_VST3_OPCODE_ARCHIVE}"
-            "${CSOUND_VST3_OPCODE_NOTARIZE}"
-            "${APPLE_NOTARY_KEY}"
-            "${APPLE_NOTARY_KEY_ID}"
-            "${APPLE_NOTARY_ISSUER_ID}"
+            "$<IF:$<AND:$<BOOL:${CSOUND_AC_ENABLE_CODESIGN}>,$<BOOL:${CSOUND_AC_ENABLE_NOTARIZATION}>>,ON,OFF>"
         VERBATIM
-        COMMENT "Notarizing macOS dist archive"
+        COMMENT "Notarizing macOS dist archive when enabled"
     )
 else()
     add_custom_target(sign_dist
@@ -241,7 +316,7 @@ else()
 
     add_custom_target(archive_dist
         DEPENDS sign_dist
-        COMMAND "${CMAKE_COMMAND}" -E tar cfv "${PROJECT_BINARY_DIR}/${CSOUND_VST3_OPCODE_ARCHIVE_NAME}" --format=zip -- dist
+        COMMAND "${CMAKE_COMMAND}" -E tar cfv "${CSOUND_VST3_OPCODE_ARCHIVE}" --format=zip -- dist
         WORKING_DIRECTORY "${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}"
         COMMENT "Creating dist archive"
     )

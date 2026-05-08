@@ -1,34 +1,33 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-archive="$1"
-notarize_enabled="$2"
-key="$3"
-key_id="$4"
-issuer="$5"
+archive_path="${1:?archive path is required}"
+enable_notarization="${2:-OFF}"
+notary_key="${APPLE_NOTARY_KEY:-}"
+notary_key_id="${APPLE_NOTARY_KEY_ID:-}"
+notary_issuer_id="${APPLE_NOTARY_ISSUER_ID:-}"
 
-if [[ "$notarize_enabled" != "ON" ]]; then
-    echo "Skipping notarization: CSOUND_VST3_OPCODE_NOTARIZE is OFF."
+case "${enable_notarization}" in
+    ON|on|On|TRUE|true|True|1|YES|yes|Yes)
+        ;;
+    *)
+        echo "Notarization disabled."
+        exit 0
+        ;;
+esac
+
+if [[ -z "${notary_key}" || -z "${notary_key_id}" || -z "${notary_issuer_id}" ]]; then
+    echo "APPLE_NOTARY_KEY, APPLE_NOTARY_KEY_ID, or APPLE_NOTARY_ISSUER_ID is not set; skipping notarization."
     exit 0
 fi
 
-if [[ -z "$archive" ]]; then
-    echo "Archive path was not supplied." >&2
+if [[ ! -f "${archive_path}" ]]; then
+    echo "Archive not found: ${archive_path}" >&2
     exit 1
 fi
 
-if [[ -z "$key" || -z "$key_id" || -z "$issuer" ]]; then
-    echo "Skipping notarization: API key credentials were not supplied."
-    exit 0
-fi
-
-if [[ ! -f "$archive" ]]; then
-    echo "Archive does not exist: $archive" >&2
-    exit 1
-fi
-
-xcrun notarytool submit "$archive" \
-    --key "$key" \
-    --key-id "$key_id" \
-    --issuer "$issuer" \
-    --wait || { echo "Notarization failed for $archive" >&2; exit 1; }
+xcrun notarytool submit "${archive_path}" \
+    --key "${notary_key}" \
+    --key-id "${notary_key_id}" \
+    --issuer "${notary_issuer_id}" \
+    --wait

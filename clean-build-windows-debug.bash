@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-"$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/clean-build-windows.bash" Debug
+"$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/clean-build-windows.bash" Debug "$@"
