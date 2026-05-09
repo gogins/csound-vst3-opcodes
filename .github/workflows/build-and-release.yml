@@ -1,0 +1,229 @@
+name: build-and-release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macos
+            runner: macos-latest
+            platform: macos
+            build_dir: build-macos
+            archive_glob: build-macos/*.zip
+          - name: linux
+            runner: ubuntu-latest
+            platform: linux
+            build_dir: build-linux
+            archive_glob: build-linux/*.zip
+          - name: windows
+            runner: windows-latest
+            platform: windows
+            build_dir: build-windows
+            archive_glob: build-windows/*.zip
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies - macOS
+        if: matrix.platform == 'macos'
+        shell: bash
+        run: |
+          brew update
+          brew install \
+            cmake \
+            ninja \
+            ccache \
+            pkg-config \
+            csound
+
+      - name: Install dependencies - Linux
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            cmake \
+            ninja-build \
+            ccache \
+            pkg-config \
+            curl \
+            zip \
+            unzip \
+            git \
+            csound \
+            libcsound64-dev \
+            libgtkmm-3.0-dev \
+            libx11-dev \
+            libx11-xcb-dev \
+            libxcb-util-dev \
+            libxcb-keysyms1-dev \
+            libxcb-image0-dev \
+            libxcb-shm0-dev \
+            libxcb-icccm4-dev \
+            libxcb-sync-dev \
+            libxcb-xfixes0-dev \
+            libxcb-shape0-dev \
+            libxcb-randr0-dev \
+            libxcb-render-util0-dev \
+            libxcb-cursor-dev \
+            libgl1-mesa-dev \
+            libglu1-mesa-dev
+
+      - name: Install dependencies - Windows
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          choco install -y cmake ninja ccache git curl 7zip
+          choco install -y csound --ignore-checksums
+
+      - name: Refresh copied files from csound-ac
+        shell: bash
+        run: |
+          ./update-csound-ac-files.bash
+
+      - name: Prepare ccache
+        shell: bash
+        run: |
+          ccache --zero-stats || true
+          ccache --set-config=max_size=1G || true
+          ccache --show-config || true
+
+      - name: Cache ccache - macOS/Linux
+        if: matrix.platform != 'windows'
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-${{ runner.os }}-${{ github.ref_name }}-${{ github.sha }}
+          restore-keys: |
+            ccache-${{ runner.os }}-${{ github.ref_name }}-
+            ccache-${{ runner.os }}-
+
+      - name: Cache ccache - Windows
+        if: matrix.platform == 'windows'
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.LOCALAPPDATA }}\ccache
+          key: ccache-${{ runner.os }}-${{ github.ref_name }}-${{ github.sha }}
+          restore-keys: |
+            ccache-${{ runner.os }}-${{ github.ref_name }}-
+            ccache-${{ runner.os }}-
+
+      - name: Import Apple code signing certificate
+        if: matrix.platform == 'macos' && github.ref_type == 'tag' && secrets.APPLE_CODESIGN_CERTIFICATE_BASE64 != ''
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.APPLE_CODESIGN_CERTIFICATE_BASE64 }}
+          p12-password: ${{ secrets.APPLE_CODESIGN_CERTIFICATE_PASSWORD }}
+
+      - name: Prepare Apple notarization key
+        if: matrix.platform == 'macos' && github.ref_type == 'tag' && secrets.APPLE_NOTARY_KEY_BASE64 != ''
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/notary"
+          echo "${{ secrets.APPLE_NOTARY_KEY_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/notary/AuthKey_${{ secrets.APPLE_NOTARY_KEY_ID }}.p8"
+          echo "APPLE_NOTARY_KEY=$RUNNER_TEMP/notary/AuthKey_${{ secrets.APPLE_NOTARY_KEY_ID }}.p8" >> "$GITHUB_ENV"
+
+      - name: Configure - macOS
+        if: matrix.platform == 'macos'
+        shell: bash
+        run: |
+          rm -rf build-macos dist
+          cmake -S vst3-opcodes -B build-macos -G Ninja \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_INSTALL_PREFIX="$PWD/dist" \
+            -DSMTG_BUILD_UNIVERSAL_BINARY=OFF \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 \
+            -DCMAKE_PREFIX_PATH="/Library;/Library/Frameworks;/opt/homebrew;/usr/local" \
+            -DCMAKE_FRAMEWORK_PATH="/Library/Frameworks;$HOME/Library/Frameworks" \
+            -DCMAKE_CXX_FLAGS="-Wno-error=unused-but-set-variable -Wno-error=deprecated-declarations" \
+            -DCSOUND_AC_ENABLE_CODESIGN=OFF \
+            -DCSOUND_AC_ENABLE_NOTARIZATION=OFF
+
+      - name: Configure - Linux
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          rm -rf build-linux dist
+          cmake -S vst3-opcodes -B build-linux -G Ninja \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_INSTALL_PREFIX="$PWD/dist"
+
+      - name: Configure - Windows
+        if: matrix.platform == 'windows'
+        shell: bash
+        run: |
+          rm -rf build-windows dist
+          cmake -S vst3-opcodes -B build-windows \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_INSTALL_PREFIX="$PWD/dist" \
+            -DSMTG_USE_STDATOMIC_H=OFF
+
+      - name: Build and locally install
+        shell: bash
+        run: |
+          cmake --build "${{ matrix.build_dir }}" --config Release --parallel --target stage_dist
+          cmake --install "${{ matrix.build_dir }}" --config Release --prefix "$PWD/dist"
+
+      - name: Sign, archive, and notarize - macOS
+        if: matrix.platform == 'macos'
+        shell: bash
+        env:
+          APPLE_CODESIGN_IDENTITY: ${{ secrets.APPLE_CODESIGN_IDENTITY }}
+          APPLE_NOTARY_KEY: ${{ env.APPLE_NOTARY_KEY }}
+          APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+          APPLE_NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
+        run: |
+          cmake --build build-macos --target sign_dist
+          cmake --build build-macos --target archive_dist
+          cmake --build build-macos --target notarize_dist
+
+      - name: Archive - Linux/Windows
+        if: matrix.platform != 'macos'
+        shell: bash
+        run: |
+          cmake --build "${{ matrix.build_dir }}" --config Release --target archive_dist
+
+      - name: Show ccache statistics
+        if: always()
+        shell: bash
+        run: |
+          ccache --show-stats || true
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: csound-vst3-opcodes-${{ matrix.platform }}
+          path: ${{ matrix.archive_glob }}
+          if-no-files-found: error
+
+      - name: Upload archive to GitHub Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.archive_glob }}
