@@ -41,11 +41,9 @@ cmake --install "${build_dir}" --prefix "${install_dir}"
 
 if [[ "${csound_ac_enable_codesign}" == "ON" && "${csound_ac_enable_notarization}" == "ON" ]]
 then
-    cmake --build "${build_dir}" --target sign_dist
-    cmake --build "${build_dir}" --target archive_dist
-    cmake --build "${build_dir}" --target notarize_dist
+    cmake --build "${build_dir}" --target release_dist
 else
-    cmake --build "${build_dir}" --target archive_dist
+    cmake --build "${build_dir}" --target release_dist
 fi
 
 find "${install_dir}" -type f -print

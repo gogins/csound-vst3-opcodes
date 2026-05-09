@@ -70,16 +70,26 @@ message(STATUS "CSOUND_AC_ENABLE_NOTARIZATION: ${CSOUND_AC_ENABLE_NOTARIZATION}"
 
 message(STATUS "Refreshing shared files from csound-ac repository head...")
 
+set(csound_ac_refresh_dir "${CMAKE_BINARY_DIR}/csound-ac-refresh")
+file(MAKE_DIRECTORY "${csound_ac_refresh_dir}")
+file(MAKE_DIRECTORY "${CSOUND_VST3_OPCODE_SOURCE_DIR}/cmake")
+
 file(DOWNLOAD
     "https://raw.githubusercontent.com/gogins-dev/csound-ac/refs/heads/master/cmake/FindCsoundHomeFirst.cmake"
-    "${CSOUND_VST3_OPCODE_SOURCE_DIR}/cmake/FindCsoundHomeFirst.cmake"
+    "${csound_ac_refresh_dir}/FindCsoundHomeFirst.cmake"
     STATUS find_csound_download_status
     SHOW_PROGRESS
 )
 
 list(GET find_csound_download_status 0 find_csound_download_code)
 
-if(NOT find_csound_download_code EQUAL 0)
+if(find_csound_download_code EQUAL 0)
+    execute_process(
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${csound_ac_refresh_dir}/FindCsoundHomeFirst.cmake"
+            "${CSOUND_VST3_OPCODE_SOURCE_DIR}/cmake/FindCsoundHomeFirst.cmake"
+    )
+else()
     list(GET find_csound_download_status 1 find_csound_download_message)
     message(WARNING
         "Failed to refresh FindCsoundHomeFirst.cmake from csound-ac head: "
@@ -89,18 +99,51 @@ endif()
 
 file(DOWNLOAD
     "https://raw.githubusercontent.com/gogins-dev/csound-ac/refs/heads/master/CsoundAC/OpcodeBaseAC.hpp"
-    "${CSOUND_VST3_OPCODE_SOURCE_DIR}/OpcodeBaseAC.hpp"
+    "${csound_ac_refresh_dir}/OpcodeBaseAC.hpp"
     STATUS opcode_base_download_status
     SHOW_PROGRESS
 )
 
 list(GET opcode_base_download_status 0 opcode_base_download_code)
 
-if(NOT opcode_base_download_code EQUAL 0)
+if(opcode_base_download_code EQUAL 0)
+    execute_process(
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${csound_ac_refresh_dir}/OpcodeBaseAC.hpp"
+            "${CSOUND_VST3_OPCODE_SOURCE_DIR}/OpcodeBaseAC.hpp"
+    )
+else()
     list(GET opcode_base_download_status 1 opcode_base_download_message)
     message(WARNING
         "Failed to refresh OpcodeBaseAC.hpp from csound-ac head: "
         "${opcode_base_download_message}. Using local copy."
+    )
+endif()
+
+file(DOWNLOAD
+    "https://raw.githubusercontent.com/gogins-dev/csound-ac/refs/heads/master/external/codesign-check.bash"
+    "${csound_ac_refresh_dir}/codesign-check.bash"
+    STATUS codesign_check_download_status
+    SHOW_PROGRESS
+)
+
+list(GET codesign_check_download_status 0 codesign_check_download_code)
+
+if(codesign_check_download_code EQUAL 0)
+    execute_process(
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${csound_ac_refresh_dir}/codesign-check.bash"
+            "${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}/codesign-check.bash"
+    )
+    execute_process(
+        COMMAND /bin/chmod +x
+            "${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}/codesign-check.bash"
+    )
+else()
+    list(GET codesign_check_download_status 1 codesign_check_download_message)
+    message(WARNING
+        "Failed to refresh codesign-check.bash from csound-ac head: "
+        "${codesign_check_download_message}. Using local copy if present."
     )
 endif()
 
@@ -299,14 +342,34 @@ if(APPLE)
         COMMENT "Creating macOS dist archive"
     )
 
-    add_custom_target(notarize_dist
-        DEPENDS archive_dist
-        COMMAND /bin/bash
-            "${CSOUND_VST3_OPCODE_SOURCE_DIR}/cmake/notarize-macos-dist.bash"
-            "${CSOUND_VST3_OPCODE_ARCHIVE}"
-            "$<IF:$<AND:$<BOOL:${CSOUND_AC_ENABLE_CODESIGN}>,$<BOOL:${CSOUND_AC_ENABLE_NOTARIZATION}>>,ON,OFF>"
-        VERBATIM
-        COMMENT "Notarizing macOS dist archive when enabled"
+    if(CSOUND_AC_ENABLE_CODESIGN AND CSOUND_AC_ENABLE_NOTARIZATION)
+        add_custom_target(notarize_dist
+            DEPENDS archive_dist
+            COMMAND /bin/bash
+                "${CSOUND_VST3_OPCODE_SOURCE_DIR}/cmake/notarize-macos-dist.bash"
+                "${CSOUND_VST3_OPCODE_ARCHIVE}"
+                ON
+            COMMAND /bin/bash
+                "${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}/codesign-check.bash"
+                "${CSOUND_VST3_OPCODE_ARCHIVE}"
+            VERBATIM
+            COMMENT "Notarizing and validating macOS dist archive when enabled"
+        )
+    else()
+        add_custom_target(notarize_dist
+            DEPENDS archive_dist
+            COMMAND /bin/bash
+                "${CSOUND_VST3_OPCODE_SOURCE_DIR}/cmake/notarize-macos-dist.bash"
+                "${CSOUND_VST3_OPCODE_ARCHIVE}"
+                OFF
+            VERBATIM
+            COMMENT "Notarization and codesign-check.bash validation are disabled"
+        )
+    endif()
+
+    add_custom_target(release_dist
+        DEPENDS notarize_dist
+        COMMENT "Building complete release archive"
     )
 else()
     add_custom_target(sign_dist
@@ -319,5 +382,10 @@ else()
         COMMAND "${CMAKE_COMMAND}" -E tar cfv "${CSOUND_VST3_OPCODE_ARCHIVE}" --format=zip -- dist
         WORKING_DIRECTORY "${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}"
         COMMENT "Creating dist archive"
+    )
+
+    add_custom_target(release_dist
+        DEPENDS archive_dist
+        COMMENT "Building complete release archive"
     )
 endif()
