@@ -96,11 +96,6 @@ jobs:
           choco install -y cmake ninja ccache git curl 7zip
           choco install -y csound --ignore-checksums
 
-      - name: Refresh copied files from csound-ac
-        shell: bash
-        run: |
-          ./update-csound-ac-files.bash
-
       - name: Prepare ccache
         shell: bash
         run: |
