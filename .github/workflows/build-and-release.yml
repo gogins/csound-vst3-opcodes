@@ -129,23 +129,34 @@ jobs:
             ccache-${{ runner.os }}-
 
       - name: Import Apple code signing certificate
-        if: matrix.platform == 'macos' && github.ref_type == 'tag' && secrets.APPLE_CODESIGN_CERTIFICATE_BASE64 != ''
+        if: matrix.platform == 'macos' && github.ref_type == 'tag'
         uses: apple-actions/import-codesign-certs@v3
         with:
           p12-file-base64: ${{ secrets.APPLE_CODESIGN_CERTIFICATE_BASE64 }}
           p12-password: ${{ secrets.APPLE_CODESIGN_CERTIFICATE_PASSWORD }}
 
       - name: Prepare Apple notarization key
-        if: matrix.platform == 'macos' && github.ref_type == 'tag' && secrets.APPLE_NOTARY_KEY_BASE64 != ''
+        if: matrix.platform == 'macos' && github.ref_type == 'tag'
         shell: bash
+        env:
+          APPLE_NOTARY_KEY_BASE64: ${{ secrets.APPLE_NOTARY_KEY_BASE64 }}
+          APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
         run: |
+          set -euo pipefail
+          if [[ -z "${APPLE_NOTARY_KEY_BASE64}" || -z "${APPLE_NOTARY_KEY_ID}" ]]
+          then
+              echo "Apple notarization secrets are not set."
+              exit 1
+          fi
           mkdir -p "$RUNNER_TEMP/notary"
-          echo "${{ secrets.APPLE_NOTARY_KEY_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/notary/AuthKey_${{ secrets.APPLE_NOTARY_KEY_ID }}.p8"
-          echo "APPLE_NOTARY_KEY=$RUNNER_TEMP/notary/AuthKey_${{ secrets.APPLE_NOTARY_KEY_ID }}.p8" >> "$GITHUB_ENV"
+          echo "${APPLE_NOTARY_KEY_BASE64}" | base64 --decode > "$RUNNER_TEMP/notary/AuthKey_${APPLE_NOTARY_KEY_ID}.p8"
+          echo "APPLE_NOTARY_KEY=$RUNNER_TEMP/notary/AuthKey_${APPLE_NOTARY_KEY_ID}.p8" >> "$GITHUB_ENV"
 
       - name: Configure - macOS
         if: matrix.platform == 'macos'
         shell: bash
+        env:
+          ENABLE_APPLE_RELEASE_SIGNING: ${{ github.ref_type == 'tag' && 'ON' || 'OFF' }}
         run: |
           rm -rf build-macos dist
           cmake -S vst3-opcodes -B build-macos -G Ninja \
@@ -158,8 +169,8 @@ jobs:
             -DCMAKE_PREFIX_PATH="/Library;/Library/Frameworks;/opt/homebrew;/usr/local" \
             -DCMAKE_FRAMEWORK_PATH="/Library/Frameworks;$HOME/Library/Frameworks" \
             -DCMAKE_CXX_FLAGS="-Wno-error=unused-but-set-variable -Wno-error=deprecated-declarations" \
-            -DCSOUND_AC_ENABLE_CODESIGN=OFF \
-            -DCSOUND_AC_ENABLE_NOTARIZATION=OFF
+            -DCSOUND_AC_ENABLE_CODESIGN="${ENABLE_APPLE_RELEASE_SIGNING}" \
+            -DCSOUND_AC_ENABLE_NOTARIZATION="${ENABLE_APPLE_RELEASE_SIGNING}"
 
       - name: Configure - Linux
         if: matrix.platform == 'linux'
@@ -190,7 +201,7 @@ jobs:
           cmake --build "${{ matrix.build_dir }}" --config Release --parallel --target stage_dist
           cmake --install "${{ matrix.build_dir }}" --config Release --prefix "$PWD/dist"
 
-      - name: Sign, archive, and notarize - macOS
+      - name: Sign, archive, notarize, and validate - macOS
         if: matrix.platform == 'macos'
         shell: bash
         env:
@@ -199,9 +210,7 @@ jobs:
           APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
           APPLE_NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
         run: |
-          cmake --build build-macos --target sign_dist
-          cmake --build build-macos --target archive_dist
-          cmake --build build-macos --target notarize_dist
+          cmake --build build-macos --target release_dist
 
       - name: Archive - Linux/Windows
         if: matrix.platform != 'macos'
