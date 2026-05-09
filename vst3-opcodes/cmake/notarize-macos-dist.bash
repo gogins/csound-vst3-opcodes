@@ -17,8 +17,8 @@ case "${enable_notarization}" in
 esac
 
 if [[ -z "${notary_key}" || -z "${notary_key_id}" || -z "${notary_issuer_id}" ]]; then
-    echo "APPLE_NOTARY_KEY, APPLE_NOTARY_KEY_ID, or APPLE_NOTARY_ISSUER_ID is not set; skipping notarization."
-    exit 0
+    echo "ERROR: APPLE_NOTARY_KEY, APPLE_NOTARY_KEY_ID, or APPLE_NOTARY_ISSUER_ID is not set, but notarization is enabled." >&2
+    exit 1
 fi
 
 if [[ ! -f "${archive_path}" ]]; then

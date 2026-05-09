@@ -15,13 +15,13 @@ case "${enable_codesign}" in
 esac
 
 if [[ -z "${codesign_identity}" ]]; then
-    echo "APPLE_CODESIGN_IDENTITY is not set; skipping signing."
-    exit 0
+    echo "ERROR: APPLE_CODESIGN_IDENTITY is not set, but code signing is enabled." >&2
+    exit 1
 fi
 
 if ! command -v codesign >/dev/null 2>&1; then
-    echo "codesign not found; skipping signing."
-    exit 0
+    echo "ERROR: codesign not found, but code signing is enabled." >&2
+    exit 1
 fi
 
 while IFS= read -r -d '' artifact
