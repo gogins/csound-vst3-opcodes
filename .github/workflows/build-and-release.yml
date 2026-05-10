@@ -37,11 +37,37 @@ jobs:
             build_dir: build-windows
             archive_glob: build-windows/*.zip
 
+    env:
+      CSOUND_INSTALL_PREFIX: ${{ github.workspace }}/.cache/csound-install
+      CSOUND_CACHE_VERSION: csound7-develop-v1
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Set up MSYS2 - Windows
+        if: matrix.platform == 'windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          path-type: inherit
+          install: >-
+            base-devel
+            git
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
+            mingw-w64-x86_64-ccache
+            mingw-w64-x86_64-pkgconf
+            mingw-w64-x86_64-libsndfile
+            mingw-w64-x86_64-curl
+            mingw-w64-x86_64-liblo
+            mingw-w64-x86_64-portaudio
+            mingw-w64-x86_64-boost
+            mingw-w64-x86_64-tools
 
       - name: Install dependencies - macOS
         if: matrix.platform == 'macos'
@@ -53,7 +79,9 @@ jobs:
             ninja \
             ccache \
             pkg-config \
-            csound
+            libsndfile \
+            bison \
+            flex
 
       - name: Install dependencies - Linux
         if: matrix.platform == 'linux'
@@ -70,8 +98,17 @@ jobs:
             zip \
             unzip \
             git \
-            csound \
-            libcsound64-dev \
+            bison \
+            flex \
+            libsndfile1-dev \
+            libasound2-dev \
+            libjack-jackd2-dev \
+            libpulse-dev \
+            portaudio19-dev \
+            libportmidi-dev \
+            liblo-dev \
+            libcurl4-openssl-dev \
+            libffi-dev \
             libgtkmm-3.0-dev \
             libx11-dev \
             libxcb1-dev \
@@ -86,6 +123,7 @@ jobs:
             libxcb-render-util0-dev \
             libxcb-cursor-dev \
             libxcb-xkb-dev \
+            libxcb-util-dev \
             libxkbcommon-dev \
             libxkbcommon-x11-dev
 
@@ -93,8 +131,189 @@ jobs:
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
-          choco install -y cmake ninja ccache git curl 7zip
-          choco install -y csound --ignore-checksums
+          choco install -y 7zip
+
+      - name: Resolve Csound develop commit
+        id: csound-source
+        shell: bash
+        run: |
+          set -euo pipefail
+          csound_sha="$(git ls-remote https://github.com/csound/csound.git refs/heads/develop | awk '{print $1}')"
+          if [[ -z "${csound_sha}" ]]
+          then
+              echo "Could not resolve Csound develop branch." >&2
+              exit 1
+          fi
+          echo "sha=${csound_sha}" >> "${GITHUB_OUTPUT}"
+          echo "Csound develop: ${csound_sha}"
+
+      - name: Cache Csound install - macOS
+        if: matrix.platform == 'macos'
+        id: cache-csound-macos
+        uses: actions/cache@v4
+        with:
+          path: |
+            .cache/csound-install
+            ~/Library/Frameworks/CsoundLib64.framework
+          key: ${{ runner.os }}-${{ env.CSOUND_CACHE_VERSION }}-${{ steps.csound-source.outputs.sha }}
+
+      - name: Cache Csound install - Linux/Windows
+        if: matrix.platform != 'macos'
+        id: cache-csound-other
+        uses: actions/cache@v4
+        with:
+          path: .cache/csound-install
+          key: ${{ runner.os }}-${{ env.CSOUND_CACHE_VERSION }}-${{ steps.csound-source.outputs.sha }}
+
+      - name: Validate Csound cache - macOS/Linux
+        if: matrix.platform != 'windows'
+        id: validate-csound-cache-unix
+        shell: bash
+        run: |
+          set -euo pipefail
+          valid=false
+          if [[ -x "${CSOUND_INSTALL_PREFIX}/bin/csound" ]]
+          then
+              if [[ "${{ matrix.platform }}" == "macos" ]]
+              then
+                  if [[ -d "${HOME}/Library/Frameworks/CsoundLib64.framework" ]]
+                  then
+                      valid=true
+                  fi
+              elif [[ -e "${CSOUND_INSTALL_PREFIX}/lib/libcsound64.so" || -e "${CSOUND_INSTALL_PREFIX}/lib64/libcsound64.so" ]]
+              then
+                  valid=true
+              fi
+          fi
+          echo "valid=${valid}" >> "${GITHUB_OUTPUT}"
+          if [[ "${valid}" == "true" ]]
+          then
+              echo "Using cached Csound install at ${CSOUND_INSTALL_PREFIX}"
+              "${CSOUND_INSTALL_PREFIX}/bin/csound" --version || true
+          else
+              echo "Cached Csound install is missing or incomplete; rebuilding."
+              rm -rf "${CSOUND_INSTALL_PREFIX}"
+              if [[ "${{ matrix.platform }}" == "macos" ]]
+              then
+                  rm -rf "${HOME}/Library/Frameworks/CsoundLib64.framework"
+              fi
+          fi
+
+      - name: Validate Csound cache - Windows
+        if: matrix.platform == 'windows'
+        id: validate-csound-cache-windows
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          valid=false
+          if [[ -x "${CSOUND_INSTALL_PREFIX}/bin/csound.exe" && -f "${CSOUND_INSTALL_PREFIX}/bin/csound64.dll" ]]
+          then
+              if find "${CSOUND_INSTALL_PREFIX}" -name 'libcsound64.dll.a' -o -name 'csound64.lib' -o -name 'libcsound64.lib' | grep -q .
+              then
+                  valid=true
+              fi
+          fi
+          echo "valid=${valid}" >> "${GITHUB_OUTPUT}"
+          if [[ "${valid}" == "true" ]]
+          then
+              echo "Using cached Csound install at ${CSOUND_INSTALL_PREFIX}"
+              "${CSOUND_INSTALL_PREFIX}/bin/csound.exe" --version || true
+          else
+              echo "Cached Csound install is missing or incomplete; rebuilding."
+              rm -rf "${CSOUND_INSTALL_PREFIX}"
+          fi
+
+      - name: Build and install Csound 7 from develop - macOS
+        if: matrix.platform == 'macos' && steps.validate-csound-cache-unix.outputs.valid != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch develop https://github.com/csound/csound.git csound-source
+          cmake -S csound-source -B csound-build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="${CSOUND_INSTALL_PREFIX}" \
+            -DBUILD_TESTS=OFF \
+            -DBUILD_JAVA_INTERFACE=OFF \
+            -DBUILD_PYTHON_INTERFACE=OFF \
+            -DBUILD_PYTHON_OPCODES=OFF \
+            -DUSE_PYTHON=OFF \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          cmake --build csound-build --parallel
+          cmake --install csound-build
+
+      - name: Build and install Csound 7 from develop - Linux
+        if: matrix.platform == 'linux' && steps.validate-csound-cache-unix.outputs.valid != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch develop https://github.com/csound/csound.git csound-source
+          cmake -S csound-source -B csound-build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="${CSOUND_INSTALL_PREFIX}" \
+            -DBUILD_TESTS=OFF \
+            -DBUILD_JAVA_INTERFACE=OFF \
+            -DBUILD_PYTHON_INTERFACE=OFF \
+            -DBUILD_PYTHON_OPCODES=OFF \
+            -DUSE_PYTHON=OFF \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          cmake --build csound-build --parallel
+          cmake --install csound-build
+          echo "${CSOUND_INSTALL_PREFIX}/lib" | sudo tee /etc/ld.so.conf.d/csound.conf
+          echo "${CSOUND_INSTALL_PREFIX}/lib64" | sudo tee -a /etc/ld.so.conf.d/csound.conf
+          sudo ldconfig
+
+      - name: Build and install Csound 7 from develop - Windows
+        if: matrix.platform == 'windows' && steps.validate-csound-cache-windows.outputs.valid != 'true'
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch develop https://github.com/csound/csound.git csound-source
+          cmake -S csound-source -B csound-build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="${CSOUND_INSTALL_PREFIX}" \
+            -DBUILD_TESTS=OFF \
+            -DBUILD_JAVA_INTERFACE=OFF \
+            -DBUILD_PYTHON_INTERFACE=OFF \
+            -DBUILD_PYTHON_OPCODES=OFF \
+            -DUSE_PYTHON=OFF \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          cmake --build csound-build --parallel
+          cmake --install csound-build
+          import_library="$(find "${CSOUND_INSTALL_PREFIX}" \( -name 'libcsound64.dll.a' -o -name 'csound64.lib' -o -name 'libcsound64.lib' \) | head -n 1 || true)"
+          if [[ -z "${import_library}" ]]
+          then
+              dll_path="$(find "${CSOUND_INSTALL_PREFIX}" -name 'csound64.dll' | head -n 1 || true)"
+              if [[ -z "${dll_path}" ]]
+              then
+                  echo "Could not find csound64.dll after Csound install." >&2
+                  exit 1
+              fi
+              mkdir -p "${CSOUND_INSTALL_PREFIX}/lib"
+              (
+                  cd "${CSOUND_INSTALL_PREFIX}/lib"
+                  gendef "${dll_path}"
+                  dlltool -d csound64.def -l libcsound64.dll.a -D csound64.dll
+              )
+          fi
+
+      - name: Add Csound to environment - macOS/Linux
+        if: matrix.platform != 'windows'
+        shell: bash
+        run: |
+          echo "${CSOUND_INSTALL_PREFIX}/bin" >> "${GITHUB_PATH}"
+          echo "LD_LIBRARY_PATH=${CSOUND_INSTALL_PREFIX}/lib:${CSOUND_INSTALL_PREFIX}/lib64:${LD_LIBRARY_PATH:-}" >> "${GITHUB_ENV}"
+          echo "DYLD_LIBRARY_PATH=${CSOUND_INSTALL_PREFIX}/lib:${CSOUND_INSTALL_PREFIX}/lib64:${DYLD_LIBRARY_PATH:-}" >> "${GITHUB_ENV}"
+          echo "CMAKE_FRAMEWORK_PATH=${HOME}/Library/Frameworks:/Library/Frameworks:${CMAKE_FRAMEWORK_PATH:-}" >> "${GITHUB_ENV}"
+
+      - name: Add Csound to environment - Windows
+        if: matrix.platform == 'windows'
+        shell: msys2 {0}
+        run: |
+          echo "${CSOUND_INSTALL_PREFIX}/bin" >> "${GITHUB_PATH}"
+          echo "${CSOUND_INSTALL_PREFIX}/lib" >> "${GITHUB_PATH}"
 
       - name: Prepare ccache
         shell: bash
@@ -127,25 +346,25 @@ jobs:
         if: matrix.platform == 'macos' && github.ref_type == 'tag'
         uses: apple-actions/import-codesign-certs@v3
         with:
-          p12-file-base64: ${{ secrets.APPLE_CODESIGN_CERTIFICATE_BASE64 }}
-          p12-password: ${{ secrets.APPLE_CODESIGN_CERTIFICATE_PASSWORD }}
+          p12-file-base64: ${{ secrets.MACOS_CODESIGN_CERTIFICATE_BASE64 }}
+          p12-password: ${{ secrets.MACOS_CODESIGN_CERTIFICATE_PASSWORD }}
 
       - name: Prepare Apple notarization key
         if: matrix.platform == 'macos' && github.ref_type == 'tag'
         shell: bash
         env:
-          APPLE_NOTARY_KEY_BASE64: ${{ secrets.APPLE_NOTARY_KEY_BASE64 }}
-          APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+          APPLE_API_KEY_P8_BASE64: ${{ secrets.APPLE_API_KEY_P8_BASE64 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
         run: |
           set -euo pipefail
-          if [[ -z "${APPLE_NOTARY_KEY_BASE64}" || -z "${APPLE_NOTARY_KEY_ID}" ]]
+          if [[ -z "${APPLE_API_KEY_P8_BASE64}" || -z "${APPLE_API_KEY_ID}" ]]
           then
               echo "Apple notarization secrets are not set."
               exit 1
           fi
           mkdir -p "$RUNNER_TEMP/notary"
-          echo "${APPLE_NOTARY_KEY_BASE64}" | base64 --decode > "$RUNNER_TEMP/notary/AuthKey_${APPLE_NOTARY_KEY_ID}.p8"
-          echo "APPLE_NOTARY_KEY=$RUNNER_TEMP/notary/AuthKey_${APPLE_NOTARY_KEY_ID}.p8" >> "$GITHUB_ENV"
+          echo "${APPLE_API_KEY_P8_BASE64}" | base64 --decode > "$RUNNER_TEMP/notary/AuthKey_${APPLE_API_KEY_ID}.p8"
+          echo "APPLE_NOTARY_KEY=$RUNNER_TEMP/notary/AuthKey_${APPLE_API_KEY_ID}.p8" >> "$GITHUB_ENV"
 
       - name: Configure - macOS
         if: matrix.platform == 'macos'
@@ -161,11 +380,15 @@ jobs:
             -DCMAKE_INSTALL_PREFIX="$PWD/dist" \
             -DSMTG_BUILD_UNIVERSAL_BINARY=OFF \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 \
-            -DCMAKE_PREFIX_PATH="/Library;/Library/Frameworks;/opt/homebrew;/usr/local" \
-            -DCMAKE_FRAMEWORK_PATH="/Library/Frameworks;$HOME/Library/Frameworks" \
+            -DCMAKE_PREFIX_PATH="${CSOUND_INSTALL_PREFIX};${HOME}/Library/Frameworks;/Library;/Library/Frameworks;/opt/homebrew;/usr/local" \
+            -DCMAKE_FRAMEWORK_PATH="${HOME}/Library/Frameworks;/Library/Frameworks" \
             -DCMAKE_CXX_FLAGS="-Wno-error=unused-but-set-variable -Wno-error=deprecated-declarations" \
-            -DCSOUND_AC_ENABLE_CODESIGN="${ENABLE_APPLE_RELEASE_SIGNING}" \
-            -DCSOUND_AC_ENABLE_NOTARIZATION="${ENABLE_APPLE_RELEASE_SIGNING}"
+            -DCSOUND_VST3_OPCODE_SIGN="${ENABLE_APPLE_RELEASE_SIGNING}" \
+            -DCSOUND_VST3_OPCODE_NOTARIZE="${ENABLE_APPLE_RELEASE_SIGNING}" \
+            -DCSOUND_VST3_OPCODE_CODESIGN_IDENTITY="${{ secrets.APPLE_CODESIGN_IDENTITY }}" \
+            -DCSOUND_VST3_OPCODE_NOTARY_KEY="${APPLE_NOTARY_KEY:-}" \
+            -DCSOUND_VST3_OPCODE_NOTARY_KEY_ID="${{ secrets.APPLE_API_KEY_ID }}" \
+            -DCSOUND_VST3_OPCODE_NOTARY_ISSUER="${{ secrets.APPLE_API_ISSUER_ID }}"
 
       - name: Configure - Linux
         if: matrix.platform == 'linux'
@@ -176,22 +399,42 @@ jobs:
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_INSTALL_PREFIX="$PWD/dist"
+            -DCMAKE_INSTALL_PREFIX="$PWD/dist" \
+            -DCMAKE_PREFIX_PATH="${CSOUND_INSTALL_PREFIX};/usr/local;/usr"
 
       - name: Configure - Windows
         if: matrix.platform == 'windows'
-        shell: bash
+        shell: msys2 {0}
         run: |
+          set -euo pipefail
           rm -rf build-windows dist
-          cmake -S vst3-opcodes -B build-windows \
+          csound_import_library="$(find "${CSOUND_INSTALL_PREFIX}" \( -name 'libcsound64.dll.a' -o -name 'csound64.lib' -o -name 'libcsound64.lib' \) | head -n 1 || true)"
+          if [[ -z "${csound_import_library}" ]]
+          then
+              echo "Could not find Csound import library in ${CSOUND_INSTALL_PREFIX}." >&2
+              exit 1
+          fi
+          cmake -S vst3-opcodes -B build-windows -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_INSTALL_PREFIX="$PWD/dist" \
+            -DCMAKE_PREFIX_PATH="${CSOUND_INSTALL_PREFIX};/mingw64" \
+            -DCSOUND_EXECUTABLE="${CSOUND_INSTALL_PREFIX}/bin/csound.exe" \
+            -DCSOUND_LIBRARY="${csound_import_library}" \
+            -DCSOUND_LIBRARIES="${csound_import_library}" \
             -DSMTG_USE_STDATOMIC_H=OFF
 
-      - name: Build and locally install
+      - name: Build and locally install - macOS/Linux
+        if: matrix.platform != 'windows'
         shell: bash
+        run: |
+          cmake --build "${{ matrix.build_dir }}" --config Release --parallel --target stage_dist
+          cmake --install "${{ matrix.build_dir }}" --config Release --prefix "$PWD/dist"
+
+      - name: Build and locally install - Windows
+        if: matrix.platform == 'windows'
+        shell: msys2 {0}
         run: |
           cmake --build "${{ matrix.build_dir }}" --config Release --parallel --target stage_dist
           cmake --install "${{ matrix.build_dir }}" --config Release --prefix "$PWD/dist"
@@ -202,14 +445,20 @@ jobs:
         env:
           APPLE_CODESIGN_IDENTITY: ${{ secrets.APPLE_CODESIGN_IDENTITY }}
           APPLE_NOTARY_KEY: ${{ env.APPLE_NOTARY_KEY }}
-          APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
-          APPLE_NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
+          APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_NOTARY_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
         run: |
           cmake --build build-macos --target release_dist
 
-      - name: Archive - Linux/Windows
-        if: matrix.platform != 'macos'
+      - name: Archive - Linux
+        if: matrix.platform == 'linux'
         shell: bash
+        run: |
+          cmake --build "${{ matrix.build_dir }}" --config Release --target archive_dist
+
+      - name: Archive - Windows
+        if: matrix.platform == 'windows'
+        shell: msys2 {0}
         run: |
           cmake --build "${{ matrix.build_dir }}" --config Release --target archive_dist
 
