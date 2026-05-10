@@ -188,6 +188,21 @@ smtg_enable_vst3_sdk()
 
 if(SMTG_WIN)
     set(SMTG_USE_STDATOMIC_H OFF CACHE BOOL "" FORCE)
+
+    find_file(CSOUND_VST3_OPCODE_WINPTHREAD_DLL
+        NAMES libwinpthread-1.dll
+        HINTS
+            "/mingw64/bin"
+            "/ucrt64/bin"
+            "/clang64/bin"
+        PATH_SUFFIXES bin
+    )
+
+    if(CSOUND_VST3_OPCODE_WINPTHREAD_DLL)
+        message(STATUS "Using libwinpthread runtime: ${CSOUND_VST3_OPCODE_WINPTHREAD_DLL}")
+    else()
+        message(WARNING "libwinpthread-1.dll was not found; skipping Windows runtime bundle copy.")
+    endif()
 endif()
 
 set(vst3_plugins_sources
@@ -342,6 +357,16 @@ add_custom_target(stage_dist
         "${CSOUND_VST3_OPCODE_DIST_DIR}/examples"
     COMMENT "Staging README.md, LICENSE, examples, and build artifacts in dist"
 )
+
+if(SMTG_WIN AND CSOUND_VST3_OPCODE_WINPTHREAD_DLL)
+    add_custom_command(TARGET stage_dist POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${CSOUND_VST3_OPCODE_WINPTHREAD_DLL}"
+            "${CSOUND_VST3_OPCODE_DIST_DIR}/bin/libwinpthread-1.dll"
+        VERBATIM
+        COMMENT "Staging libwinpthread-1.dll runtime dependency"
+    )
+endif()
 
 if(APPLE)
     add_custom_target(sign_dist
