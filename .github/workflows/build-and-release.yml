@@ -259,7 +259,7 @@ jobs:
             -DINSTALL_PYTHON_INTERFACE=OFF \
             -DUSE_PYTHON=OFF \
             -DCSOUND_INCLUDE_DIR="${CSOUND_INSTALL_PREFIX}/include/csound" \
-            -DCSOUND_INCLUDE_DIRS="${CSOUND_INSTALL_PREFIX}/include/csound" \
+            -DCSOUND_INCLUDE_DIRS="${CSOUND_INSTALL_PREFIX}/include;CSOUND_INSTALL_PREFIX}/include/csound;" \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
           cmake --build csound-build --parallel
