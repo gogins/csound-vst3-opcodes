@@ -159,6 +159,25 @@ message(STATUS "Using Csound include dirs:  ${CSOUND_INCLUDE_DIRS}")
 message(STATUS "Using Csound framework dir: ${CSOUND_FRAMEWORK_DIR}")
 message(STATUS "Using Csound version:       ${CSOUND_VERSION}")
 
+set(_csound_resolved_include_dirs "")
+foreach(_csound_include_dir IN LISTS CSOUND_INCLUDE_DIRS)
+    if(EXISTS "${_csound_include_dir}/csound.h")
+        list(APPEND _csound_resolved_include_dirs "${_csound_include_dir}")
+    elseif(EXISTS "${_csound_include_dir}/csound/csound.h")
+        list(APPEND _csound_resolved_include_dirs "${_csound_include_dir}/csound")
+    else()
+        list(APPEND _csound_resolved_include_dirs "${_csound_include_dir}")
+    endif()
+endforeach()
+
+if(_csound_resolved_include_dirs)
+    list(REMOVE_DUPLICATES _csound_resolved_include_dirs)
+    set(CSOUND_INCLUDE_DIRS "${_csound_resolved_include_dirs}")
+    list(GET CSOUND_INCLUDE_DIRS 0 CSOUND_INCLUDE_DIR)
+endif()
+
+message(STATUS "Resolved Csound include dirs: ${CSOUND_INCLUDE_DIRS}")
+
 set(vst3sdk_SOURCE_DIR
     "${CSOUND_VST3_OPCODE_REPOSITORY_ROOT}/vst3sdk"
     CACHE PATH "Steinberg VST3 SDK source directory."
