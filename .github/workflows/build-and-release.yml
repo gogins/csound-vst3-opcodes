@@ -274,6 +274,16 @@ jobs:
         run: |
           set -euo pipefail
           git clone --depth 1 --branch develop https://github.com/csound/csound.git csound-source
+          mkdir -p /usr/x86_64-w64-mingw32/lib
+          winpthread_dll="$(find /mingw64 /usr -name 'libwinpthread-1.dll' -print -quit || true)"
+          if [[ -z "${winpthread_dll}" ]]
+          then
+              echo "Could not find libwinpthread-1.dll." >&2
+              find / -name 'libwinpthread-1.dll' -print 2>/dev/null >&2 || true
+              exit 1
+          fi
+          cp -f "${winpthread_dll}" /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll
+          ls -l /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll
           cmake -S csound-source -B csound-build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX="${CSOUND_INSTALL_PREFIX}" \
@@ -438,21 +448,6 @@ jobs:
         run: |
           cmake --build "${{ matrix.build_dir }}" --config Release --parallel --target stage_dist
           cmake --install "${{ matrix.build_dir }}" --config Release --prefix "$PWD/dist"
-
-      - name: Provide Csound-expected winpthread path - Windows
-        if: matrix.platform == 'windows'
-        shell: msys2 {0}
-        run: |
-          set -euo pipefail
-          mkdir -p /usr/x86_64-w64-mingw32/lib
-          if [[ -f /mingw64/bin/libwinpthread-1.dll ]]
-          then
-              cp -f /mingw64/bin/libwinpthread-1.dll /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll
-          else
-              echo "Could not find /mingw64/bin/libwinpthread-1.dll" >&2
-              find /mingw64 -name 'libwinpthread-1.dll' -print >&2
-              exit 1
-          fi
 
       - name: Build and locally install - Windows
         if: matrix.platform == 'windows'
