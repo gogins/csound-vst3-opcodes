@@ -39,7 +39,7 @@ jobs:
 
     env:
       CSOUND_INSTALL_PREFIX: ${{ github.workspace }}/.cache/csound-install
-      CSOUND_CACHE_VERSION: csound7-develop-v4
+      CSOUND_CACHE_VERSION: csound7-develop-v5
 
     steps:
       - name: Checkout repository
