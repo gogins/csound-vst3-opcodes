@@ -70,8 +70,8 @@ cmake -S "${repo_root}/vst3-opcodes" -B "${build_dir}" -G Ninja \
     -DCMAKE_PREFIX_PATH="/Library;/Library/Frameworks;/opt/homebrew;/usr/local" \
     -DCMAKE_FRAMEWORK_PATH="/Library/Frameworks;$HOME/Library/Frameworks" \
     -DCMAKE_CXX_FLAGS="-Wno-error=unused-but-set-variable -Wno-error=deprecated-declarations" \
-    "${launcher_args[@]}" \
-    "${cmake_args[@]}"
+    ${launcher_args[@]+"${launcher_args[@]}"} \
+    ${cmake_args[@]+"${cmake_args[@]}"}
 
 cmake --build "${build_dir}" --parallel --target stage_dist
 cmake --build "${build_dir}" --target release_dist
