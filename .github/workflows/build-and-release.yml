@@ -403,7 +403,9 @@ jobs:
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_INSTALL_PREFIX="$PWD/dist" \
-            -DCMAKE_PREFIX_PATH="${CSOUND_INSTALL_PREFIX};/usr/local;/usr"
+            -DCMAKE_PREFIX_PATH="${CSOUND_INSTALL_PREFIX};/usr/local;/usr" \
+            -DCSOUND_INCLUDE_DIR="${CSOUND_INSTALL_PREFIX}/include/csound" \
+            -DCSOUND_INCLUDE_DIRS="${CSOUND_INSTALL_PREFIX}/include/csound"
 
       - name: Configure - Windows
         if: matrix.platform == 'windows'
