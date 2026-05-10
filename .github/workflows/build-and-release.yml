@@ -39,7 +39,7 @@ jobs:
 
     env:
       CSOUND_INSTALL_PREFIX: ${{ github.workspace }}/.cache/csound-install
-      CSOUND_CACHE_VERSION: csound7-develop-v5
+      CSOUND_CACHE_VERSION: csound7-develop-v6
 
     steps:
       - name: Checkout repository
@@ -237,6 +237,7 @@ jobs:
             -DBUILD_PYTHON_INTERFACE=OFF \
             -DBUILD_PYTHON_OPCODES=OFF \
             -DUSE_PYTHON=OFF \
+            -DINSTALL_PYTHON_INTERFACE=OFF \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
           cmake --build csound-build --parallel
@@ -255,6 +256,7 @@ jobs:
             -DBUILD_JAVA_INTERFACE=OFF \
             -DBUILD_PYTHON_INTERFACE=OFF \
             -DBUILD_PYTHON_OPCODES=OFF \
+            -DINSTALL_PYTHON_INTERFACE=OFF \
             -DUSE_PYTHON=OFF \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
@@ -278,6 +280,7 @@ jobs:
             -DBUILD_PYTHON_INTERFACE=OFF \
             -DBUILD_PYTHON_OPCODES=OFF \
             -DUSE_PYTHON=OFF \
+            -DINSTALL_PYTHON_INTERFACE=OFF \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
           cmake --build csound-build --parallel
