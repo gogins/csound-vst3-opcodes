@@ -17,8 +17,8 @@ These opcodes are a port of the older vst4cs opcodes, which support only the
 VST2 protocol, to the newer and more capable VST3 protocol. The opcodes have 
 more or less the same behavior as the vst4cs opcodes.
 
-These opcodes are designed to be cross-platform and to run at least on Linux, 
-Windows, and macOS.
+These opcodes are designed to be cross-platform and to run at least on macOS 
+and Linux.
 
 csound-vst3-opcodes is non-commercial software and is licensed under GPLv3, as 
 is the VST3 SDK; GPLv3, in turn, is compatible with Csound, which has a 
