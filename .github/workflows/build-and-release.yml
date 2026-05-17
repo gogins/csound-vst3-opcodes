@@ -31,11 +31,12 @@ jobs:
             platform: linux
             build_dir: build-linux
             archive_glob: build-linux/*.zip
-          - name: windows
-            runner: windows-latest
-            platform: windows
-            build_dir: build-windows
-            archive_glob: build-windows/*.zip
+          # Windows build is temporarily disabled, but kept here for re-enabling.
+          # - name: windows
+          #   runner: windows-latest
+          #   platform: windows
+          #   build_dir: build-windows
+          #   archive_glob: build-windows/*.zip
 
     env:
       CSOUND_INSTALL_PREFIX: ${{ github.workspace }}/.cache/csound-install
