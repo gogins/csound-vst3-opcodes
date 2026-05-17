@@ -1,6 +1,6 @@
 <CsoundSynthesizer>
 <CsOptions>
---m-amps=1 --m-range=1 --m-dB=1 --m-benchmarks=1 --m-warnings=0 -+msg_color=0 -d -Wfopianoteq8.wav
+--m-amps=1 --m-range=1 --m-dB=1 --m-benchmarks=1 --m-warnings=0 -+msg_color=0 -d -Wfopianoteq9.wav
 </CsOptions>
 <CsInstruments>
 

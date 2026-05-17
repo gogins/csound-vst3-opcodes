@@ -67,6 +67,10 @@ specified in the `OPCODE7DIR64` environment variable. Or, preferably, create a
 symbolic link in the `OPCODE7DIR64` directory to the vst3-plugins shared 
 library.
 
+## Testing
+
+To validate your build or installation on macOS, run [pianoteq9_macos_test.csd](https://github.com/gogins-dev/csound-vst3-opcodes/blob/master/examples/pianoteq9_macos_test.csd) from the terminal with Csound. If you do not have the Pianoteq plugin, you can substitute some plugin that you do have.
+
 ## User Guide
 
 The VST3 opcodes have exactly the same names as the vst4cs opcodes, except 
